@@ -122,6 +122,8 @@ body{
 .step.done .stepdot{border-color:var(--green);color:var(--green);}
 .prog{height:6px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;}
 .prog > i{display:block;height:100%;width:0;background:var(--cyan);border-radius:999px;transition:width .2s linear;}
+.prog.thin{height:4px;margin-top:6px;}
+.overall-row{display:flex;justify-content:space-between;align-items:baseline;}
 /* 选项卡 */
 .tabs{display:flex;gap:10px;margin:12px 0;}
 .tab{flex:1;border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;background:var(--card);}
@@ -158,6 +160,7 @@ body{
 .gaincard.comb{border-color:rgba(255,77,77,.5);background:rgba(255,77,77,.05);}
 .gaincard.comb .gv{color:var(--red);}
 .gaincard .tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
+.snrdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:1px;}
 /* 图例 */
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:8px;}
 .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;}
@@ -272,9 +275,18 @@ ul.clean li{margin:6px 0;}
       <div class="tab" id="tab-usb"><div class="t"></div><div class="n"></div></div>
     </div>
     <div class="alert amber" id="usb-tip"></div>
-    <div class="alert amber show" id="case-tip"></div>
     <div class="alert amber show" id="position-tip"></div>
+    <div class="alert amber show" id="case-tip"></div>
+    <div class="alert amber show" id="quiet-tip"></div>
     <div class="card" id="measure-card">
+      <div id="overall-wrap" class="hidden">
+        <div class="overall-row">
+          <div class="small" id="overall-text"></div>
+          <div class="small" id="overall-pct">0%</div>
+        </div>
+        <div class="prog thin"><i id="overall-fill"></i></div>
+        <div class="small" id="overall-obj" style="margin-top:6px;"></div>
+      </div>
       <div id="measure-steps"></div>
       <div class="small mt8" id="measure-status"></div>
     </div>
@@ -1893,7 +1905,7 @@ var MODELS_DB = {
   }
 
   // 单通道规则计算
-  function ruleChannel(meas31, target31, combBins, spec, tol) {
+  function ruleChannel(meas31, target31, combBins, spec, tol, snr31) {
     var dev31 = new Array(31);
     var i;
     for (i = 0; i < 31; i++) dev31[i] = meas31[i] - target31[i];
@@ -1915,7 +1927,7 @@ var MODELS_DB = {
         else usable.push(cov[i]);
       }
       var band = { label: label, centerHz: center, gainDb: 0,
-                   action: 'none', reason: '' };
+                   action: 'none', reason: '', snr: 'ok' };
       if (usable.length === 0) {
         // 整个覆盖区都是梳状凹陷：保持 0，不做任何提升
         band.action = 'comb';
@@ -1954,6 +1966,27 @@ var MODELS_DB = {
       if (hasComb && band.action !== 'comb') {
         band.reason += '；注意：该频段内另有梳状滤波凹陷，已排除在计算之外';
       }
+      /* 分频段 SNR 门控（v1.9）：底噪污染是分频段的，宽带 SNR 会误杀干净频段。
+         原理：SNR=15dB 时底噪贡献 10*log10(1+10^(-15/10))≈0.14dB，可忽略；
+         SNR=10dB 时误差 0.41dB 开始显著；<10dB 时底噪主导，该频段数据不可用。 */
+      if (snr31 && usable.length > 0) {
+        var minSnr = Infinity, si;
+        for (si = 0; si < usable.length; si++) {
+          if (snr31[usable[si]] < minSnr) minSnr = snr31[usable[si]];
+        }
+        band.minSnrDb = Math.round(minSnr*10)/10;
+        if (minSnr < 10) {
+          band.snr = 'bad';
+          band.gainDb = 0;
+          band.action = 'noised';
+          band.reason = '该频段底噪污染严重（SNR<' + band.minSnrDb +
+            'dB），测量数据不可用，未出增益';
+        } else if (minSnr < 15) {
+          band.snr = 'warn';
+          band.reason += '；该频段有轻度底噪污染（SNR ' + band.minSnrDb +
+            'dB），增益供参考';
+        }
+      }
       bands.push(band);
     }
     return { bands: bands, unfixable: unfixable, dev31: dev31 };
@@ -1988,7 +2021,8 @@ var MODELS_DB = {
    * @param {number[31]} measL31 左声道 31 段测量（dB）
    * @param {number[31]} measR31 右声道 31 段测量（dB）
    * @param {object} eqSpec 车机 EQ 规格 {bands, labels, centers|null, rangeDb, stepDb}
-   * @param {object} opts {tol} tol 默认 1.5dB
+   * @param {object} opts {tol, floor31} tol 默认 1.5dB；floor31 为 31 段底噪（dB），
+   *   用于分频段 SNR 门控（无则跳过门控，宽带 snrGate 仍在 UI 层生效）
    */
   DSP.ruleEngine = function (measL31, measR31, eqSpec, opts) {
     opts = opts || {};
@@ -2001,8 +2035,16 @@ var MODELS_DB = {
     // L/R 独立计算：单点测立体声时左右差异本身就是诊断信息，不可预先平均
     var combL = DSP.detectComb(measL31.map(function (v, k) { return v - target31[k]; }));
     var combR = DSP.detectComb(measR31.map(function (v, k) { return v - target31[k]; }));
-    var rL = ruleChannel(measL31, target31, combL, spec, tol);
-    var rR = ruleChannel(measR31, target31, combR, spec, tol);
+    // 分频段 SNR：snr[i] = sig31[i] - floor31[i]（无底噪数据时跳过门控）
+    var floor31 = opts.floor31;
+    function snrOf(m31){
+      if(!floor31) return null;
+      var s = new Array(31), k;
+      for(k=0;k<31;k++) s[k] = m31[k] - floor31[k];
+      return s;
+    }
+    var rL = ruleChannel(measL31, target31, combL, spec, tol, snrOf(measL31));
+    var rR = ruleChannel(measR31, target31, combR, spec, tol, snrOf(measR31));
 
     // 合并：逐段取左右 gain 平均后按步进取整；差异 >1 步进则标注
     var bandsCombined = [];
@@ -2014,17 +2056,23 @@ var MODELS_DB = {
       if (g > 0) g = 0; // cut-only 铁律：合并后也永不为正
       var diff = Math.abs(gL - gR) > spec.stepDb + 1e-9;
       var action = rL.bands[b].action;
-      // 左右 action 不一致时取更保守的一方（comb/unfixable 优先）
-      var order = { comb: 0, unfixable: 1, cut: 2, none: 3 };
+      // 左右 action 不一致时取更保守的一方（comb/noised/unfixable 优先）
+      var order = { comb: 0, noised: 0, unfixable: 1, cut: 2, none: 3 };
       var aR = rR.bands[b].action;
       if (order[aR] < order[action]) action = aR;
       var reason = (action === rL.bands[b].action) ? rL.bands[b].reason : rR.bands[b].reason;
-      if (diff && action !== 'comb') {
+      if (diff && action !== 'comb' && action !== 'noised') {
         reason += '；左右声道该段差异超过 1 档（左 ' + gL + ' / 右 ' + gR +
           ' dB），已取平均，建议以主驾位听感为准微调';
       }
+      // 分频段 SNR：任一侧 noised → 整段不出增益（污染频段不参与平均）
+      var sL = rL.bands[b].snr||'ok', sR = rR.bands[b].snr||'ok';
+      var snrWorst = 'ok';
+      if(sL==='bad'||sR==='bad') snrWorst='bad';
+      else if(sL==='warn'||sR==='warn') snrWorst='warn';
+      if(action==='noised'){ g = 0; }
       bandsCombined.push({ label: spec.labels[b], centerHz: spec.centers[b],
-                           gainDb: g, action: action, reason: reason,
+                           gainDb: g, action: action, reason: reason, snr: snrWorst,
                            gainL: gL, gainR: gR, lrDiff: diff });
     }
 
@@ -2393,6 +2441,8 @@ window.COPY = {
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipPosition: "📍 手机放在驾驶位头枕处——两步测量全程不要移动手机。环境底噪和立体声整体测量都在驾驶位完成：调音目标就是你开车时实际听到的声音。推荐用支架固定，至少保证手不抖、位置不动。",
     tipPositionEn: "📍 Place your phone at the driver's headrest — don't move it during both steps. Ambient floor and stereo measurement are both done at the driver's seat: the tuning target is exactly what you hear while driving. A mount is recommended; at minimum keep your hand steady and the position fixed.",
+    tipQuiet: "🔇 尽量在安静的环境下测——地下车库、夜晚小区都是好选择。环境越安静，底噪越低，测得越准（报告里绿灯越多）",
+    tipQuietEn: "🔇 Measure somewhere as quiet as possible — an underground garage or a quiet neighborhood at night are great choices. The quieter it is, the lower the noise floor and the more accurate the result (more green lights in your report)",
     isoCheckTitle: "声道隔离自检",
     isoCheckTitleEn: "Channel isolation check",
     isoCheckQ: "刚才只播了左声道——只听到左边喇叭响吗？",
@@ -2403,6 +2453,22 @@ window.COPY = {
     isoNoEn: "Both sides played",
     stepStereo: "第 2 步：立体声整体测量（30 秒）",
     stepStereoEn: "Step 2: Stereo combined measurement (30s)",
+    objFloor: "环境底噪",
+    objFloorEn: "Ambient noise floor",
+    objStereo: "立体声整体",
+    objStereoEn: "Stereo combined",
+    objL: "左声道",
+    objLEn: "Left channel",
+    objR: "右声道",
+    objREn: "Right channel",
+    listeningNow: function (n) { return "正在监听：" + n; },
+    listeningNowEn: function (n) { return "Listening: " + n; },
+    listeningDone: function (n) { return "已完成监听：" + n; },
+    listeningDoneEn: function (n) { return "Listening complete: " + n; },
+    listenDone: "已完成监听",
+    listenDoneEn: "Listening complete",
+    progressStep: function (c, t) { return "监听进度 第 " + c + "/" + t + " 步"; },
+    progressStepEn: function (c, t) { return "Listening progress: step " + c + "/" + t; },
     collectingN: function (n) { return "正在采集频谱…第 " + n + " 帧"; },
     collectingNEn: function (n) { return "Capturing spectrum… frame " + n; },
     finalAvg: "正在做最终平均…",
@@ -2465,6 +2531,10 @@ window.COPY = {
     sub: "照着下面的数值，逐段设置车机 EQ 就好。",
     perBandNote: "以下 {n} 个增益值与你车机 EQ 的 {n} 段一一对应，只调这几段，其余不动。",
     combNote: "该频段存在声学干涉谷，EQ 硬拉只会越补越糟，已自动跳过",
+    snrWarn: "轻度底噪污染",
+    snrWarnEn: "Mild noise contamination",
+    snrBad: "底噪污染，未出方案",
+    snrBadEn: "Noise contaminated, no gain issued",
     burnTitle: "试听前必读（防烧喇叭）",
     burnBody: "三句话：只做衰减不做提升；低频不要硬推；音量由小渐大试听，听到破音立刻调小。",
     restoreTitle: "随时恢复",
@@ -3240,14 +3310,14 @@ function refreshBountyBtn(){
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
 var STEP_DEFS_LR = [
-  {key:'floor', dur:30, copy:'measure.stepFloor'},
-  {key:'L',     dur:30, copy:'measure.stepL'},
-  {key:'R',     dur:30, copy:'measure.stepR'}
+  {key:'floor', dur:30, copy:'measure.stepFloor', obj:'measure.objFloor'},
+  {key:'L',     dur:30, copy:'measure.stepL',     obj:'measure.objL'},
+  {key:'R',     dur:30, copy:'measure.stepR',     obj:'measure.objR'}
 ];
 /* v1.3+ 默认：立体声整体测量（一次测完，测的就是驾驶位实际听到的声音） */
 var STEP_DEFS_STEREO = [
-  {key:'floor', dur:30, copy:'measure.stepFloor'},
-  {key:'stereo', dur:30, copy:'measure.stepStereo'}
+  {key:'floor', dur:30, copy:'measure.stepFloor',  obj:'measure.objFloor'},
+  {key:'stereo', dur:30, copy:'measure.stepStereo', obj:'measure.objStereo'}
 ];
 function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
@@ -3258,6 +3328,7 @@ function initMeasure(){
   setText('usb-tip','measure.usbPlayingTip');
   setText('case-tip','measure.tipCase');
   setText('position-tip','measure.tipPosition');
+  setText('quiet-tip','measure.tipQuiet');
   setText('clip-alert','measure.clipAlert');
   setText('snr-alert','measure.snrWarn');
   setText('mic-retry','common.retry');
@@ -3308,7 +3379,9 @@ function buildStepsUI(){
     var d = document.createElement('div');
     d.className = 'step'; d.id = 'step-'+i;
     d.innerHTML = '<div class="stepdot num">'+(i+1)+'</div><div style="flex:1;">'+
-      '<div class="body14" id="step-t-'+i+'">'+escapeHtml(tt(s.copy))+'</div>'+
+      '<div class="body14" style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">'+
+        '<span id="step-t-'+i+'">'+escapeHtml(tt(s.copy))+'</span>'+
+        '<span class="small" id="step-c-'+i+'" style="flex:none;"></span></div>'+
       '<div class="small" id="step-s-'+i+'"></div>'+
       '<div class="prog"><i id="step-p-'+i+'"></i></div></div>';
     box.appendChild(d);
@@ -3408,6 +3481,12 @@ function rafLoop(){
       app._shownFrames = app.frameCount; // 采集进行时：帧计数器（节流到变化才刷新）
       setStatus(tf('measure.collectingN')(app.frameCount));
     }
+    // 整体监听进度：(已完成步数 + 当前步进度) / 总步数；步内倒计时 0:07/0:30
+    var defsAll = stepDefs();
+    var op = Math.min(1, (app.curStep + p)/defsAll.length);
+    setOverallFill(op);
+    var cdEl = document.getElementById('step-c-'+app.curStep);
+    if(cdEl) cdEl.textContent = fmtClock(remain) + '/' + fmtClock(app.stepDur);
   }
   // 电平表
   var f = app.lastFrame;
@@ -3453,6 +3532,37 @@ function onClipStop(){
   track('measure_clip_stop');
 }
 function setStatus(s){ document.getElementById('measure-status').textContent = s; }
+/* ---------- 监听整体进度条（v1.9） ---------- */
+function fmtClock(sec){ // m:ss，如 0:07 / 0:30
+  sec = Math.max(0, Math.ceil(sec));
+  return Math.floor(sec/60) + ':' + ('0'+(sec%60)).slice(-2);
+}
+function setOverallText(s){ var el=document.getElementById('overall-text'); if(el) el.textContent=s; }
+function setOverallObj(s){ var el=document.getElementById('overall-obj'); if(el) el.textContent=s; }
+function setOverallFill(frac){
+  var fill=document.getElementById('overall-fill'), pct=document.getElementById('overall-pct');
+  var p = Math.max(0, Math.min(1, frac));
+  if(fill) fill.style.width = (p*100).toFixed(1)+'%';
+  if(pct) pct.textContent = Math.round(p*100)+'%';
+}
+function showOverall(){ var w=document.getElementById('overall-wrap'); if(w) w.classList.remove('hidden'); }
+/* 某步开始：整体文案"监听进度 第 c/t 步"＋"正在监听：对象" */
+function stepStartUI(idx){
+  var defs = stepDefs(), def = defs[idx];
+  showOverall();
+  setOverallText(tf('measure.progressStep')(idx+1, defs.length));
+  setOverallObj(tf('measure.listeningNow')(tt(def.obj)));
+}
+/* 某步完成："已完成监听：对象"＋停 1 秒让用户看到；返回 false 表示流程已失效 */
+async function stepDonePause(token, idx){
+  var defs = stepDefs(), def = defs[idx];
+  var doneTxt = tf('measure.listeningDone')(tt(def.obj));
+  setStatus(doneTxt);
+  setOverallObj(doneTxt);
+  setOverallFill((idx+1)/defs.length);
+  await new Promise(function(r){ setTimeout(r, 1000); });
+  return token===app.runToken;
+}
 function setStepState(i, cls){
   var d = document.getElementById('step-'+i);
   if(d) d.className = 'step '+cls;
@@ -3566,18 +3676,21 @@ async function startMeasureFlow(){
   setStepState(0,'active'); setStatus(tt('measure.stepFloor'));
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=30;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
+  stepStartUI(0);
   startRaf();
   var floor31 = null;
   try{ floor31 = await M.startFloor(); }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return;
   S().floor31 = floor31;
   setStepState(0,'done'); track('floor_done');
+  if(!(await stepDonePause(token, 0))) return;
 
   // ③ 立体声整体测量 30s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(1,'active'); setStatus(tt('measure.stepStereo'));
   app.curStep=1; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
+  stepStartUI(1);
   startRaf();
   if(app.playMode==='bt'){ try{ M.playPink(null); }catch(_){} }  // dual-mono：左右同发
   var meas = null;
@@ -3590,6 +3703,7 @@ async function startMeasureFlow(){
   S().measL = meas; S().measR = meas;
   S().channelIsolated = false;
   setStepState(1,'done');
+  if(!(await stepDonePause(token, 1))) return;
   // 持久化（经 DSP）
   try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(_){}
   setStatus('');
@@ -3610,6 +3724,10 @@ async function startLrOptIn(){
   hideAlerts();
   app.measureMode = 'lr'; buildStepsUI(); resetStepsUI();
   setStepState(0,'done'); // 底噪已测过，不重测
+  // 整体进度回到 1/3（底噪已完成），等 L 步开始再推进
+  showOverall();
+  setOverallText(tf('measure.progressStep')(1, 3));
+  setOverallFill(1/3);
   track('lr_optin_start');
 
   // 自检：播 3s 左声道粉噪
@@ -3640,6 +3758,7 @@ async function startLrOptIn(){
     setStepState(s,'active'); setStatus(tt(defs[s].copy));
     app.curStep=s; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
     app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
+    stepStartUI(s);
     startRaf();
     if(app.playMode==='bt'){ try{ M.playPink(ch); }catch(_){} }
     var m2 = null;
@@ -3651,6 +3770,7 @@ async function startLrOptIn(){
     snrGate(m2, ch);
     results[ch]=m2;
     setStepState(s,'done');
+    if(!(await stepDonePause(token, s))) return;
     track(s===1?'measure_l_done':'measure_r_done');
   }
   S().measL = results.L; S().measR = results.R;
@@ -3686,7 +3806,7 @@ function avg31(){
 }
 /* 规则引擎层（v1）：数值方案由 DSP.ruleEngine 产生；LLM 文案层为 v2 预留 */
 function buildPlan(){
-  return DSP.ruleEngine(S().measL, S().measR, S().eqSpec, { channelIsolated: S().channelIsolated });
+  return DSP.ruleEngine(S().measL, S().measR, S().eqSpec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
 }
 function renderReport(){
   setText('report-title','report.title');
@@ -3851,13 +3971,20 @@ function renderPlan(){
     // 中心频率未知时显示"经验预设"
     var centerTxt = (spec.centersVerified && bd.centerHz!=null) ? (bd.centerHz+' Hz') : tt('car.centersPending');
     var gv = (bd.gainDb>0?'+':'') + (bd.gainDb||0) + 'dB';
+    // 分频段 SNR 状态点：绿可信 / 黄轻度污染 / 灰未出方案
+    var snrState = bd.snr||'ok';
+    var snrDot = snrState==='warn'
+      ? '<span class="snrdot" style="background:var(--amber);" title="'+escapeHtml(tt('plan.snrWarn'))+'"></span>'
+      : snrState==='bad'
+      ? '<span class="snrdot" style="background:#8a94a6;" title="'+escapeHtml(tt('plan.snrBad'))+'"></span>'
+      : '<span class="snrdot" style="background:var(--green);"></span>';
     var unfix = '';
     if(bd.unfixable){
       unfix = '<div class="gc" style="color:var(--amber);">需要 '+(bd.unfixable.needDb||bd.unfixable.need)+
               '，车机只能到 '+(bd.unfixable.maxDb||bd.unfixable.max)+'（如实告知：此段无法完全修正）</div>';
     }
     card.innerHTML =
-      '<div class="gl"><div class="gt">'+escapeHtml(bd.label||('B'+(i+1)))+
+      '<div class="gl"><div class="gt">'+escapeHtml(bd.label||('B'+(i+1)))+snrDot+
         (isComb?' <span class="tag" style="color:var(--red);border-color:rgba(255,77,77,.5);">梳状谷</span>':'')+'</div>'+
         '<div class="gc num">'+escapeHtml(centerTxt)+(bd.action?' · '+escapeHtml(String(bd.action)):'')+'</div>'+
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
@@ -3865,6 +3992,15 @@ function renderPlan(){
       '<div class="gv num">'+escapeHtml(gv)+'</div>';
     box.appendChild(card);
   });
+  // 分频段 SNR 图例（一句话）
+  var snrLegend = document.createElement('div');
+  snrLegend.className = 'small';
+  snrLegend.style.cssText = 'margin:2px 0 12px;';
+  snrLegend.innerHTML =
+    '<span class="snrdot" style="background:var(--green);margin-left:0;"></span> 可信　' +
+    '<span class="snrdot" style="background:var(--amber);margin-left:0;"></span> ' + escapeHtml(tt('plan.snrWarn')) + '（增益供参考）　' +
+    '<span class="snrdot" style="background:#8a94a6;margin-left:0;"></span> ' + escapeHtml(tt('plan.snrBad'));
+  box.appendChild(snrLegend);
   try{ DSP.savePlan(plan); }catch(_){}
   track('plan_view', {bands:bands.length});
   CTA.plan = [
