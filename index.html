@@ -213,21 +213,18 @@ ul.clean li{margin:6px 0;}
     <div class="topbar"><button class="backbtn" data-back="sec-checklist" id="bk-car"></button></div>
     <div class="h" id="car-title"></div>
     <div class="small" id="car-sub"></div>
-    <!-- 一级：品牌（可搜索） -->
-    <div class="field" id="car-lv1-wrap">
-      <label id="car-brand-label"></label>
-      <input class="input" id="car-brand-search" autocomplete="off">
-      <ul id="brand-results" class="picklist"></ul>
+    <!-- 车型：单一搜索框 → 车系列表 → 年款列表（三步走） -->
+    <div class="field" id="car-search-wrap">
+      <label id="car-search-label"></label>
+      <div style="position:relative;">
+        <input class="input" id="car-q" autocomplete="off" style="padding-right:40px;">
+        <button id="car-q-clear" class="hidden" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--sub);font-size:16px;padding:10px;cursor:pointer;font-family:inherit;">&#10005;</button>
+      </div>
+      <ul id="car-results" class="picklist"></ul>
     </div>
-    <!-- 二级：车系 -->
-    <div class="field hidden" id="car-lv2-wrap">
-      <label id="car-series-label"></label>
-      <ul id="series-results" class="picklist show"></ul>
-    </div>
-    <!-- 三级：年款 -->
-    <div class="field hidden" id="car-lv3-wrap">
-      <label id="car-year-label2"></label>
-      <ul id="year-results" class="picklist show"></ul>
+    <div class="field hidden" id="car-list-wrap">
+      <div id="car-crumb" class="small" style="margin-bottom:6px;"></div>
+      <ul id="car-list" class="picklist show"></ul>
     </div>
     <!-- 已选汇总 -->
     <div id="car-selected" class="card hidden">
@@ -2253,6 +2250,7 @@ var MODELS_DB = {
    * 导出
    * ============================================================ */
   global.DSP = DSP;
+  global.MODELS_DB = MODELS_DB; // 车型库：UI 层（blk2）直接引用，必须挂全局
 
 })(typeof window !== 'undefined' ? window : this);
 
@@ -2307,6 +2305,10 @@ window.COPY = {
     sub: "车型决定车机 EQ 有几段。方案严格按实际段数生成，不承诺做不到的精度。",
     brandPh: "品牌",
     brandSearchPh: "搜索品牌，如：吉利",
+    searchLabel: "品牌 / 车系",
+    searchPh: "输入品牌或车型，如：吉利 / 星越L",
+    brandBadge: "品牌",
+    backToSearch: "重新搜索",
     seriesPh: "车系，如：星越L",
     seriesLabel: "车系",
     yearLabel2: "年款",
@@ -2732,17 +2734,14 @@ function carSpecFromSeries(brand, se){
 function initCar(){
   setText('car-title','car.title');
   setText('car-sub','car.sub');
-  setText('car-brand-label','car.brandPh');
-  setText('car-series-label','car.seriesLabel');
-  setText('car-year-label2','car.yearLabel2');
+  setText('car-search-label','car.searchLabel');
   setText('car-year-manual-label','car.yearLabel');
   setText('car-hu-label','car.huLabel');
   setText('car-manual-toggle','car.manualToggle');
   setText('car-selected-k','car.selectedK');
   setText('car-change','car.changeBtn');
   setText('bk-car','common.back');
-  var bsi = document.getElementById('car-brand-search');
-  bsi.placeholder = tt('car.brandSearchPh');
+  document.getElementById('car-q').placeholder = tt('car.searchPh');
   document.getElementById('car-hu').placeholder = tt('car.huPh');
   setText('car-hu-hint','car.huHint');
   var huInput = document.getElementById('car-hu');
@@ -2763,27 +2762,26 @@ function initCar(){
   });
   setText('car-year-err','car.yearRequired');
 
+  /* ============ 车型选择 v3：单一搜索 → 车系列表 → 年款列表（三步走，笨但可靠） ============ */
   var brandSel = null, seriesSel = null, yearSel = null, manualMode = false;
-  var brandResults = document.getElementById('brand-results');
-  var lv2 = document.getElementById('car-lv2-wrap');
-  var seriesResults = document.getElementById('series-results');
-  var lv3 = document.getElementById('car-lv3-wrap');
-  var yearResults = document.getElementById('year-results');
+  var qInput = document.getElementById('car-q');
+  var qClear = document.getElementById('car-q-clear');
+  var qResults = document.getElementById('car-results');
+  var searchWrap = document.getElementById('car-search-wrap');
+  var listWrap = document.getElementById('car-list-wrap');
+  var crumb = document.getElementById('car-crumb');
+  var carList = document.getElementById('car-list');
   var selCard = document.getElementById('car-selected');
   var bandPicker = document.getElementById('band-picker');
   var bandTip = document.getElementById('band-picker-tip');
 
   function huVal(){ return document.getElementById('car-hu').value.trim(); }
 
-  function resetCascade(){
-    brandSel = seriesSel = yearSel = null;
-    S().car = null; S().eqSpec = null;
-    bsi.value = '';
-    brandResults.classList.remove('show');
-    lv2.classList.add('hidden'); lv3.classList.add('hidden');
-    selCard.classList.add('hidden');
-    bandPicker.classList.add('hidden');
-    renderEqSpec();
+  function carCtaErr(msg){
+    var e = document.getElementById('car-cta-err');
+    if (!e) return;
+    if (msg){ e.textContent = msg; e.classList.add('show'); }
+    else { e.textContent = ''; e.classList.remove('show'); }
   }
 
   /* iOS 加固点击：Safari 在键盘收起导致布局跳动时会吞掉 click，
@@ -2810,134 +2808,137 @@ function initCar(){
     });
   }
 
-  /* 防御性纠正：品牌框内容若实际是车系名（精确命中），自动反查品牌+车系。
-     覆盖场景：iOS tap 丢失、用户手动输入车系名等导致 brandSel 为空但框内有值。 */
-  function healBrandField(){
-    if (brandSel) return true;
-    var v = normCarText(bsi.value);
-    if (!v) return false;
-    var all = MODELS_DB.brands, i, j;
-    for (i = 0; i < all.length; i++){
-      var b = all[i];
-      if (normCarText(b.name) === v){ pickBrand(b); return true; }
-      for (j = 0; j < b.series.length; j++){
-        var se = b.series[j];
-        if (normCarText(se.name) === v || normCarText(b.name + se.name) === v){
-          pickBrand(b); pickSeries(se); return true;
-        }
-      }
-    }
-    return false;
+  function eqBadge(se){
+    if (se.eq_bands === 0) return '<span class="badge red">不可调</span>';
+    if (se.eq_bands) return '<span class="badge cyan">' + se.eq_bands + '段</span>';
+    return '<span class="badge amber">EQ未知</span>';
   }
 
-  function carCtaErr(msg){
-    var e = document.getElementById('car-cta-err');
-    if (!e) return;
-    if (msg){ e.textContent = msg; e.classList.add('show'); }
-    else { e.textContent = ''; e.classList.remove('show'); }
-  }
-
-  function renderBrandList(q){
+  /* 混合结果列表：车系直达行（品牌 · 车系）+ 品牌行（品牌：X） */
+  function renderSearchResults(q){
     var r = carSearch(q), n = 0;
-    brandResults.innerHTML = '';
-    r.series.slice(0, 4).forEach(function(it){
+    qResults.innerHTML = '';
+    r.series.slice(0, 5).forEach(function(it){
       if (n >= 8) return;
       var li = document.createElement('li');
-      li.innerHTML = '<span>' + escapeHtml(it.se.name) + '</span><span class="badge cyan">' + escapeHtml(it.b.name) + '</span>';
-      bindTap(li, (function(b, se){ return function(){ pickBrand(b); pickSeries(se); }; })(it.b, it.se));
-      brandResults.appendChild(li); n++;
+      li.innerHTML = '<span>' + escapeHtml(it.b.name) + ' · ' + escapeHtml(it.se.name) + '</span>' + eqBadge(it.se);
+      bindTap(li, (function(b, se){ return function(){ goSeries(b, se); }; })(it.b, it.se));
+      qResults.appendChild(li); n++;
     });
     r.brands.slice(0, Math.max(0, 8 - n)).forEach(function(b){
       var li = document.createElement('li');
-      li.innerHTML = '<span>' + escapeHtml(b.name) + '</span><span class="small">' + b.series.length + '车系</span>';
-      bindTap(li, function(){ pickBrand(b); });
-      brandResults.appendChild(li); n++;
+      li.innerHTML = '<span>' + escapeHtml(tt('car.brandBadge') || '品牌') + '：' + escapeHtml(b.name) + '</span><span class="small">' + b.series.length + '车系</span>';
+      bindTap(li, (function(bb){ return function(){ goSeries(bb, null); }; })(b));
+      qResults.appendChild(li); n++;
     });
     if (!n){
-      /* 无结果：给明确反馈 + 一键进手动输入（下方常驻按钮之外再给一条近路） */
-      if (q) renderNoResultRow(q);
-      else brandResults.classList.remove('show');
+      if (q) renderNoResult(q);
+      else qResults.classList.remove('show');
       return;
     }
-    brandResults.classList.add('show');
+    qResults.classList.add('show');
   }
-  /* 无结果提示行：点按直接打开手动输入 */
-  function renderNoResultRow(q){
-    brandResults.innerHTML = '';
+  function renderNoResult(q){
+    qResults.innerHTML = '';
     var li = document.createElement('li');
     li.innerHTML = '<span class="small">' + escapeHtml((tt('car.noResult') || '没有找到"{q}"').replace('{q}', q)) + '</span><span class="badge amber">' + escapeHtml(tt('car.manualToggle')) + '</span>';
     bindTap(li, function(){
       document.getElementById('car-manual-toggle').click();
       track('car_no_result_manual', {q: q});
     });
-    brandResults.appendChild(li);
-    brandResults.classList.add('show');
+    qResults.appendChild(li);
+    qResults.classList.add('show');
   }
-  var timer = 0;
-  bsi.addEventListener('input', function(){
-    clearTimeout(timer);
-    timer = setTimeout(function(){ renderBrandList(bsi.value.trim()); }, 200);
-  });
-  bsi.addEventListener('focus', function(){
-    if (!bsi.value.trim()) renderBrandList('');
-  });
 
-  function pickBrand(b){
-    brandSel = b; seriesSel = yearSel = null;
+  /* 面包屑：显示已选路径，点按回退 */
+  function renderCrumb(){
+    crumb.innerHTML = '';
+    function mk(txt, fn){
+      var b = document.createElement('button');
+      b.className = 'linklike';
+      b.style.cssText = 'padding:4px 10px 4px 0;font-size:14px;';
+      b.textContent = txt;
+      bindTap(b, fn);
+      crumb.appendChild(b);
+    }
+    if (seriesSel){
+      mk('‹ ' + brandSel.name, function(){ goSeries(brandSel, null); });
+      var s = document.createElement('span');
+      s.className = 'small'; s.textContent = ' › ' + seriesSel.name + ' › 年款';
+      crumb.appendChild(s);
+    } else if (brandSel){
+      mk('‹ ' + (tt('car.backToSearch') || '重新搜索'), backToSearch);
+      var s2 = document.createElement('span');
+      s2.className = 'small'; s2.textContent = ' › ' + brandSel.name + ' › 车系';
+      crumb.appendChild(s2);
+    }
+  }
+
+  /* 回到搜索（清空一切，可重来，永不卡死） */
+  function backToSearch(){
+    brandSel = seriesSel = yearSel = null;
     S().car = null; S().eqSpec = null;
-    manualMode = false;
+    carCtaErr('');
+    listWrap.classList.add('hidden');
+    selCard.classList.add('hidden');
+    bandPicker.classList.add('hidden');
+    searchWrap.classList.remove('hidden');
+    qInput.value = '';
+    qClear.classList.add('hidden');
+    qResults.classList.remove('show');
+    renderEqSpec();
+    track('car_back_to_search');
+  }
+
+  /* 选品牌 → 只显示车系列表；se 非空时直达年款 */
+  function goSeries(b, se){
+    brandSel = b; seriesSel = null; yearSel = null;
+    S().car = null; S().eqSpec = null; manualMode = false;
     carCtaErr('');
     document.getElementById('car-manual-box').classList.add('hidden');
-    bsi.value = b.name;
-    brandResults.classList.remove('show');
-    seriesResults.innerHTML = '';
-    b.series.forEach(function(se){
+    searchWrap.classList.add('hidden');
+    qResults.classList.remove('show');
+    carList.innerHTML = '';
+    b.series.forEach(function(s){
       var li = document.createElement('li');
-      var badge;
-      if (se.eq_bands === 0) badge = '<span class="badge red">不可调</span>';
-      else if (se.eq_bands) badge = '<span class="badge cyan">' + se.eq_bands + '段</span>';
-      else badge = '<span class="badge amber">EQ未知</span>';
-      li.innerHTML = '<span>' + escapeHtml(se.name) + '</span>' + badge;
-      bindTap(li, function(){ pickSeries(se); });
-      seriesResults.appendChild(li);
+      li.innerHTML = '<span>' + escapeHtml(s.name) + '</span>' + eqBadge(s);
+      bindTap(li, (function(ss){ return function(){ goYears(ss); }; })(s));
+      carList.appendChild(li);
     });
-    lv2.classList.remove('hidden');
-    lv3.classList.add('hidden');
+    listWrap.classList.remove('hidden');
     selCard.classList.add('hidden');
     bandPicker.classList.add('hidden');
     renderEqSpec();
-    track('car_brand_pick', {brand: b.name});
+    renderCrumb();
+    if (se) goYears(se);
+    track('car_brand_pick', {brand: b.name, direct: !!se});
   }
 
-  function pickSeries(se){
+  /* 选车系 → 只显示年款列表 */
+  function goYears(se){
     seriesSel = se; yearSel = null;
     S().car = null; S().eqSpec = null;
-    var items = seriesResults.children, i;
-    for (i = 0; i < items.length; i++){
-      items[i].classList.toggle('sel', items[i].querySelector('span').textContent === se.name);
-    }
-    yearResults.innerHTML = '';
+    carList.innerHTML = '';
     se.years.forEach(function(y){
       var li = document.createElement('li');
       li.innerHTML = '<span>' + escapeHtml(y) + '</span>';
-      bindTap(li, function(){ pickYear(y); });
-      yearResults.appendChild(li);
+      bindTap(li, (function(yy){ return function(){ pickYear(yy); }; })(y));
+      carList.appendChild(li);
     });
-    lv3.classList.remove('hidden');
+    searchWrap.classList.add('hidden');
+    listWrap.classList.remove('hidden');
     selCard.classList.add('hidden');
     bandPicker.classList.add('hidden');
     renderEqSpec();
+    renderCrumb();
     track('car_series_pick', {brand: brandSel.name, series: se.name});
   }
 
   function pickYear(y){
     yearSel = y;
-    var items = yearResults.children, i;
-    for (i = 0; i < items.length; i++){
-      items[i].classList.toggle('sel', items[i].querySelector('span').textContent === y);
-    }
     document.getElementById('car-selected-text').textContent =
-      brandSel.name + ' \u00b7 ' + seriesSel.name + ' \u00b7 ' + y;
+      brandSel.name + ' · ' + seriesSel.name + ' · ' + y;
+    listWrap.classList.add('hidden');
     selCard.classList.remove('hidden');
     S().car = { brand: brandSel.name, series: seriesSel.name, year: y };
     var spec = carSpecFromSeries(brandSel.name, seriesSel);
@@ -2945,17 +2946,48 @@ function initCar(){
       S().eqSpec = spec;
       bandPicker.classList.add('hidden');
       renderEqSpec();
-      track('car_cascade_pick', {car: brandSel.name + ' ' + seriesSel.name, year: y, bands: spec.bands});
+      track('car_pick', {car: brandSel.name + ' ' + seriesSel.name, year: y, bands: spec.bands});
     } else {
       S().eqSpec = null;
       renderEqSpec();
       showBandPicker('unknown');
-      track('car_cascade_unknown', {car: brandSel.name + ' ' + seriesSel.name, year: y});
+      track('car_pick_unknown', {car: brandSel.name + ' ' + seriesSel.name, year: y});
     }
   }
 
+  /* 防御性自愈：搜索框有内容但未选择时，精确命中车系/品牌则自动推进 */
+  function healSearch(){
+    if (brandSel) return true;
+    var v = normCarText(qInput.value);
+    if (!v) return false;
+    var all = MODELS_DB.brands, i, j;
+    for (i = 0; i < all.length; i++){
+      var b = all[i];
+      if (normCarText(b.name) === v){ goSeries(b, null); return true; }
+      for (j = 0; j < b.series.length; j++){
+        var se = b.series[j];
+        if (normCarText(se.name) === v || normCarText(b.name + se.name) === v){
+          goSeries(b, se); return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  var qTimer = 0;
+  qInput.addEventListener('input', function(){
+    var v = qInput.value;
+    qClear.classList.toggle('hidden', !v);
+    clearTimeout(qTimer);
+    qTimer = setTimeout(function(){ renderSearchResults(v.trim()); }, 200);
+  });
+  qInput.addEventListener('focus', function(){
+    renderSearchResults(qInput.value.trim());
+  });
+  qClear.onclick = function(){ backToSearch(); };
+
   document.getElementById('car-change').onclick = function(){
-    resetCascade();
+    backToSearch();
     track('car_change');
   };
 
@@ -2986,7 +3018,7 @@ function initCar(){
     manualMode = !manualMode;
     document.getElementById('car-manual-box').classList.toggle('hidden', !manualMode);
     if (manualMode){
-      resetCascade();
+      backToSearch();
       showBandPicker('manual');
       track('car_manual_open');
     } else {
@@ -3006,24 +3038,24 @@ function initCar(){
       ye.classList.remove('show'); yi.classList.remove('err');
       if (S().car) S().car.year = y;
     } else {
-      /* 先尝试防御性自愈：品牌框内容可能是车系名（iOS tap 丢失等） */
-      if (!(brandSel && seriesSel && yearSel)) healBrandField();
+      /* 先尝试防御性自愈：搜索框内容可能是车系名/品牌名（iOS tap 丢失等） */
+      if (!(brandSel && seriesSel && yearSel)) healSearch();
       if (!brandSel){
+        backToSearch();
         carCtaErr(tt('car.errBrand') || '请先选择品牌：在上方搜索框输入品牌或车系名');
-        renderBrandList(bsi.value.trim());
-        bsi.focus();
+        qInput.focus();
         track('car_next_blocked', {at: 'brand'});
         return;
       }
       if (!seriesSel){
         carCtaErr(tt('car.errSeries') || '请选择车系');
-        document.getElementById('car-lv2-wrap').scrollIntoView({behavior:'smooth', block:'center'});
+        goSeries(brandSel, null);
         track('car_next_blocked', {at: 'series'});
         return;
       }
       if (!yearSel){
         carCtaErr(tt('car.errYear') || '请选择年款（必填）');
-        document.getElementById('car-lv3-wrap').scrollIntoView({behavior:'smooth', block:'center'});
+        goYears(seriesSel);
         track('car_next_blocked', {at: 'year'});
         return;
       }
