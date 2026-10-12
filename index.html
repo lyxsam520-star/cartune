@@ -1731,9 +1731,10 @@ var MODELS_DB = {
     });
   };
 
-  /** 开始环境底噪采集：自动跑 3 秒，resolve 得到 floor31（dB 数组） */
+  /** 开始环境底噪采集：自动跑 30 秒（与测量同口径；粉噪随机信号的 1/3 倍频程波动
+      ε≈1/√(带宽×时间)，30s 把 20Hz 波动压到 ±0.7dB 内），resolve 得到 floor31（dB 数组） */
   DSP.Measurer.prototype.startFloor = function () {
-    this._floorPromise = this._acquire(3, null);
+    this._floorPromise = this._acquire(30, null);
     return this._floorPromise;
   };
   /** 提前终止底噪采集，返回已采集部分的平均 floor31 */
@@ -2362,7 +2363,7 @@ window.COPY = {
     steps: [
       "给车机 EQ 界面拍张照片（记录段数、标签与当前数值）",
       "逐段 +6dB 播放粉噪，手机测出每段的峰值位置（应用内校准向导会一步步带你做）",
-      "标准粉噪完整测量一次（左、右声道各 8 秒）"
+      "标准粉噪完整测量一次（立体声整体，约 30 秒）"
     ],
     reward: "完成后奖励一次免费高级调音方案（18 元档），任务通过质检后自动发放到你的账户。",
     ctaSignup: "报名参加",
@@ -2376,10 +2377,10 @@ window.COPY = {
     btNote: "方便，但精度略低：手机连车机蓝牙播放测试音频。",
     usbTab: "车机 U 盘播放",
     usbNote: "推荐：测试音频拷进 U 盘，用车机直接播放，信噪比更好。",
-    stepFloor: "第 1 步：测环境底噪",
-    stepFloorTip: "车窗关闭、空调暂时关闭，保持安静约 5 秒。",
-    stepL: "第 2 步：测左声道",
-    stepR: "第 3 步：测右声道",
+    stepFloor: "第 1 步：测环境底噪（30 秒）",
+    stepFloorTip: "车窗关闭、空调暂时关闭，保持安静约 30 秒。",
+    stepL: "第 2 步：测左声道（30 秒）",
+    stepR: "第 3 步：测右声道（30 秒）",
     measuringTip: "正在播放测试音频并测量…请保持安静，不要碰手机。",
     snrWarn: "信号太弱，请调大车机音量后再测",
     clipAlert: "检测到麦克风削顶，已停止，请调小音量重测",
@@ -2400,8 +2401,12 @@ window.COPY = {
     isoYesEn: "Yes, left only",
     isoNo: "两边都响",
     isoNoEn: "Both sides played",
-    stepStereo: "第 2 步：立体声整体测量",
-    stepStereoEn: "Step 2: Stereo combined measurement",
+    stepStereo: "第 2 步：立体声整体测量（30 秒）",
+    stepStereoEn: "Step 2: Stereo combined measurement (30s)",
+    collectingN: function (n) { return "正在采集频谱…第 " + n + " 帧"; },
+    collectingNEn: function (n) { return "Capturing spectrum… frame " + n; },
+    finalAvg: "正在做最终平均…",
+    finalAvgEn: "Final averaging…",
     advCta: "进阶：验证声道隔离，解锁 L/R 独立测量",
     advCtaEn: "Advanced: verify channel isolation to unlock L/R measurement",
     advNeedRemeasure: "请先完成一次整体测量",
@@ -3222,21 +3227,27 @@ function refreshBountyBtn(){
 }
 /* =====================================================================
  * 测量页（核心）
- * 流程：①环境底噪 3s → ②左声道粉噪 8s → ③右声道粉噪 8s
+ * 流程：①环境底噪 30s → ②立体声整体测量 30s（默认）；进阶可解锁 L/R 各 30s
  * 实时柱按车机 EQ 段数绘制（非 31 段 hero）；专业模式额外叠加内部 31 段。
  * iOS Safari：Measurer.init 必须由按钮 onclick 直接调用，async 链不断开。
+ * ---------------------------------------------------------------------
+ * 时长原理（v1.8）：粉噪是随机信号，1/3 倍频程测量的理论波动 ε ≈ 1/√(带宽×时间)，
+ * 瓶颈在低频。30s 时：20Hz（带宽 4.6Hz）±0.7dB，50Hz 以上全 <0.5dB——真正的
+ * 专业级 1/3 倍频程精度。两步共 60 秒，坐车里 1 分钟做一次调音，体验可接受。
+ * 车机 EQ 步进 1dB，测量波动必须压到 1dB 内才有意义；8s 技术上"够用"但用户
+ * 不信=没用——信任是测量产品的一部分。
  * ===================================================================== */
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
 var STEP_DEFS_LR = [
-  {key:'floor', dur:3, copy:'measure.stepFloor'},
-  {key:'L',     dur:8, copy:'measure.stepL'},
-  {key:'R',     dur:8, copy:'measure.stepR'}
+  {key:'floor', dur:30, copy:'measure.stepFloor'},
+  {key:'L',     dur:30, copy:'measure.stepL'},
+  {key:'R',     dur:30, copy:'measure.stepR'}
 ];
 /* v1.3+ 默认：立体声整体测量（一次测完，测的就是驾驶位实际听到的声音） */
 var STEP_DEFS_STEREO = [
-  {key:'floor', dur:3, copy:'measure.stepFloor'},
-  {key:'stereo', dur:8, copy:'measure.stepStereo'}
+  {key:'floor', dur:30, copy:'measure.stepFloor'},
+  {key:'stereo', dur:30, copy:'measure.stepStereo'}
 ];
 function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
@@ -3388,6 +3399,15 @@ function rafLoop(){
     var p = Math.min(1, (performance.now()-app.stepStart)/(app.stepDur*1000));
     var bar = document.getElementById('step-p-'+app.curStep);
     if(bar) bar.style.width = (p*100).toFixed(1)+'%';
+    // 专业反馈：让用户"看到"时间花在哪，而不是干等倒计时
+    var remain = app.stepDur - (performance.now()-app.stepStart)/1000;
+    if(remain<=5 && remain>0 && !app.avgShown){
+      app.avgShown = true; // 结束前 5 秒：最终平均
+      setStatus(tt('measure.finalAvg'));
+    }else if(!app.avgShown && app.frameCount>0 && app.frameCount!==app._shownFrames){
+      app._shownFrames = app.frameCount; // 采集进行时：帧计数器（节流到变化才刷新）
+      setStatus(tf('measure.collectingN')(app.frameCount));
+    }
   }
   // 电平表
   var f = app.lastFrame;
@@ -3403,6 +3423,7 @@ function startRaf(){ stopRaf(); app.measuring = true; app.rafId = requestAnimati
 
 /* 实时帧回调：DSP.Measurer 透出 {eqLevels, peak, clipped} */
 function onFrame(f){
+  app.frameCount = (app.frameCount||0)+1; // 专业反馈：采集帧计数
   var spec = S().eqSpec;
   var eqLevels = f.eqLevels;
   if(!eqLevels && f.band31 && spec && spec.bands){
@@ -3541,23 +3562,26 @@ async function startMeasureFlow(){
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
 
-  // ② 环境底噪 3s
+  // ② 环境底噪 30s
   setStepState(0,'active'); setStatus(tt('measure.stepFloor'));
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=3; startRaf();
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=30;
+  app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
+  startRaf();
   var floor31 = null;
   try{ floor31 = await M.startFloor(); }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return;
   S().floor31 = floor31;
   setStepState(0,'done'); track('floor_done');
 
-  // ③ 立体声整体测量 8s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
+  // ③ 立体声整体测量 30s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(1,'active'); setStatus(tt('measure.stepStereo'));
-  app.curStep=1; app.stepStart=performance.now(); app.stepDur=8; app.clipStreak=0; app.lowStreak=0;
+  app.curStep=1; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
+  app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
   startRaf();
   if(app.playMode==='bt'){ try{ M.playPink(null); }catch(_){} }  // dual-mono：左右同发
   var meas = null;
-  try{ meas = await M.measure(8, onFrame); }catch(e){ return failMeasure(token, e); }
+  try{ meas = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
   if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
   stopRaf(); app.measuring=false;
@@ -3608,17 +3632,18 @@ async function startLrOptIn(){
     return;
   }
   track('lr_optin_iso_pass');
-  // L/R 各 8s
+  // L/R 各 30s
   var results = {};
   var defs = stepDefs();
   for(var s=1;s<=2;s++){
     var ch = s===1?'L':'R';
     setStepState(s,'active'); setStatus(tt(defs[s].copy));
-    app.curStep=s; app.stepStart=performance.now(); app.stepDur=8; app.clipStreak=0; app.lowStreak=0;
+    app.curStep=s; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
+    app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
     startRaf();
     if(app.playMode==='bt'){ try{ M.playPink(ch); }catch(_){} }
     var m2 = null;
-    try{ m2 = await M.measure(8, onFrame); }catch(e){ return failMeasure(token, e); }
+    try{ m2 = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
     if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
     if(token!==app.runToken) return;
     stopRaf(); app.measuring=false;
