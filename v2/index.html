@@ -1809,6 +1809,16 @@ var MODELS_DB = {
         self.audioCtx = new AC();
       }
       self.sampleRate = self.audioCtx.sampleRate;
+      // 安全限幅器（2026-10-13 爆音事故）：主输出必经 DynamicsCompressor，
+      // threshold -6dB / ratio 20:1 / knee 0 — 任何代码 bug 都不许再炸用户耳朵或喇叭，这是安全红线
+      try {
+        var _comp = self.audioCtx.createDynamicsCompressor();
+        _comp.threshold.value = -6; _comp.knee.value = 0; _comp.ratio.value = 20;
+        _comp.attack.value = 0.002; _comp.release.value = 0.1;
+        _comp.connect(self.audioCtx.destination);
+        self._masterOut = _comp;
+        console.log('[initAudio] 安全限幅器已接入主输出');
+      } catch (e) { console.warn('[initAudio] 限幅器创建失败', e); self._masterOut = null; }
       // iOS 要求在手势后 resume，否则处于 suspended 拿不到数据
       if (self.audioCtx.state === 'suspended') return self.audioCtx.resume();
     }).then(function () {
@@ -1979,11 +1989,20 @@ var MODELS_DB = {
     var g = this.audioCtx.createGain();
     var t = this.audioCtx.currentTime;
     var fi = (typeof fadeInSec === 'number' && fadeInSec >= 0) ? fadeInSec : 0.1;
-    g.gain.setValueAtTime(0.0001, t); // 指数 ramp 不能从 0 起
-    if (fi > 0) { try { g.gain.exponentialRampToValueAtTime(1.0, t + fi); } catch (e) { g.gain.setValueAtTime(1.0, t); } }
+    // v2.3: 指数 ramp 在 iOS 会抛异常，catch 回退 setValueAtTime(1.0) = 瞬间满音量爆音。
+    // 改线性 ramp（可从 0 起，几乎不抛）；异常时宁可无声（由无信号熔断接管），绝不许爆音。
+    g.gain.setValueAtTime(0, t);
+    if (fi > 0) {
+      try { g.gain.linearRampToValueAtTime(1.0, t + fi); }
+      catch (e) { console.error('[playPink] linearRamp 失败，保持静音', e); /* 保持 0，由熔断处理 */ }
+    }
     else { g.gain.setValueAtTime(1.0, t); }
+    // 起播断言：gain 必须从 0 起（2026-10-13 爆音事故复盘）
+    try { console.log('[playPink] 起播断言 gain@start=' + g.gain.value + ' (期望 0)'); } catch(_){}
     src.connect(g);
-    g.connect(this.audioCtx.destination);
+    // 经安全限幅器输出（无则直连 destination 兜底）
+    try { g.connect(this._masterOut || this.audioCtx.destination); }
+    catch (e) { g.connect(this.audioCtx.destination); }
     try { src.start(t + 0.02); console.log('[playPink] src.start scheduled @ '+Number(t+0.02).toFixed(3)+' fadeIn='+fi+'s'); }
     catch (e) { console.error('[playPink] start(t+0.02) FAILED', e); try { src.start(); console.log('[playPink] src.start() fallback ok'); } catch (e2) { console.error('[playPink] start() FAILED', e2); } }
     this._pinkSrc = src;
@@ -2005,9 +2024,10 @@ var MODELS_DB = {
         try {
           g.gain.cancelScheduledValues(t);
           var cur = g.gain.value;
-          if (!(cur > 0.0001)) cur = 0.0001;
+          if (!(cur > 0)) cur = 0;
           g.gain.setValueAtTime(cur, t);
-          g.gain.exponentialRampToValueAtTime(0.0001, t + fo);
+          try { g.gain.linearRampToValueAtTime(0, t + fo); }
+          catch (_) { try { g.gain.setValueAtTime(0, t); } catch (_2) {} }
         } catch (_) {}
         try { src.stop(t + fo + 0.05); } catch (e) { try { src.stop(); } catch (_) {} }
         setTimeout(function () { try { src.disconnect(); } catch (_) {} try { g.disconnect(); } catch (_) {} }, Math.ceil((fo + 0.25) * 1000));
@@ -2047,6 +2067,8 @@ var MODELS_DB = {
    * @param {Object} opts {btPlay, phases:[{key,dur,side, obj}], onFrame(phaseKey,info), onPhase(phaseKey,phase)}
    *   side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道。
    * @returns Promise<{floor31:number[31], seg31:Object, noSignal:boolean}>
+    floorAnomaly: "底噪阶段检测到播放信号，流程异常，已停止测量。请重试。",
+    floorAnomalyEn: "Playback signal detected during the ambient-floor phase — abnormal flow, measurement stopped. Please retry.",
    */
   /**
    * v2.2 暂停/恢复测量（削顶保护改"暂停+指引"，不再直接掐死）。
@@ -2153,6 +2175,17 @@ var MODELS_DB = {
         var peak = 0;
         for (k = 0; k < time.length; k++) { var a = time[k] < 0 ? -time[k] : time[k]; if (a > peak) peak = a; }
         var clipped = peak >= 0.99;
+        // v2.3 floor 相位异常熔断：底噪阶段本该安静，若持续出现大信号（>0.3 连续 20 帧≈333ms），
+        // 说明有播放信号漏进来（调度 bug），立即熔断，不产垃圾数据
+        if (ph.key === 'floor') {
+          if (peak > 0.3) { self._floorLoudStreak = (self._floorLoudStreak || 0) + 1; }
+          else { self._floorLoudStreak = 0; }
+          if (self._floorLoudStreak >= 20) {
+            console.error('[measureMerged] floor 相位持续大信号，熔断');
+            try { self.stopPink(0.05); } catch (_) {}
+            finish(false, true); return;
+          }
+        } else { self._floorLoudStreak = 0; }
         if (onFrame) {
           try {
             onFrame(ph.key, {
@@ -2164,11 +2197,11 @@ var MODELS_DB = {
         }
         setTimeout(tick, 0);
       }
-      function finish(noSignal) {
+      function finish(noSignal, floorAnomaly) {
         try { self.stopPink(0.2); } catch (_) {} // 200ms fade out 收尾，防"掐断爆音"
         var seg31 = {}, kk2;
         for (kk2 = 0; kk2 < phases.length; kk2++) seg31[phases[kk2].key] = avg31(phases[kk2].key);
-        resolve({ floor31: seg31.floor, seg31: seg31, noSignal: !!noSignal });
+        resolve({ floor31: seg31.floor, seg31: seg31, noSignal: !!noSignal, floorAnomaly: !!floorAnomaly });
       }
       tick();
     });
@@ -4577,6 +4610,18 @@ function failNoSignal(token){
   renderCTA(CTA.measure);
   track('measure_no_signal', {remeasure:!!app._remeasureMode});
 }
+/* floor 相位异常熔断：底噪阶段检测到持续播放信号，流程异常，不产数据 */
+function failFloorAnomaly(token){
+  if(token!==app.runToken) return;
+  stopRaf(); app.measuring=false;
+  var va = document.getElementById('valid-alert');
+  va.textContent = tt('measure.floorAnomaly');
+  va.classList.add('show');
+  setStatus('');
+  CTA.measure = [{ text: tt('common.retry'), onClick: retryMeasureFn() }];
+  renderCTA(CTA.measure);
+  track('measure_floor_anomaly', {remeasure:!!app._remeasureMode});
+}
 /* 有效性门：不过则亮红字+回重试，不再继续 */
 function validityGate(meas, chLabel){
   var vok = true, vreason='';
@@ -4698,6 +4743,7 @@ async function startMeasureFlow(opts){
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
   stopRaf(); app.measuring=false;
   if(res && res.noSignal){ return failNoSignal(token); }
+  if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
   var floor31 = res.floor31, meas = res.seg31.sig;
   S().floor31 = floor31;
   if(!validityGate(meas, 'stereo')) return;
@@ -4778,6 +4824,7 @@ async function startLrOptIn(){
   if(token!==app.runToken) return;
   stopRaf(); app.measuring=false;
   if(res && res.noSignal){ return failNoSignal(token); }
+  if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
   S().floor31 = res.floor31;
   var L31 = res.seg31.L, R31 = res.seg31.R;
   if(!validityGate(L31, 'L')) return;
