@@ -59,7 +59,8 @@ body{
   background:linear-gradient(180deg,rgba(11,14,19,0),rgba(11,14,19,.92) 28%);
   padding:18px 16px calc(12px + var(--sat));
 }
-#cta-bar .inner{max-width:480px;margin:0 auto;display:flex;gap:10px;}
+#cta-bar .inner{max-width:480px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;}
+.cta-sub{flex:0 0 100%;text-align:center;font-size:12px;color:var(--sub);}
 .btn{
   flex:1;display:block;width:100%;border:none;border-radius:14px;
   font-size:18px;font-weight:700;padding:15px 12px;cursor:pointer;
@@ -2408,6 +2409,12 @@ window.COPY = {
     mixAlert: "检测到车机混音（可能环绕未关/蓝牙连成电话模式），已切换为整体测量。建议：关闭车机环绕音效，确认手机连的是媒体音频而非蓝牙电话后重测。",
     mixAlertEn: "Head-unit mixing detected (surround may be on / Bluetooth in phone-call mode). Switched to combined measurement. Tip: turn off surround effects and make sure your phone is connected as media audio, not phone audio, then re-measure.",
     ctaNext: "查看报告",
+    ctaStart: "开始测试",
+    ctaStartEn: "Start Test",
+    ctaReport: "免费生成调音报告",
+    ctaReportEn: "Generate Free Tuning Report",
+    ctaSub: "AI 智能调音",
+    ctaSubEn: "AI Smart Tuning",
     barsCaption: "1/3 倍频程实时频谱"
   },
   report: {
@@ -2583,7 +2590,7 @@ function show(id){
   if(ON_SHOW[id]){ try{ ON_SHOW[id](); }catch(_){} }
   track('view_'+id);
 }
-function renderCTA(btns){
+function renderCTA(btns, sub){
   var box = document.getElementById('cta-inner');
   box.innerHTML = '';
   btns.forEach(function(b){
@@ -2595,6 +2602,11 @@ function renderCTA(btns){
     btn.onclick = b.onClick;
     box.appendChild(btn);
   });
+  if(typeof sub==='string' && sub){
+    var s = document.createElement('div');
+    s.className = 'cta-sub'; s.textContent = sub;
+    box.appendChild(s);
+  }
   // 无 CTA 时隐藏底栏，避免遮挡
   document.getElementById('cta-bar').style.display = btns.length ? '' : 'none';
 }
@@ -3263,9 +3275,10 @@ function initMeasure(){
   buildStepsUI();
   window.addEventListener('resize', function(){ if(document.getElementById('sec-measure').classList.contains('active')) sizeCanvases(); });
 
-  CTA.measure = [{ text: tt('measure.ctaNext'), onClick: startMeasureFlow }];
+  CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+  renderCTA(CTA.measure, tt('measure.ctaSub'));
   CTA['measure_done'] = [
-    { text: tt('measure.ctaNext'), onClick: function(){ renderReport(); show('report'); } },
+    { text: tt('measure.ctaReport'), onClick: function(){ renderReport(); show('report'); } },
     { text: tt('measure.advCta'), primary:false, onClick: startLrOptIn }
   ];
   // 进入测量页时（可见后）再生成标签行并取 canvas 尺寸
@@ -3414,8 +3427,8 @@ function onClipStop(){
   document.getElementById('clip-alert').classList.add('show');
   setStatus(tt('measure.clipAlert'));
   resetStepsUI();
-  CTA.measure = [{ text: tt('measure.ctaNext'), onClick: startMeasureFlow }];
-  renderCTA(CTA.measure);
+  CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+  renderCTA(CTA.measure, tt('measure.ctaSub'));
   track('measure_clip_stop');
 }
 function setStatus(s){ document.getElementById('measure-status').textContent = s; }
