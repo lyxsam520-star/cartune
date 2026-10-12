@@ -1774,6 +1774,7 @@ var MODELS_DB = {
     this.sampleRate = 48000;
     this.eqSpec = null;       // 当前车机 EQ 规格（决定实时显示段数）
     this._pinkSrc = null;     // 播放中的粉噪源
+    this._pinkGain = null;    // 播放链路 GainNode（fade 包络，防爆音）
     this._stop = false;       // 采集循环中止旗
     this._floorPromise = null;
   };
@@ -1782,7 +1783,14 @@ var MODELS_DB = {
    * iOS 安全初始化：必须在用户手势回调里调用。
    * AudioContext 尝试固定 48000Hz，失败回退默认；采集约束关闭一切系统处理。
    */
-  DSP.Measurer.prototype.init = function () {
+  /**
+   * 音频初始化（v2.1 拆分）：只建 AudioContext，不碰麦克风。
+   * 必须在用户手势回调链内调用；iOS 要求手势后 resume。
+   * 拆分原因：试音环节需要在"干净的播放会话"（mic 未激活）下验证蓝牙链路，
+   * 此时蓝牙 A2DP 最稳定、手机音量键有效——三个症状（无声/爆音/音量键失灵）
+   * 连起来看都指向"mic 激活后的音频会话"问题，先播后录是最稳的顺序。
+   */
+  DSP.Measurer.prototype.initAudio = function () {
     var self = this;
     return Promise.resolve().then(function () {
       var AC = global.AudioContext || global.webkitAudioContext;
@@ -1793,24 +1801,37 @@ var MODELS_DB = {
         self.audioCtx = new AC();
       }
       self.sampleRate = self.audioCtx.sampleRate;
-      var constraints = {
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-          channelCount: 1
-        }
-      };
-      return getUserMediaCompat(constraints);
-    }).then(function (stream) {
-      self.stream = stream;
-      self.source = self.audioCtx.createMediaStreamSource(stream);
-      self._buildAnalyser();
       // iOS 要求在手势后 resume，否则处于 suspended 拿不到数据
       if (self.audioCtx.state === 'suspended') return self.audioCtx.resume();
     }).then(function () {
       return self;
     });
+  };
+  /** 麦克风初始化：getUserMedia＋analyser（试音通过后再调，见 startMeasureFlow） */
+  DSP.Measurer.prototype.initMic = function () {
+    var self = this;
+    if (!self.audioCtx) return Promise.reject(new Error('请先调用 initAudio'));
+    var constraints = {
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        channelCount: 1
+      }
+    };
+    return getUserMediaCompat(constraints).then(function (stream) {
+      self.stream = stream;
+      self.source = self.audioCtx.createMediaStreamSource(stream);
+      self._buildAnalyser();
+      if (self.audioCtx.state === 'suspended') return self.audioCtx.resume();
+    }).then(function () {
+      return self;
+    });
+  };
+  /** 兼容旧调用：一次完成音频＋麦克风初始化 */
+  DSP.Measurer.prototype.init = function () {
+    var self = this;
+    return self.initAudio().then(function () { return self.initMic(); });
   };
 
   DSP.Measurer.prototype._buildAnalyser = function () {
@@ -1923,23 +1944,61 @@ var MODELS_DB = {
     this._stop = true;
   };
 
-  /** 播放粉噪（loop）：side='L'/'R' 对应声道，另一声道静音 */
-  DSP.Measurer.prototype.playPink = function (side) {
-    this.stopPink();
-    var buf = DSP.makeStereoPink(this.audioCtx, 30, side);
+  /**
+   * 播放粉噪（loop）：side='L'/'R' 对应声道，另一声道静音；其他值=双声道。
+   * v2.1 根因修复：经 GainNode＋指数 fade 包络输出，杜绝"满幅瞬间起播＝爆音"。
+   * （2026-10-13 用户真机：旧版直连 destination、无 fade，±0.9 峰值粉噪瞬间起播
+   *  产生宽带瞬态＝用户听到的爆音；爆音又可能触发削顶连锁 onClipStop→stopPink
+   *  ＝随后 30 秒无声。两个症状同一根因。）
+   * @param {string|null} side
+   * @param {number} fadeInSec 起播淡入秒数（默认 0.1；传 0 则无淡入）
+   */
+  DSP.Measurer.prototype.playPink = function (side, fadeInSec) {
+    this.stopPink(0.12);
+    var buf = DSP.makeStereoPink(this.audioCtx, 35, side);
     var src = this.audioCtx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
-    src.connect(this.audioCtx.destination);
-    src.start();
+    var g = this.audioCtx.createGain();
+    var t = this.audioCtx.currentTime;
+    var fi = (typeof fadeInSec === 'number' && fadeInSec >= 0) ? fadeInSec : 0.1;
+    g.gain.setValueAtTime(0.0001, t); // 指数 ramp 不能从 0 起
+    if (fi > 0) { try { g.gain.exponentialRampToValueAtTime(1.0, t + fi); } catch (e) { g.gain.setValueAtTime(1.0, t); } }
+    else { g.gain.setValueAtTime(1.0, t); }
+    src.connect(g);
+    g.connect(this.audioCtx.destination);
+    try { src.start(t + 0.02); } catch (e) { try { src.start(); } catch (_) {} }
     this._pinkSrc = src;
+    this._pinkGain = g;
   };
-  DSP.Measurer.prototype.stopPink = function () {
-    if (this._pinkSrc) {
-      try { this._pinkSrc.stop(); } catch (e) {}
-      try { this._pinkSrc.disconnect(); } catch (e) {}
-      this._pinkSrc = null;
-    }
+  /**
+   * 停粉噪：默认 0.2s 指数 fade out，杜绝"瞬间掐断＝爆音"。
+   * @param {number} fadeOutSec 淡出秒数（默认 0.2；传 0 则立即停）
+   */
+  DSP.Measurer.prototype.stopPink = function (fadeOutSec) {
+    var src = this._pinkSrc, g = this._pinkGain, ctx = this.audioCtx;
+    this._pinkSrc = null;
+    this._pinkGain = null;
+    if (!src || !ctx) return;
+    var fo = (typeof fadeOutSec === 'number' && fadeOutSec >= 0) ? fadeOutSec : 0.2;
+    try {
+      var t = ctx.currentTime;
+      if (fo > 0 && g) {
+        try {
+          g.gain.cancelScheduledValues(t);
+          var cur = g.gain.value;
+          if (!(cur > 0.0001)) cur = 0.0001;
+          g.gain.setValueAtTime(cur, t);
+          g.gain.exponentialRampToValueAtTime(0.0001, t + fo);
+        } catch (_) {}
+        try { src.stop(t + fo + 0.05); } catch (e) { try { src.stop(); } catch (_) {} }
+        setTimeout(function () { try { src.disconnect(); } catch (_) {} try { g.disconnect(); } catch (_) {} }, Math.ceil((fo + 0.25) * 1000));
+      } else {
+        try { src.stop(); } catch (_) {}
+        try { src.disconnect(); } catch (_) {}
+        if (g) { try { g.disconnect(); } catch (_) {} }
+      }
+    } catch (e) { try { src.stop(); } catch (_) {} }
   };
 
   /**
@@ -1950,6 +2009,122 @@ var MODELS_DB = {
    */
   DSP.Measurer.prototype.measure = function (seconds, onFrame) {
     return this._acquire(seconds, onFrame);
+  };
+
+  /**
+   * 40s 合并测量（v2.1）：多相位一次跑完，中间无停顿。
+   * 一次起播一次收尾，中间不重建 AudioContext、不启停 source——从根上消灭
+   * step1→step2 交接爆音（交接逻辑是爆音的第一嫌疑人，直接删掉交接）。
+   *
+   * 10s/30s 分配原理：
+   * - 信号 30s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；30s 时 20Hz ±0.7dB、
+   *   50Hz 以上全 <0.5dB；车机 EQ 步进 1dB，精度余量充足；
+   * - 底噪 10s 足够：底噪只用于分频段 SNR 门控（阈值 10/15dB）；10s 时 20Hz
+   *   波动 ±1.2dB，远小于阈值间距（5dB），不影响"出/不出增益"判断。
+   *
+   * 无信号 live 熔断：进入首个信号相位 5s 后，若 500Hz–4kHz 相对底噪平均抬升
+   * <3dB，说明粉噪根本没播出来（蓝牙链路问题/用户没按播放），直接熔断，
+   * 诚实报错，不产出垃圾报告。
+   *
+   * @param {Object} opts {btPlay, phases:[{key,dur,side, obj}], onFrame(phaseKey,info), onPhase(phaseKey,phase)}
+   *   side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道。
+   * @returns Promise<{floor31:number[31], seg31:Object, noSignal:boolean}>
+   */
+  DSP.Measurer.prototype.measureMerged = function (opts) {
+    var self = this;
+    opts = opts || {};
+    var phases = opts.phases || [
+      { key: 'floor', dur: 10, side: 'off' },
+      { key: 'sig', dur: 30, side: null }
+    ];
+    var btPlay = !!opts.btPlay;
+    var onFrame = opts.onFrame, onPhase = opts.onPhase;
+    var i, b, k;
+    var sums = {}, ns = {};
+    for (i = 0; i < phases.length; i++) {
+      sums[phases[i].key] = new Array(31);
+      ns[phases[i].key] = 0;
+      for (b = 0; b < 31; b++) sums[phases[i].key][b] = 0;
+    }
+    var bounds = [], acc = 0;
+    for (i = 0; i < phases.length; i++) { bounds.push(acc); acc += phases[i].dur; }
+    bounds.push(acc);
+    var TOTAL = acc;
+    var firstSigIdx = -1;
+    for (i = 0; i < phases.length; i++) { if (phases[i].side !== 'off') { firstSigIdx = i; break; } }
+    var CHECK_AT = firstSigIdx >= 0 ? bounds[firstSigIdx] + 5 : TOTAL;
+    return new Promise(function (resolve) {
+      function now() { return (typeof performance !== 'undefined') ? performance.now() : Date.now(); }
+      var t0 = now();
+      var freq = new Float32Array(self.analyser.frequencyBinCount);
+      var time = new Float32Array(self.fftSize);
+      var slowStreak = 0;
+      var curPhaseIdx = -1;
+      var sigChecked = false;
+      self._stop = false;
+      function avg31(key) {
+        var out = new Array(31), n = ns[key], sarr = sums[key], bb;
+        for (bb = 0; bb < 31; bb++) out[bb] = n > 0 ? powerToDb(sarr[bb] / n) : -120;
+        return out;
+      }
+      function phaseAt(el) {
+        for (var kk = 0; kk < phases.length; kk++) { if (el < bounds[kk + 1]) return kk; }
+        return phases.length - 1;
+      }
+      function switchAudio(ph) {
+        // 相位切换：播新前先停旧（playPink 内部自带 0.12s fade 停旧），fade 过渡无爆音
+        if (btPlay && ph.side !== 'off') { try { self.playPink(ph.side, 0.1); } catch (_) {} }
+        else { try { self.stopPink(0.15); } catch (_) {} }
+      }
+      function tick() {
+        if (self._stop) { finish(false); return; }
+        var el = (now() - t0) / 1000;
+        if (el >= TOTAL) { finish(false); return; }
+        var pi = phaseAt(el), ph = phases[pi];
+        if (pi !== curPhaseIdx) {
+          curPhaseIdx = pi;
+          switchAudio(ph);
+          if (onPhase) { try { onPhase(ph.key, ph); } catch (_) {} }
+        }
+        if (!sigChecked && firstSigIdx >= 0 && el >= CHECK_AT) {
+          sigChecked = true;
+          var fA = avg31('floor'), sA = avg31(phases[firstSigIdx].key);
+          var lift = 0, cnt = 0, bi;
+          for (bi = 14; bi <= 23; bi++) { lift += (sA[bi] - fA[bi]); cnt++; } // 500Hz–4kHz
+          if (cnt > 0 && lift / cnt < 3) { finish(true); return; }
+        }
+        var f0 = now();
+        self.analyser.getFloatFrequencyData(freq);
+        var cur31 = aggregate31(freq, self.sampleRate, self.fftSize);
+        var cost = now() - f0;
+        slowStreak = self._maybeDowngrade(cost, slowStreak);
+        if (freq.length !== self.analyser.frequencyBinCount) freq = new Float32Array(self.analyser.frequencyBinCount);
+        if (time.length !== self.fftSize) time = new Float32Array(self.fftSize);
+        var arr = sums[ph.key];
+        for (b = 0; b < 31; b++) arr[b] += dbToPower(cur31[b]);
+        ns[ph.key]++;
+        self.analyser.getFloatTimeDomainData(time);
+        var peak = 0;
+        for (k = 0; k < time.length; k++) { var a = time[k] < 0 ? -time[k] : time[k]; if (a > peak) peak = a; }
+        var clipped = peak >= 0.99;
+        if (onFrame) {
+          try {
+            onFrame(ph.key, {
+              eqLevels: DSP.eqBandLevels(cur31, self.eqSpec),
+              frameDb31: cur31, peak: peak, clipped: clipped, elapsed: el
+            });
+          } catch (_) {}
+        }
+        setTimeout(tick, 0);
+      }
+      function finish(noSignal) {
+        try { self.stopPink(0.2); } catch (_) {} // 200ms fade out 收尾，防"掐断爆音"
+        var seg31 = {}, kk2;
+        for (kk2 = 0; kk2 < phases.length; kk2++) seg31[phases[kk2].key] = avg31(phases[kk2].key);
+        resolve({ floor31: seg31.floor, seg31: seg31, noSignal: !!noSignal });
+      }
+      tick();
+    });
   };
 
   /** 释放：停采集、关粉噪、关 stream、关 AudioContext */
@@ -2648,6 +2823,32 @@ window.COPY = {
     ctaStartEn: "Start Test",
     ctaReport: "生成调音报告",
     ctaReportEn: "Generate Tuning Report",
+    stepMerged: "合并监听（40 秒）：底噪 10s＋立体声 30s，一次跑完",
+    stepMergedEn: "Combined listening (40s): 10s floor + 30s stereo, one pass",
+    stepMergedLr: "合并监听（40 秒）：底噪 10s＋左 15s＋右 15s，一次跑完",
+    stepMergedLrEn: "Combined listening (40s): 10s floor + 15s L + 15s R, one pass",
+    stepMergedTip: "一次跑完、中间不停顿：前 10 秒保持安静测底噪，随后粉噪自动淡入，40 秒后淡出收尾。",
+    stepMergedTipEn: "One pass with no pauses: first 10s measures the noise floor in silence, then pink noise fades in automatically and fades out at 40s.",
+    progressMerged: "监听进度：40 秒合并监听",
+    progressMergedEn: "Listening progress: 40s combined",
+    soundCheckTitle: "试音",
+    soundCheckTitleEn: "Sound check",
+    soundCheckQ: "刚才音响发出粉噪声了吗？请确认三点：①听得到声音 ②是音响在响（不是手机喇叭）③按手机音量键，声音大小有变化",
+    soundCheckQEn: "Did the speaker play pink noise? Confirm: 1) you hear it, 2) it's the speaker (not the phone), 3) phone volume keys change the volume",
+    soundCheckOk: "听到了，音量正常",
+    soundCheckOkEn: "Heard it, volume OK",
+    soundCheckFail: "没听到 / 有问题",
+    soundCheckFailEn: "No sound / problem",
+    soundTroubleTitle: "没听到声音？按这 5 步排查",
+    soundTroubleTitleEn: "No sound? Check these 5 steps",
+    soundTroubleBody: "①确认手机蓝牙已连接音响 ②确认连的是媒体音频（A2DP），不是蓝牙电话——电话模式无声或单声道 ③调大音响音量 ④断开蓝牙重连一次 ⑤还不行就换「车机 U 盘播放」模式",
+    soundTroubleBodyEn: "1) Phone Bluetooth is connected to the speaker 2) Connected as media audio (A2DP), not phone-call audio — call mode is silent or mono 3) Turn up the speaker 4) Disconnect and reconnect Bluetooth 5) Or switch to USB playback mode",
+    soundRetry: "重试试音",
+    soundRetryEn: "Retry sound check",
+    soundBack: "返回",
+    soundBackEn: "Back",
+    noSignal: "未检测到测试信号：音响没有发出粉噪。请确认音响正在播放（蓝牙模式检查连接，U 盘模式按车机播放键），调大音量后重测。",
+    noSignalEn: "No test signal detected: the speaker isn't playing pink noise. Make sure it's playing (check Bluetooth, or press play on the head unit in USB mode), turn up the volume and retry.", 
     ctaSub: "AI 智能调音",
     ctaSubEn: "AI Smart Tuning",
     barsCaption: "1/3 倍频程实时频谱"
@@ -3641,27 +3842,38 @@ function refreshBountyBtn(){
 }
 /* =====================================================================
  * 测量页（核心）
- * 流程：①环境底噪 30s → ②立体声整体测量 30s（默认）；进阶可解锁 L/R 各 30s
+ * 流程（v2.1）：40s 合并监听一次跑完——底噪 10s → 立体声 30s（默认）；
+ *   进阶 L/R：底噪 10s＋左 15s＋右 15s＝40s。中间无停顿、无交接。
  * 实时柱按车机 EQ 段数绘制（非 31 段 hero）；专业模式额外叠加内部 31 段。
- * iOS Safari：Measurer.init 必须由按钮 onclick 直接调用，async 链不断开。
+ * iOS Safari：Measurer.initAudio 必须由按钮 onclick 直接调用，async 链不断开。
  * ---------------------------------------------------------------------
- * 时长原理（v1.8）：粉噪是随机信号，1/3 倍频程测量的理论波动 ε ≈ 1/√(带宽×时间)，
- * 瓶颈在低频。30s 时：20Hz（带宽 4.6Hz）±0.7dB，50Hz 以上全 <0.5dB——真正的
- * 专业级 1/3 倍频程精度。两步共 60 秒，坐车里 1 分钟做一次调音，体验可接受。
- * 车机 EQ 步进 1dB，测量波动必须压到 1dB 内才有意义；8s 技术上"够用"但用户
- * 不信=没用——信任是测量产品的一部分。
+ * 时长原理（v2.1）：粉噪 1/3 倍频程波动 ε≈1/√(带宽×时间)。
+ * - 信号 30s：20Hz ±0.7dB、50Hz 以上全 <0.5dB——专业级精度；车机 EQ 步进 1dB，
+ *   精度余量充足；且 30 秒是"不儿戏"的专业分量（用户反馈）。
+ * - 底噪 10s：底噪只用于分频段 SNR 门控（阈值 10/15dB）；10s 时 20Hz 波动
+ *   ±1.2dB，远小于阈值间距（5dB），不影响"出/不出增益"判断。
+ * - 无缝：10s 处粉噪 fade in 切入，40s 处 fade out 收尾；一次起播一次收尾，
+ *   不给音频会话重协商留窗口（2026-10-13 爆音/无声根因修复）。
  * ===================================================================== */
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
+/* v2.1 40s 合并流程：单步 UI，内部多相位一次跑完，中间无停顿。
+ * 从根上消灭 step1→step2 交接爆音（2026-10-13 真机问题：交接逻辑是第一嫌疑人）。 */
 var STEP_DEFS_LR = [
-  {key:'floor', dur:30, copy:'measure.stepFloor', obj:'measure.objFloor'},
-  {key:'L',     dur:30, copy:'measure.stepL',     obj:'measure.objL'},
-  {key:'R',     dur:30, copy:'measure.stepR',     obj:'measure.objR'}
+  {key:'merged_lr', dur:40, merged:true, copy:'measure.stepMergedLr', obj:'measure.objFloor'}
 ];
-/* v1.3+ 默认：立体声整体测量（一次测完，测的就是驾驶位实际听到的声音） */
 var STEP_DEFS_STEREO = [
-  {key:'floor', dur:30, copy:'measure.stepFloor',  obj:'measure.objFloor'},
-  {key:'stereo', dur:30, copy:'measure.stepStereo', obj:'measure.objStereo'}
+  {key:'merged', dur:40, merged:true, copy:'measure.stepMerged', obj:'measure.objFloor'}
+];
+/* 合并相位表：side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道 */
+var PHASES_STEREO = [
+  {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
+  {key:'sig',   dur:30, side:null,  obj:'measure.objStereo'}
+];
+var PHASES_LR = [
+  {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
+  {key:'L',     dur:15, side:'L',   obj:'measure.objL'},
+  {key:'R',     dur:15, side:'R',   obj:'measure.objR'}
 ];
 function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
@@ -3730,7 +3942,8 @@ function buildStepsUI(){
       '<div class="prog"><i id="step-p-'+i+'"></i></div></div>';
     box.appendChild(d);
   });
-  var tip = t('measure.stepFloorTip');
+  var _d0 = (typeof stepDefs==='function') ? stepDefs()[0] : null;
+  var tip = t(_d0 && _d0.merged ? 'measure.stepMergedTip' : 'measure.stepFloorTip');
   if(typeof tip==='string' && tip!=='measure.stepFloorTip'){
     var s0 = document.getElementById('step-s-0'); if(s0) s0.textContent = tip;
   }
@@ -3894,8 +4107,13 @@ function showOverall(){ var w=document.getElementById('overall-wrap'); if(w) w.c
 function stepStartUI(idx){
   var defs = stepDefs(), def = defs[idx];
   showOverall();
-  setOverallText(tf('measure.progressStep')(idx+1, defs.length));
-  setOverallObj(tf('measure.listeningNow')(tt(def.obj)));
+  if(def && def.merged){
+    setOverallText(tt('measure.progressMerged'));
+    setOverallObj(tf('measure.listeningNow')(tt('measure.objFloor')));
+  }else{
+    setOverallText(tf('measure.progressStep')(idx+1, defs.length));
+    setOverallObj(tf('measure.listeningNow')(tt(def.obj)));
+  }
 }
 /* 某步完成："已完成监听：对象"＋停 1 秒让用户看到；返回 false 表示流程已失效 */
 async function stepDonePause(token, idx){
@@ -3959,6 +4177,108 @@ function closeIsoOverlay(){
   try{ if(app._isoOverlay && app._isoOverlay._cancel) app._isoOverlay._cancel(); }catch(_){}
   app._isoOverlay = null;
 }
+/* 试音弹窗（v2.1）：Promise<'ok'|'fail'>。弹窗样式复用 iso-overlay（iOS 双通道防吞点击）。 */
+function askSoundCheck(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
+        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ'))+'</div>'+
+        '<button class="btn btn-primary" id="sc-ok">'+escapeHtml(tt('measure.soundCheckOk'))+'</button>'+
+        '<button class="btn btn-ghost" id="sc-fail">'+escapeHtml(tt('measure.soundCheckFail'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n = Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('sc-ok', 'ok');
+    wire('sc-fail', 'fail');
+  });
+}
+/* 试音排查指引弹窗：Promise<'retry'|'back'> */
+function askSoundTrouble(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundTroubleTitle'))+'</div>'+
+        '<div class="small mt8" style="text-align:left;line-height:1.7;">'+escapeHtml(tt('measure.soundTroubleBody'))+'</div>'+
+        '<button class="btn btn-primary" id="st-retry">'+escapeHtml(tt('measure.soundRetry'))+'</button>'+
+        '<button class="btn btn-ghost" id="st-back">'+escapeHtml(tt('measure.soundBack'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n = Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('st-retry', 'retry');
+    wire('st-back', 'back');
+  });
+}
+/* 试音流程（v2.1）：3s 粉噪（fade in/out）→ 三问确认 → fail 则排查指引＋可重试。
+ * 返回 true=通过；false=用户返回/放弃/token 失效。 */
+async function soundCheckFlow(M, token){
+  async function play3s(){
+    setStatus(tt('measure.soundCheckTitle')+'…');
+    try{ M.playPink(null, 0.15); }catch(_){}
+    await new Promise(function(r){ setTimeout(r, 3000); });
+    try{ M.stopPink(0.2); }catch(_){}
+  }
+  await play3s();
+  if(token!==app.runToken) return false;
+  for(;;){
+    var ans = await askSoundCheck();
+    if(token!==app.runToken) return false;
+    if(ans==='ok'){ track('soundcheck_ok'); return true; }
+    track('soundcheck_fail');
+    var act = await askSoundTrouble();
+    if(token!==app.runToken) return false;
+    if(act==='back'){ track('soundcheck_back'); return false; }
+    await play3s();
+    if(token!==app.runToken) return false;
+  }
+}
+/* 无信号熔断（v2.1）：40s 全程没录到测试音——诚实报错，不产出垃圾报告。
+ * 触发条件见 measureMerged：信号段相对底噪抬升 <3dB@500Hz–4kHz。 */
+function failNoSignal(token){
+  if(token!==app.runToken) return;
+  stopRaf(); app.measuring=false;
+  var va = document.getElementById('valid-alert');
+  va.textContent = tt('measure.noSignal');
+  va.classList.add('show');
+  setStatus('');
+  CTA.measure = [{ text: tt('common.retry'), onClick: retryMeasureFn() }];
+  renderCTA(CTA.measure);
+  track('measure_no_signal', {remeasure:!!app._remeasureMode});
+}
 /* 有效性门：不过则亮红字+回重试，不再继续 */
 function validityGate(meas, chLabel){
   var vok = true, vreason='';
@@ -3999,11 +4319,11 @@ async function startMeasureFlow(opts){
   resetStepsUI();
   var token = ++app.runToken;
   var spec = S().eqSpec;
-  // ① 初始化（必须在手势回调链内同步触发）
+  // ① 音频初始化（必须在手势回调链内同步触发；只建 AudioContext，不碰麦克风——试音要干净会话）
   var M;
   try{
     M = new DSP.Measurer();
-    await M.init();            // ← iOS：getUserMedia / AudioContext 在此完成
+    await M.initAudio();       // ← iOS：AudioContext 在此完成；麦克风等试音通过后再开
   }catch(e){
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
@@ -4020,49 +4340,79 @@ async function startMeasureFlow(opts){
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
 
-  // ② 环境底噪 30s
-  setStepState(0,'active'); setStatus(tt('measure.stepFloor'));
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=30;
-  app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
+  // ② 试音（仅蓝牙模式）：3s 粉噪 → 三问确认 → 不通过则排查指引
+  // 在 initMic 之前做：麦克风未激活＝干净的播放会话，蓝牙 A2DP 最稳定、音量键有效
+  if(app.playMode==='bt'){
+    var _scOK = await soundCheckFlow(M, token);
+    if(token!==app.runToken) return;
+    if(!_scOK){
+      setStatus('');
+      CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+      renderCTA(CTA.measure);
+      return;
+    }
+  }
+  if(token!==app.runToken) return;
+
+  // ③ 激活麦克风（试音通过后）
+  try{
+    await M.initMic();
+  }catch(e){
+    document.getElementById('mic-err-card').classList.remove('hidden');
+    document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
+    document.getElementById('mic-err-body').textContent = ttx('measure.micErrBody','measure.safeNote');
+    track('measure_mic_denied', {remeasure:!!app._remeasureMode});
+    CTA.measure = [{ text: tt('common.retry'), onClick: retryMeasureFn() }];
+    renderCTA(CTA.measure);
+    return;
+  }
+  if(token!==app.runToken) return;
+
+  // ④ 40s 合并测量（v2.1）：底噪 10s → 立体声 30s，一次跑完无停顿
+  CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
+  renderCTA(CTA.measure);
+  app.measureMode = 'stereo'; buildStepsUI();
+  setStepState(0,'active');
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40;
+  app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
-  var floor31 = null;
-  try{ floor31 = await M.startFloor(); }catch(e){ return failMeasure(token, e); }
-  if(token!==app.runToken) return;
-  S().floor31 = floor31;
-  setStepState(0,'done'); track('floor_done');
-  if(!(await stepDonePause(token, 0))) return;
-
-  // ③ 立体声整体测量 30s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
-  app.measureMode = 'stereo'; buildStepsUI();
-  setStepState(1,'active'); setStatus(tt('measure.stepStereo'));
-  app.curStep=1; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
-  app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
-  stepStartUI(1);
-  startRaf();
-  if(app.playMode==='bt'){ try{ M.playPink(null); }catch(_){} }  // dual-mono：左右同发
-  var meas = null;
-  try{ meas = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
-  if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
+  var res = null;
+  try{
+    res = await M.measureMerged({
+      btPlay: app.playMode==='bt',
+      phases: PHASES_STEREO,
+      onFrame: function(ph, info){ onFrame(info); },
+      onPhase: function(phKey, ph){ setOverallObj(tf('measure.listeningNow')(tt(ph.obj))); }
+    });
+  }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
   stopRaf(); app.measuring=false;
+  if(res && res.noSignal){ return failNoSignal(token); }
+  var floor31 = res.floor31, meas = res.seg31.sig;
+  S().floor31 = floor31;
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
   S().channelIsolated = false;
-  setStepState(1,'done');
-  if(!(await stepDonePause(token, 1))) return;
+  setStepState(0,'done');
+  // 收尾："已完成监听"＋停 1 秒让用户看到（用户指定文案）
+  setStatus(tt('measure.listenDone'));
+  setOverallObj(tt('measure.listenDone'));
+  setOverallFill(1);
+  track('measure_done', {flow:'merged40'});
+  await new Promise(function(r){ setTimeout(r, 1000); });
+  if(token!==app.runToken) return;
   if(isRemeasure){
-    // 复测：不覆盖调前数据（S().measL/measR 保持原样），不写主测量存档，路由到复测对比
+    // 复测：不覆盖调前数据，不写主测量存档，路由到复测对比（复测同样走 40s 合并流程）
     setStatus('');
-    track('measure_done', {flow:'stereo', remeasure:true});
+    track('measure_done', {flow:'merged40', remeasure:true});
     finishRemeasure(meas);
     return;
   }
   // 持久化（经 DSP）
   try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(_){}
   setStatus('');
-  track('measure_done', {flow:'stereo'});
   renderCTA(CTA['measure_done']);
 }
 
@@ -4078,25 +4428,20 @@ async function startLrOptIn(){
   }
   hideAlerts();
   app.measureMode = 'lr'; buildStepsUI(); resetStepsUI();
-  setStepState(0,'done'); // 底噪已测过，不重测
-  // 整体进度回到 1/3（底噪已完成），等 L 步开始再推进
-  showOverall();
-  setOverallText(tf('measure.progressStep')(1, 3));
-  setOverallFill(1/3);
   track('lr_optin_start');
 
-  // 自检：播 3s 左声道粉噪
+  // 自检：播 3s 左声道粉噪（fade in/out，无爆音）
   setStatus(tt('measure.isoCheckTitle')+'…');
-  if(app.playMode==='bt'){ try{ M.playPink('L'); }catch(_){} }
+  if(app.playMode==='bt'){ try{ M.playPink('L', 0.1); }catch(_){} }
   await new Promise(function(r){ setTimeout(r, 3000); });
   if(token!==app.runToken) return;
-  if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
+  if(app.playMode==='bt'){ try{ M.stopPink(0.2); }catch(_){} }
   var ans = await askChannelIsolation();
   if(token!==app.runToken) return;
   if(ans!==true){
     // 未通过：回整体模式 + 诚实提示
     app.measureMode = 'stereo'; buildStepsUI(); resetStepsUI();
-    setStepState(0,'done'); setStepState(1,'done');
+    setStepState(0,'done');
     var ma = document.getElementById('mix-alert');
     ma.textContent = tt('measure.mixAlert'); ma.classList.add('show');
     setStatus('');
@@ -4105,34 +4450,41 @@ async function startLrOptIn(){
     return;
   }
   track('lr_optin_iso_pass');
-  // L/R 各 30s
-  var results = {};
-  var defs = stepDefs();
-  for(var s=1;s<=2;s++){
-    var ch = s===1?'L':'R';
-    setStepState(s,'active'); setStatus(tt(defs[s].copy));
-    app.curStep=s; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
-    app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
-    stepStartUI(s);
-    startRaf();
-    if(app.playMode==='bt'){ try{ M.playPink(ch); }catch(_){} }
-    var m2 = null;
-    try{ m2 = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
-    if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
-    if(token!==app.runToken) return;
-    stopRaf(); app.measuring=false;
-    if(!validityGate(m2, ch)) return;
-    snrGate(m2, ch);
-    results[ch]=m2;
-    setStepState(s,'done');
-    if(!(await stepDonePause(token, s))) return;
-    track(s===1?'measure_l_done':'measure_r_done');
-  }
-  S().measL = results.L; S().measR = results.R;
+
+  // 40s 合并 L/R：底噪 10s＋左 15s＋右 15s，一次跑完（相位切换处 fade 过渡，无爆音）
+  setStepState(0,'active');
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40;
+  app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
+  stepStartUI(0);
+  startRaf();
+  var res = null;
+  try{
+    res = await M.measureMerged({
+      btPlay: app.playMode==='bt',
+      phases: PHASES_LR,
+      onFrame: function(ph, info){ onFrame(info); },
+      onPhase: function(phKey, ph){ setOverallObj(tf('measure.listeningNow')(tt(ph.obj))); }
+    });
+  }catch(e){ return failMeasure(token, e); }
+  if(token!==app.runToken) return;
+  stopRaf(); app.measuring=false;
+  if(res && res.noSignal){ return failNoSignal(token); }
+  S().floor31 = res.floor31;
+  var L31 = res.seg31.L, R31 = res.seg31.R;
+  if(!validityGate(L31, 'L')) return;
+  if(!validityGate(R31, 'R')) return;
+  snrGate(L31, 'L'); snrGate(R31, 'R');
+  S().measL = L31; S().measR = R31;
   S().channelIsolated = true;
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:S().floor31, measL:results.L, measR:results.R, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:res.floor31, measL:L31, measR:R31, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  setStepState(0,'done');
+  setStatus(tt('measure.listenDone'));
+  setOverallObj(tt('measure.listenDone'));
+  setOverallFill(1);
+  track('measure_done', {flow:'merged40_lr'});
+  await new Promise(function(r){ setTimeout(r, 1000); });
+  if(token!==app.runToken) return;
   setStatus('');
-  track('measure_done', {flow:'lr'});
   renderCTA(CTA['measure_done']);
 }
 function failMeasure(token, e){
