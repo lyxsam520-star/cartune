@@ -69,6 +69,10 @@ body{
 .btn-primary:disabled{background:#3a3f4a;color:#7a828f;cursor:not-allowed;}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);flex:0 0 auto;padding:15px 18px;}
 .btn-danger-ghost{background:transparent;color:var(--red);border:1px solid rgba(255,77,77,.4);}
+/* 声道隔离自检弹窗 */
+.iso-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
+.iso-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:340px;}
+.iso-card .btn{margin-top:12px;}
 /* 顶部返回 */
 .topbar{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
 .backbtn{background:none;border:none;color:var(--sub);font-size:14px;padding:8px 4px;cursor:pointer;font-family:inherit;}
@@ -204,6 +208,7 @@ ul.clean li{margin:6px 0;}
     <div id="checklist-items"></div>
     <div class="card">
       <div class="small" id="checklist-pink"></div>
+      <div class="small mt8" id="checklist-bt"></div>
       <div class="small mt8" id="checklist-safe" style="color:var(--amber);"></div>
     </div>
   </section>
@@ -267,6 +272,7 @@ ul.clean li{margin:6px 0;}
     </div>
     <div class="alert amber" id="usb-tip"></div>
     <div class="alert amber show" id="case-tip"></div>
+    <div class="alert amber show" id="position-tip"></div>
     <div class="card" id="measure-card">
       <div id="measure-steps"></div>
       <div class="small mt8" id="measure-status"></div>
@@ -287,6 +293,7 @@ ul.clean li{margin:6px 0;}
     <div class="alert red" id="clip-alert"></div>
     <div class="alert amber" id="snr-alert"></div>
     <div class="alert red" id="valid-alert"></div>
+    <div class="alert amber" id="mix-alert"></div>
     <div class="card hidden" id="mic-err-card">
       <div class="h" id="mic-err-title"></div>
       <div class="small" id="mic-err-body"></div>
@@ -2057,7 +2064,8 @@ var MODELS_DB = {
       flatnessAfter: round1(flatnessAfter),
       nAdjust: nAdjust,
       tolDb: tol,
-      usedFallbackCenters: spec.usedFallbackCenters
+      usedFallbackCenters: spec.usedFallbackCenters,
+      channelIsolated: !!opts.channelIsolated  // true=L/R 独立测量；false=立体声整体测量
     };
   };
 
@@ -2158,8 +2166,9 @@ var MODELS_DB = {
       car: obj.car || null,
       eqSpec: obj.eqSpec || null,
       floor31: obj.floor31 || null,
-      measL31: obj.measL31 || null,
-      measR31: obj.measR31 || null,
+      measL31: obj.measL31 || obj.measL || null,
+      measR31: obj.measR31 || obj.measR || null,
+      channelIsolated: (typeof obj.channelIsolated === 'boolean') ? obj.channelIsolated : null,
       snrDb: (typeof obj.snrDb === 'number') ? obj.snrDb : null,
       sampleRate: obj.sampleRate || null,
       ua: obj.ua || (typeof navigator !== 'undefined' ? navigator.userAgent : '')
@@ -2276,6 +2285,8 @@ window.COPY = {
     title: "测前检查",
     sub: "三项都确认，测出来才准。很快，一分钟搞定。",
     pinkNote: "测试音频：拷进 U 盘用车机直接播放（推荐）；手机蓝牙播放也行，精度略低。",
+    btTip: "🔵 确认手机连的是车机「媒体音频」（在手机蓝牙设置里查看），而不是「蓝牙电话」——电话模式是单声道的，左右声道会被混成一路。",
+    btTipEn: "🔵 Make sure your phone is connected as \"media audio\" (check in Bluetooth settings), not \"phone audio\" — call mode is mono and mixes both channels together.",
     safeNote: "请在车辆静止、安全停放时测量",
     items: [
       {
@@ -2378,6 +2389,24 @@ window.COPY = {
     usbPlayingTip: "请确认车机正在播放测试音频",
     tipCase: "📱 取下手机壳再测——手机壳会闷住麦克风孔，高频拾音更干净，测得更准",
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
+    tipPosition: "📍 手机放在驾驶位头枕处——两步测量全程不要移动手机。环境底噪和立体声整体测量都在驾驶位完成：调音目标就是你开车时实际听到的声音。推荐用支架固定，至少保证手不抖、位置不动。",
+    tipPositionEn: "📍 Place your phone at the driver's headrest — don't move it during both steps. Ambient floor and stereo measurement are both done at the driver's seat: the tuning target is exactly what you hear while driving. A mount is recommended; at minimum keep your hand steady and the position fixed.",
+    isoCheckTitle: "声道隔离自检",
+    isoCheckTitleEn: "Channel isolation check",
+    isoCheckQ: "刚才只播了左声道——只听到左边喇叭响吗？",
+    isoCheckQEn: "Only the left channel just played — did you hear sound from the left speaker only?",
+    isoYes: "是，只有左边响",
+    isoYesEn: "Yes, left only",
+    isoNo: "两边都响",
+    isoNoEn: "Both sides played",
+    stepStereo: "第 2 步：立体声整体测量",
+    stepStereoEn: "Step 2: Stereo combined measurement",
+    advCta: "进阶：验证声道隔离，解锁 L/R 独立测量",
+    advCtaEn: "Advanced: verify channel isolation to unlock L/R measurement",
+    advNeedRemeasure: "请先完成一次整体测量",
+    advNeedRemeasureEn: "Please complete a combined measurement first",
+    mixAlert: "检测到车机混音（可能环绕未关/蓝牙连成电话模式），已切换为整体测量。建议：关闭车机环绕音效，确认手机连的是媒体音频而非蓝牙电话后重测。",
+    mixAlertEn: "Head-unit mixing detected (surround may be on / Bluetooth in phone-call mode). Switched to combined measurement. Tip: turn off surround effects and make sure your phone is connected as media audio, not phone audio, then re-measure.",
     ctaNext: "查看报告",
     barsCaption: "1/3 倍频程实时频谱"
   },
@@ -2524,6 +2553,7 @@ function track(ev, data){
 var app = {
   state: { pro:false, car:null, eqSpec:null, floor31:null, measL:null, measR:null, plan:null, paid:false },
   playMode: 'bt',           // 'bt' | 'usb'
+  measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
   measurer: null,
   runToken: 0,
@@ -2613,6 +2643,7 @@ function initChecklist(){
   setText('checklist-title','checklist.title');
   setText('checklist-sub','checklist.sub');
   setText('checklist-pink','checklist.pinkNote');
+  setText('checklist-bt','checklist.btTip');
   setText('checklist-safe','checklist.safeNote');
   setText('bk-checklist','common.back');
   var items = t('checklist.items');
@@ -3183,11 +3214,19 @@ function refreshBountyBtn(){
  * 实时柱按车机 EQ 段数绘制（非 31 段 hero）；专业模式额外叠加内部 31 段。
  * iOS Safari：Measurer.init 必须由按钮 onclick 直接调用，async 链不断开。
  * ===================================================================== */
-var STEP_DEFS = [
+/* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
+   这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
+var STEP_DEFS_LR = [
   {key:'floor', dur:3, copy:'measure.stepFloor'},
   {key:'L',     dur:8, copy:'measure.stepL'},
   {key:'R',     dur:8, copy:'measure.stepR'}
 ];
+/* v1.3+ 默认：立体声整体测量（一次测完，测的就是驾驶位实际听到的声音） */
+var STEP_DEFS_STEREO = [
+  {key:'floor', dur:3, copy:'measure.stepFloor'},
+  {key:'stereo', dur:8, copy:'measure.stepStereo'}
+];
+function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
   setText('measure-title','measure.title');
   setText('measure-safe','measure.safeNote');
@@ -3195,6 +3234,7 @@ function initMeasure(){
   setText('bars-caption','measure.barsCaption');
   setText('usb-tip','measure.usbPlayingTip');
   setText('case-tip','measure.tipCase');
+  setText('position-tip','measure.tipPosition');
   setText('clip-alert','measure.clipAlert');
   setText('snr-alert','measure.snrWarn');
   setText('mic-retry','common.retry');
@@ -3224,7 +3264,10 @@ function initMeasure(){
   window.addEventListener('resize', function(){ if(document.getElementById('sec-measure').classList.contains('active')) sizeCanvases(); });
 
   CTA.measure = [{ text: tt('measure.ctaNext'), onClick: startMeasureFlow }];
-  CTA['measure_done'] = [{ text: tt('measure.ctaNext'), onClick: function(){ renderReport(); show('report'); } }];
+  CTA['measure_done'] = [
+    { text: tt('measure.ctaNext'), onClick: function(){ renderReport(); show('report'); } },
+    { text: tt('measure.advCta'), primary:false, onClick: startLrOptIn }
+  ];
   // 进入测量页时（可见后）再生成标签行并取 canvas 尺寸
   ON_SHOW.measure = function(){ buildBarLabels(); sizeCanvases(); };
 }
@@ -3237,7 +3280,7 @@ function ttx(primary, fallback){
 function buildStepsUI(){
   var box = document.getElementById('measure-steps');
   box.innerHTML = '';
-  STEP_DEFS.forEach(function(s, i){
+  stepDefs().forEach(function(s, i){
     var d = document.createElement('div');
     d.className = 'step'; d.id = 'step-'+i;
     d.innerHTML = '<div class="stepdot num">'+(i+1)+'</div><div style="flex:1;">'+
@@ -3381,12 +3424,84 @@ function setStepState(i, cls){
   if(d) d.className = 'step '+cls;
 }
 function resetStepsUI(){
-  STEP_DEFS.forEach(function(_,i){ setStepState(i,''); var p=document.getElementById('step-p-'+i); if(p) p.style.width='0'; });
+  stepDefs().forEach(function(_,i){ setStepState(i,''); var p=document.getElementById('step-p-'+i); if(p) p.style.width='0'; });
 }
 function hideAlerts(){
-  ['clip-alert','snr-alert','valid-alert'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
+  ['clip-alert','snr-alert','valid-alert','mix-alert'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
 }
 
+/* 声道隔离自检弹窗：Promise<boolean|null>（true=隔离ok / false=混音 / null=中止） */
+function askChannelIsolation(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.isoCheckTitle'))+'</div>'+
+        '<div class="small mt8">'+escapeHtml(tt('measure.isoCheckQ'))+'</div>'+
+        '<button class="btn btn-primary" id="iso-yes">'+escapeHtml(tt('measure.isoYes'))+'</button>'+
+        '<button class="btn btn-ghost" id="iso-no">'+escapeHtml(tt('measure.isoNo'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    // iOS 防吞点击：click + touchend 双通道（与 bindTap 同策略，内联自包含）
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n = Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('iso-yes', true);
+    wire('iso-no', false);
+    // 对外暴露取消入口（流程中止时用）
+    ov._cancel = function(){ finish(null); };
+    app._isoOverlay = ov;
+  });
+}
+function closeIsoOverlay(){
+  try{ if(app._isoOverlay && app._isoOverlay._cancel) app._isoOverlay._cancel(); }catch(_){}
+  app._isoOverlay = null;
+}
+/* 有效性门：不过则亮红字+回重试，不再继续 */
+function validityGate(meas, chLabel){
+  var vok = true, vreason='';
+  try{
+    var v = DSP.validityCheck(meas, S().floor31);
+    if(v===false){ vok=false; }
+    else if(v && typeof v==='object'){ vok = v.ok!==false; vreason = v.reason||''; }
+  }catch(e){ vok=true; }
+  if(!vok){
+    var va = document.getElementById('valid-alert');
+    va.textContent = tt('measure.validityFail') + (vreason?('：'+vreason):'');
+    va.classList.add('show');
+    track('measure_validity_fail', {ch:chLabel, reason:vreason});
+    CTA.measure = [{ text: tt('common.retry'), onClick: startMeasureFlow }];
+    renderCTA(CTA.measure);
+    return false;
+  }
+  return true;
+}
+/* SNR 告警（<15dB 提示调大音量，不阻断；注：DSP.snr 签名为 (floor31, sig31)） */
+function snrGate(meas, chLabel){
+  try{
+    var s = DSP.snr(S().floor31, meas);
+    if(s && typeof s.db==='number' && s.pass===false){
+      var sa = document.getElementById('snr-alert');
+      sa.textContent = tt('measure.snrWarn') + '（' + s.db + ' dB）';
+      sa.classList.add('show');
+      track('measure_low_snr', {ch:chLabel, snr:s.db});
+    }
+  }catch(_){}
+}
 /* 测量主流程：由按钮 onclick 直接调用（iOS 手势链） */
 async function startMeasureFlow(){
   hideAlerts();
@@ -3422,54 +3537,89 @@ async function startMeasureFlow(){
   S().floor31 = floor31;
   setStepState(0,'done'); track('floor_done');
 
-  // ③④ 左右声道各 8s
+  // ③ 立体声整体测量 8s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
+  app.measureMode = 'stereo'; buildStepsUI();
+  setStepState(1,'active'); setStatus(tt('measure.stepStereo'));
+  app.curStep=1; app.stepStart=performance.now(); app.stepDur=8; app.clipStreak=0; app.lowStreak=0;
+  startRaf();
+  if(app.playMode==='bt'){ try{ M.playPink(null); }catch(_){} }  // dual-mono：左右同发
+  var meas = null;
+  try{ meas = await M.measure(8, onFrame); }catch(e){ return failMeasure(token, e); }
+  if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
+  if(token!==app.runToken) return; // 削顶自动停止后丢弃
+  stopRaf(); app.measuring=false;
+  if(!validityGate(meas, 'stereo')) return;
+  snrGate(meas, 'stereo');
+  S().measL = meas; S().measR = meas;
+  S().channelIsolated = false;
+  setStepState(1,'done');
+  // 持久化（经 DSP）
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  setStatus('');
+  track('measure_done', {flow:'stereo'});
+  renderCTA(CTA['measure_done']);
+}
+
+/* 进阶：声道隔离自检 → 解锁 L/R 独立测量（DSP/外接播放器用户）。
+   车机 DSP 会对蓝牙/USB 输入混音/上混，大多数车机过不了自检——这是硬件链路限制。 */
+async function startLrOptIn(){
+  var token = ++app.runToken;
+  var M = app.measurer;
+  if(!M){
+    setStatus(tt('measure.advNeedRemeasure'));
+    track('lr_optin_no_measurer');
+    return;
+  }
+  hideAlerts();
+  app.measureMode = 'lr'; buildStepsUI(); resetStepsUI();
+  setStepState(0,'done'); // 底噪已测过，不重测
+  track('lr_optin_start');
+
+  // 自检：播 3s 左声道粉噪
+  setStatus(tt('measure.isoCheckTitle')+'…');
+  if(app.playMode==='bt'){ try{ M.playPink('L'); }catch(_){} }
+  await new Promise(function(r){ setTimeout(r, 3000); });
+  if(token!==app.runToken) return;
+  if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
+  var ans = await askChannelIsolation();
+  if(token!==app.runToken) return;
+  if(ans!==true){
+    // 未通过：回整体模式 + 诚实提示
+    app.measureMode = 'stereo'; buildStepsUI(); resetStepsUI();
+    setStepState(0,'done'); setStepState(1,'done');
+    var ma = document.getElementById('mix-alert');
+    ma.textContent = tt('measure.mixAlert'); ma.classList.add('show');
+    setStatus('');
+    track('lr_optin_iso_fail');
+    renderCTA(CTA['measure_done']);
+    return;
+  }
+  track('lr_optin_iso_pass');
+  // L/R 各 8s
   var results = {};
+  var defs = stepDefs();
   for(var s=1;s<=2;s++){
     var ch = s===1?'L':'R';
-    setStepState(s,'active'); setStatus(tt(STEP_DEFS[s].copy));
+    setStepState(s,'active'); setStatus(tt(defs[s].copy));
     app.curStep=s; app.stepStart=performance.now(); app.stepDur=8; app.clipStreak=0; app.lowStreak=0;
     startRaf();
     if(app.playMode==='bt'){ try{ M.playPink(ch); }catch(_){} }
-    var meas = null;
-    try{ meas = await M.measure(8, onFrame); }catch(e){ return failMeasure(token, e); }
+    var m2 = null;
+    try{ m2 = await M.measure(8, onFrame); }catch(e){ return failMeasure(token, e); }
     if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
-    if(token!==app.runToken) return; // 削顶自动停止后丢弃
+    if(token!==app.runToken) return;
     stopRaf(); app.measuring=false;
-    // 有效性校验
-    var vok = true, vreason='';
-    try{
-      var v = DSP.validityCheck(meas, floor31);
-      if(v===false){ vok=false; }
-      else if(v && typeof v==='object'){ vok = v.ok!==false; vreason = v.reason||''; }
-    }catch(e){ vok=true; }
-    if(!vok){
-      var va = document.getElementById('valid-alert');
-      va.textContent = tt('measure.validityFail') + (vreason?('：'+vreason):'');
-      va.classList.add('show');
-      track('measure_validity_fail', {ch:ch, reason:vreason});
-      CTA.measure = [{ text: tt('common.retry'), onClick: startMeasureFlow }];
-      renderCTA(CTA.measure);
-      return;
-    }
-    // SNR 告警（<15dB 提示调大音量，不阻断）
-    try{
-      var snr = DSP.snr(meas, floor31);
-      if(typeof snr==='number' && snr<15){
-        var sa = document.getElementById('snr-alert');
-        sa.textContent = tt('measure.snrWarn');
-        sa.classList.add('show');
-        track('measure_low_snr', {ch:ch, snr:snr});
-      }
-    }catch(_){}
-    results[ch]=meas;
+    if(!validityGate(m2, ch)) return;
+    snrGate(m2, ch);
+    results[ch]=m2;
     setStepState(s,'done');
     track(s===1?'measure_l_done':'measure_r_done');
   }
   S().measL = results.L; S().measR = results.R;
-  // 持久化（经 DSP）
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:results.L, measR:results.R, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  S().channelIsolated = true;
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:S().floor31, measL:results.L, measR:results.R, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(_){}
   setStatus('');
-  track('measure_done');
+  track('measure_done', {flow:'lr'});
   renderCTA(CTA['measure_done']);
 }
 function failMeasure(token, e){
@@ -3498,8 +3648,7 @@ function avg31(){
 }
 /* 规则引擎层（v1）：数值方案由 DSP.ruleEngine 产生；LLM 文案层为 v2 预留 */
 function buildPlan(){
-  var args = { measL:S().measL, measR:S().measR, eqSpec:S().eqSpec, target:DSP.TARGET };
-  return DSP.ruleEngine(args);
+  return DSP.ruleEngine(S().measL, S().measR, S().eqSpec, { channelIsolated: S().channelIsolated });
 }
 function renderReport(){
   setText('report-title','report.title');
