@@ -201,7 +201,8 @@ ul.clean li{margin:6px 0;}
       </div>
       <button class="linklike" id="home-tech-link"></button>
     </div>
-    <div class="small center" id="home-payhint" style="margin-top:10px;"></div>
+    <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
+    <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
   </section>
 
   <!-- ============ 2. 标准条件检查 ============ -->
@@ -328,7 +329,7 @@ ul.clean li{margin:6px 0;}
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <div class="small center mt8" id="report-priceline"></div>
+    <div class="small center mt8" id="report-priceline" style="display:none;"><!-- 内测版：价格行已隐藏 --></div>
   </section>
 
   <!-- ============ 6. 授权 ============ -->
@@ -344,7 +345,8 @@ ul.clean li{margin:6px 0;}
   </section>
 
   <!-- ============ 7. 付费 ============ -->
-  <section class="sec" id="sec-pay">
+  <!-- 内测版：付费页整体隐藏（display:none），恢复时删除 style 即可；JS 的 initPay/mockPay 保留 -->
+  <section class="sec" id="sec-pay" style="display:none;">
     <div class="topbar"><button class="backbtn" data-back="sec-consent" id="bk-pay"></button></div>
     <div class="h" id="pay-title"></div>
     <div><span class="badge amber" id="pay-testbadge"></span></div>
@@ -2327,8 +2329,8 @@ window.COPY = {
     ctaPrimary: "开始测量",
     ctaPro: "专业模式",
     linkTech: "技术原理",
-    badgeFree: "测量免费 · 方案 9 元",
-    payHint: "当前为测试模式：支付为演示流程，不会真实扣款（商户号办理中）",
+    badgeFree: "内测版 · 全功能开放",
+    payHint: "",
     proDesc: "专业模式：显示内部 31 段 1/3 倍频程分析视图与完整术语"
   },
   checklist: {
@@ -2395,8 +2397,8 @@ window.COPY = {
     eqFoundNote: "已匹配该车型的 EQ 实测数据：共 {n} 段，可调 ±{r}dB。用户实测数据，非官方参数，仅供参考。",
     eqUnknownNote: "暂无该车型的 EQ 实测数据。请手动选择你的车机 EQ 段数，方案将按所选段数生成；也欢迎按指引补传实测，帮车型库更准。",
     et9Title: "该车型暂不支持方案生成",
-    et9Body: "该车型车机未开放 EQ 调节，给不出可执行的调整动作，不建议购买 9 元方案。测量与曲线查看仍免费。",
-    et9CarNote: "该车型车机未开放 EQ 调节，无法给出可执行的调整动作，付费页将不再推荐购买。",
+    et9Body: "该车型车机未开放 EQ 调节，给不出可执行的调整动作。",
+    et9CarNote: "该车型车机未开放 EQ 调节，无法给出可执行的调整动作。",
     centersPending: "待实测",
     huNormalized: "已忽略小版本更新（如 2.3.1→2.3）",
     bountyCardTitle: "该车型 EQ 参数悬赏中",
@@ -2413,7 +2415,7 @@ window.COPY = {
       "逐段 +6dB 播放粉噪，手机测出每段的峰值位置（应用内校准向导会一步步带你做）",
       "标准粉噪完整测量一次（立体声整体，约 30 秒）"
     ],
-    reward: "完成后奖励一次免费高级调音方案（18 元档），任务通过质检后自动发放到你的账户。",
+    reward: "完成后奖励一次高级调音方案，任务通过质检后自动发放到你的账户。",
     ctaSignup: "报名参加",
     signed: "已报名 ✓ 完成校准任务后发放奖励",
     note: "v1 报名记录保存在本机；云端同步与奖励发放 v2 上线。"
@@ -2482,8 +2484,8 @@ window.COPY = {
     ctaNext: "查看报告",
     ctaStart: "开始测试",
     ctaStartEn: "Start Test",
-    ctaReport: "免费生成调音报告",
-    ctaReportEn: "Generate Free Tuning Report",
+    ctaReport: "生成调音报告",
+    ctaReportEn: "Generate Tuning Report",
     ctaSub: "AI 智能调音",
     ctaSubEn: "AI Smart Tuning",
     barsCaption: "1/3 倍频程实时频谱"
@@ -2494,13 +2496,13 @@ window.COPY = {
       if (n === 0) return "各频段均在容差内，暂无硬伤";
       return "测得 " + n + " 个频段超出容差，方案会逐个处理";
     },
-    previewTitle: "免费预览",
+    previewTitle: "方案预览",
     legendMeas: "实测曲线",
     legendTarget: "目标曲线",
     legendSim: "按方案调整后（模拟）",
     trustNote: "曲线来自你刚才的实测；目标曲线的来历见「技术原理」页。",
-    ctaUnlock: "解锁完整方案 · 9 元",
-    priceLine: "9 元 / 单次方案"
+    ctaUnlock: "查看完整方案",
+    priceLine: ""
   },
   consent: {
     title: "开始前，请确认两项授权",
@@ -2511,20 +2513,27 @@ window.COPY = {
     agreeBtn: "同意并继续"
   },
   pay: {
-    title: "解锁调音方案",
-    testModeBadge: "测试模式",
-    price9: "9 元",
-    includes9: [
-      "按你车机实际段数，逐段给出增益数值",
-      "配套调音说明：只减不加，安全试听",
-      "梳状干涉谷自动识别并跳过，不硬补"
-    ],
-    refundRule: "AI 生成失败或结果明显异常自动退款；主观听感不满意可获一次免费重测/换风格",
-    virtualNote: "虚拟服务，购买后即时交付",
-    invoiceNote: "如需发票请联系客服",
-    weekPreview: "30 元周卡（7 天）即将上线",
-    ctaPayMock: "模拟支付 9 元",
-    paidOk: "支付成功（测试模式），方案已生成"
+    /* 内测版：付费文案已中性化（页面隐藏，JS 保留可恢复） */
+    title: "调音方案",
+    testModeBadge: "内测版",
+    price9: "",
+    includes9: [],
+    refundRule: "",
+    virtualNote: "",
+    invoiceNote: "",
+    weekPreview: "",
+    ctaPayMock: "",
+    paidOk: ""
+  },
+  beta: {
+    badge: "内测版",
+    badgeEn: "Beta",
+    expiredTitle: "内测已结束",
+    expiredTitleEn: "Beta Ended",
+    expiredBody: "感谢参与内测，正式版即将上线，敬请期待。",
+    expiredBodyEn: "Thanks for joining the beta. The official release is coming soon.",
+    expiringSoon: function (d) { return "内测将于 " + d + " 结束"; },
+    expiringSoonEn: function (d) { return "Beta ends on " + d; }
   },
   plan: {
     title: "你的调音方案",
@@ -2648,6 +2657,20 @@ var app = {
   curStep: -1
 };
 function S(){ return app.state; }
+
+/* =====================================================================
+ * 内测配置：改这一行即可延期（ISO 8601，北京时间）
+ * ===================================================================== */
+var BETA_EXPIRES = '2026-11-13T00:00:00+08:00';
+function betaExpired(){ return Date.now() > Date.parse(BETA_EXPIRES); }
+function betaExpiringSoon(){ // 到期前 7 天内
+  var ms = Date.parse(BETA_EXPIRES) - Date.now();
+  return ms > 0 && ms <= 7*24*3600*1000;
+}
+function betaExpiryDateStr(){
+  var d = new Date(Date.parse(BETA_EXPIRES));
+  return (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日';
+}
 
 /* ---------- 路由：section 切换 ---------- */
 var CTA = {}; // 各 section 的底部 CTA 配置，init 时装配
@@ -3884,7 +3907,7 @@ function initConsent(){
   var c1 = document.getElementById('c1');
   function refresh(){
     CTA.consent = [{ text: tt('consent.agreeBtn'), disabled:!c1.checked,
-      onClick: function(){ track('consent_done',{c2:document.getElementById('c2').checked}); show('pay'); } }];
+      onClick: function(){ track('consent_done',{c2:document.getElementById('c2').checked}); renderPlan(); show('plan'); } }]; // 内测版：跳过付费，直达方案
     renderCTA(CTA.consent);
   }
   c1.addEventListener('change', refresh);
@@ -4071,6 +4094,14 @@ function initWxBanner(){
   }
 }
 function init(){
+  // 内测时限：到期后只显示全屏结束卡，不渲染主界面
+  if(betaExpired()){
+    setText('beta-expired-t','beta.expiredTitle');
+    setText('beta-expired-b','beta.expiredBody');
+    var ov = document.getElementById('beta-expired');
+    if(ov) ov.style.display = 'flex';
+    return;
+  }
   if(!window.DSP){ document.getElementById('app').innerHTML = '<div class="card" style="margin-top:40px;">DSP 未注入（构建占位未替换）</div>'; return; }
   if(!window.COPY){ console.warn('[COPY] window.COPY 缺失，文案将降级显示 key 名'); window.COPY = {}; }
   initBackButtons();
@@ -4084,10 +4115,22 @@ function init(){
   initPay();
   initTech();
   show('home');
+  // 内测到期前 7 天：首页温和提示（不阻塞）
+  if(betaExpiringSoon()){
+    var soon = document.getElementById('home-beta-soon');
+    if(soon){ soon.textContent = tf('beta.expiringSoon')(betaExpiryDateStr()); soon.classList.remove('hidden'); }
+  }
   track('app_open', {pro:false});
 }
 if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', init); }
 else{ init(); }
 </script>
+<!-- 内测到期全屏卡 -->
+<div id="beta-expired" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;align-items:center;justify-content:center;padding:24px;">
+  <div class="card center" style="max-width:320px;">
+    <div class="h" id="beta-expired-t" style="margin-bottom:8px;"></div>
+    <div class="small" id="beta-expired-b"></div>
+  </div>
+</div>
 </body>
 </html>
