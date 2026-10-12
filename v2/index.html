@@ -1954,6 +1954,15 @@ var MODELS_DB = {
    * @param {number} fadeInSec 起播淡入秒数（默认 0.1；传 0 则无淡入）
    */
   DSP.Measurer.prototype.playPink = function (side, fadeInSec) {
+    /* v2.2 调度诊断（2026-10-13 真机：正式测试 10s 处起播无声，试音正常）。
+     * 记录 ctx.state；suspended 则 resume（iOS 在 mic 激活/静音期可能挂起 context，
+     * 此时 currentTime 冻结，src.start 调度永不触发＝无声）。 */
+    try{
+      var _cs = this.audioCtx ? this.audioCtx.state : 'n/a';
+      var _ct = this.audioCtx ? this.audioCtx.currentTime : -1;
+      console.log('[playPink] side='+side+' ctx.state='+_cs+' currentTime='+Number(_ct).toFixed(3)+' micActive='+!!this.stream);
+      if(this.audioCtx && _cs==='suspended'){ console.warn('[playPink] ctx suspended -> resume()'); try{ this.audioCtx.resume(); }catch(_){} }
+    }catch(_){}
     this.stopPink(0.12);
     var buf = DSP.makeStereoPink(this.audioCtx, 35, side);
     var src = this.audioCtx.createBufferSource();
@@ -1967,7 +1976,8 @@ var MODELS_DB = {
     else { g.gain.setValueAtTime(1.0, t); }
     src.connect(g);
     g.connect(this.audioCtx.destination);
-    try { src.start(t + 0.02); } catch (e) { try { src.start(); } catch (_) {} }
+    try { src.start(t + 0.02); console.log('[playPink] src.start scheduled @ '+Number(t+0.02).toFixed(3)+' fadeIn='+fi+'s'); }
+    catch (e) { console.error('[playPink] start(t+0.02) FAILED', e); try { src.start(); console.log('[playPink] src.start() fallback ok'); } catch (e2) { console.error('[playPink] start() FAILED', e2); } }
     this._pinkSrc = src;
     this._pinkGain = g;
   };
@@ -2030,6 +2040,29 @@ var MODELS_DB = {
    *   side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道。
    * @returns Promise<{floor31:number[31], seg31:Object, noSignal:boolean}>
    */
+  /**
+   * v2.2 暂停/恢复测量（削顶保护改"暂停+指引"，不再直接掐死）。
+   * pause：冻结 tick 时钟（_pauseTotal 累积暂停时长），fade out 停粉噪；
+   * resume：补回暂停时长，从当前相位恢复播放（fade in），不从头来。
+   */
+  DSP.Measurer.prototype.pauseMeasure = function () {
+    if (this._paused) return;
+    this._paused = true;
+    this._pauseStart = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    try{ console.log('[pauseMeasure] paused at phaseIdx=' + this._curPhaseIdx); }catch(_){}
+    try { this.stopPink(0.2); } catch (_) {}
+  };
+  DSP.Measurer.prototype.resumeMeasure = function () {
+    if (!this._paused) return;
+    var n = (typeof performance !== 'undefined') ? performance.now() : Date.now();
+    this._pauseTotal = (this._pauseTotal || 0) + (n - (this._pauseStart || n));
+    this._paused = false; this._pauseStart = 0;
+    var pi = (typeof this._curPhaseIdx === 'number' && this._curPhaseIdx >= 0) ? this._curPhaseIdx : 0;
+    var ph = (this._phases || [])[pi];
+    try{ console.log('[resumeMeasure] resume at phaseIdx=' + pi + ' key=' + (ph && ph.key)); }catch(_){}
+    if (this._btPlay && ph && ph.side !== 'off') { try { this.playPink(ph.side, 0.3); } catch (e) { console.error('[resumeMeasure] playPink FAILED', e); } }
+  };
+
   DSP.Measurer.prototype.measureMerged = function (opts) {
     var self = this;
     opts = opts || {};
@@ -2050,6 +2083,8 @@ var MODELS_DB = {
     for (i = 0; i < phases.length; i++) { bounds.push(acc); acc += phases[i].dur; }
     bounds.push(acc);
     var TOTAL = acc;
+    self._phases = phases; self._btPlay = !!btPlay; self._curPhaseIdx = -1;
+    self._paused = false; self._pauseTotal = 0; self._pauseStart = 0;
     var firstSigIdx = -1;
     for (i = 0; i < phases.length; i++) { if (phases[i].side !== 'off') { firstSigIdx = i; break; } }
     var CHECK_AT = firstSigIdx >= 0 ? bounds[firstSigIdx] + 5 : TOTAL;
@@ -2073,16 +2108,19 @@ var MODELS_DB = {
       }
       function switchAudio(ph) {
         // 相位切换：播新前先停旧（playPink 内部自带 0.12s fade 停旧），fade 过渡无爆音
-        if (btPlay && ph.side !== 'off') { try { self.playPink(ph.side, 0.1); } catch (_) {} }
-        else { try { self.stopPink(0.15); } catch (_) {} }
+        // v2.2：不再静默吞异常——起播失败必须可见（此前 catch(_){} 把调度 bug 藏起来了）
+        try{ console.log('[switchAudio] phase='+ph.key+' side='+ph.side+' btPlay='+btPlay+' ctx.state='+(self.audioCtx&&self.audioCtx.state)); }catch(_){}
+        if (btPlay && ph.side !== 'off') { try { self.playPink(ph.side, 0.1); } catch (e) { console.error('[switchAudio] playPink FAILED', e); } }
+        else { try { self.stopPink(0.15); } catch (e) { console.error('[switchAudio] stopPink FAILED', e); } }
       }
       function tick() {
         if (self._stop) { finish(false); return; }
-        var el = (now() - t0) / 1000;
+        if (self._paused) { setTimeout(tick, 120); return; } // v2.2 暂停中：时钟冻结，不累积
+        var el = (now() - t0 - (self._pauseTotal || 0)) / 1000;
         if (el >= TOTAL) { finish(false); return; }
         var pi = phaseAt(el), ph = phases[pi];
         if (pi !== curPhaseIdx) {
-          curPhaseIdx = pi;
+          curPhaseIdx = pi; self._curPhaseIdx = pi;
           switchAudio(ph);
           if (onPhase) { try { onPhase(ph.key, ph); } catch (_) {} }
         }
@@ -2111,7 +2149,8 @@ var MODELS_DB = {
           try {
             onFrame(ph.key, {
               eqLevels: DSP.eqBandLevels(cur31, self.eqSpec),
-              frameDb31: cur31, peak: peak, clipped: clipped, elapsed: el
+              frameDb31: cur31, peak: peak, clipped: clipped, elapsed: el,
+              phaseKey: ph.key, phaseElapsed: el - bounds[pi] // v2.2：削顶宽限期判断用
             });
           } catch (_) {}
         }
@@ -2771,6 +2810,39 @@ window.COPY = {
     measuringTip: "正在播放测试音频并测量…请保持安静，不要碰手机。",
     snrWarn: "信号太弱，请调大车机音量后再测",
     clipAlert: "检测到麦克风削顶，已停止，请调小音量重测",
+    clipPaused: "已暂停：检测到麦克风削顶",
+    clipPauseTitle: "检测到麦克风削顶",
+    clipPauseTitleEn: "Microphone clipping detected",
+    clipPauseBody: "测量已暂停，当前进度保留。请调小音响音量后点继续，或点重来从头开始。",
+    clipPauseBodyEn: "Measurement paused — progress is kept. Turn down the speaker volume, then tap Continue; or tap Restart to start over.",
+    clipResume: "继续测量",
+    clipResumeEn: "Continue",
+    clipRestart: "重来",
+    clipRestartEn: "Restart",
+    levelCalibTitle: "电平校准",
+    levelCalibTitleEn: "Level check",
+    levelCalibHint: "正在播放粉噪并检测麦克风电平，请勿触碰手机（约 6 秒）",
+    levelCalibHintEn: "Playing pink noise and checking mic level — don't touch the phone (about 6 seconds)",
+    levelCalibUsbHint: "请确认车机/U 盘正在播放粉噪，正在检测麦克风电平（约 6 秒）",
+    levelCalibUsbHintEn: "Make sure the head unit is playing pink noise. Checking mic level (about 6 seconds)",
+    levelTooLoud: "音量太大，麦克风削顶了，请调小音响音量后重新校准",
+    levelTooLoudEn: "Too loud — the mic is clipping. Turn down the speaker and recalibrate.",
+    levelTooQuiet: "声音太小，请调大音量后重新校准",
+    levelTooQuietEn: "Too quiet — turn up the volume and recalibrate.",
+    levelTooQuietLive: "电平偏低…",
+    levelTooQuietLiveEn: "Level low…",
+    levelNoSignal: "好像没检测到测试声，请确认音响正在播放粉噪后再试",
+    levelNoSignalEn: "No test signal detected — make sure the speaker is playing pink noise.",
+    levelOk: "电平合适，可以开始正式测试",
+    levelOkEn: "Level OK — ready for the formal test.",
+    levelHot: "电平合适（偏高，请勿再调大），可以开始正式测试",
+    levelHotEn: "Level OK (on the hot side — don't turn it up further).",
+    levelGo: "开始正式测试",
+    levelGoEn: "Start test",
+    levelRecalib: "重新校准",
+    levelRecalibEn: "Recalibrate",
+    levelBack: "返回",
+    levelBackEn: "Back",
     validityFail: "本次测量有效性未通过，请调好音量后重测",
     micErrTitle: "麦克风启动失败",
     micErrBody: "请检查浏览器麦克风权限后重试；也可以先去看看技术原理页",
@@ -4026,11 +4098,11 @@ function rafLoop(){
   if(S().pro) drawBars31();
   // 进度
   if(app.stepDur>0){
-    var p = Math.min(1, (performance.now()-app.stepStart)/(app.stepDur*1000));
+    var p = Math.min(1, (performance.now()-app.stepStart-(app._pauseAccum||0))/(app.stepDur*1000)); // v2.2：暂停时长不计入进度
     var bar = document.getElementById('step-p-'+app.curStep);
     if(bar) bar.style.width = (p*100).toFixed(1)+'%';
     // 专业反馈：让用户"看到"时间花在哪，而不是干等倒计时
-    var remain = app.stepDur - (performance.now()-app.stepStart)/1000;
+    var remain = app.stepDur - (performance.now()-app.stepStart-(app._pauseAccum||0))/1000;
     if(remain<=5 && remain>0 && !app.avgShown){
       app.avgShown = true; // 结束前 5 秒：最终平均
       setStatus(tt('measure.finalAvg'));
@@ -4066,9 +4138,15 @@ function onFrame(f){
     try{ eqLevels = DSP.eqBandLevels(spec, f.band31); }catch(_){ eqLevels = []; }
   }
   app.lastFrame = { eqLevels:eqLevels||[], peak:f.peak, clipped:!!f.clipped, band31:f.band31||null };
-  // 削顶：连续 5 帧触发红字报警并自动停止
+  // 削顶：连续 5 帧触发暂停（v2.2：不再直接掐死，改暂停+指引）。
+  // 宽限期：floor 相位恒宽限；信号相位起播后 3s 内宽限（只记录不触发）——
+  // 避免把 10s 处调度 transient 误判成削顶（2026-10-13 真机：26% 爆音实为孤立 transient，
+  // 检测器被触发后 stopPink 导致继续无声——检测器成了帮凶）。
   if(f.clipped){ app.clipStreak++; } else { app.clipStreak = 0; }
-  if(app.clipStreak>=5){ onClipStop(); return; }
+  var _phEl = (f && typeof f.phaseElapsed === 'number') ? f.phaseElapsed : 99;
+  var _inGrace = (f && f.phaseKey === 'floor') || _phEl < 3;
+  if(_inGrace && f.clipped){ try{ console.log('[clip] grace: clipped frame ignored (phase='+(f.phaseKey||'?')+' phEl='+_phEl.toFixed(2)+')'); }catch(_){} }
+  if(!_inGrace && app.clipStreak>=5){ app.clipStreak = 0; onClipPause(); return; }
   // 电平过低提示
   if(typeof f.peak==='number' && f.peak < Math.pow(10,-45/20)){ app.lowStreak++; } else { app.lowStreak=0; }
   var lowEl = document.getElementById('snr-alert');
@@ -4076,17 +4154,78 @@ function onFrame(f){
     lowEl.textContent = tt('measure.levelLow'); lowEl.classList.add('show');
   }
 }
-function onClipStop(){
+/* 削顶暂停（v2.2）：fade out 暂停→弹窗指引→[继续]从当前相位恢复 / [重来]。
+ * 替代旧 onClipStop 的"直接掐死"（用户一脸懵）。 */
+function onClipPause(){
+  if(app._clipPaused) return; // 防重入
+  app._clipPaused = true;
+  var _tok = app.runToken;
+  try{ if(app.measurer && app.measurer.pauseMeasure) app.measurer.pauseMeasure(); }catch(_){}
+  app._uiPauseStart = (typeof performance!=='undefined') ? performance.now() : Date.now();
+  stopRaf(); app.measuring = false;
+  setStatus(tt('measure.clipPaused'));
+  track('measure_clip_pause', {remeasure:!!app._remeasureMode});
+  askClipPause().then(function(act){
+    app._clipPaused = false;
+    if(_tok !== app.runToken){ try{ if(app.measurer && app.measurer.abort) app.measurer.abort(); }catch(_){} return; }
+    if(act==='resume'){
+      if(app._uiPauseStart){ app._pauseAccum = (app._pauseAccum||0) + (((typeof performance!=='undefined')?performance.now():Date.now()) - app._uiPauseStart); app._uiPauseStart = 0; }
+      app.clipStreak = 0;
+      try{ if(app.measurer && app.measurer.resumeMeasure) app.measurer.resumeMeasure(); }catch(_){}
+      setStatus('');
+      startRaf();
+      track('measure_clip_resume', {remeasure:!!app._remeasureMode});
+    }else{
+      onClipStopHard(); // 重来：走硬停止
+    }
+  });
+}
+/* 硬停止（v2.2）：暂停弹窗点[重来]时用。保留旧 onClipStop 行为。 */
+function onClipStopHard(){
   var token = ++app.runToken; // 让未完成的 measure promise 失效
   stopRaf();
   app.measuring = false;
+  app._uiPauseStart = 0;
   try{ if(app.measurer){ if(app.measurer.abort) app.measurer.abort(); if(app.measurer.stopPink) app.measurer.stopPink(); } }catch(_){}
   document.getElementById('clip-alert').classList.add('show');
   setStatus(tt('measure.clipAlert'));
   resetStepsUI();
   CTA.measure = [{ text: tt(app._remeasureMode?'common.retry':'measure.ctaStart'), onClick: retryMeasureFn() }];
   renderCTA(CTA.measure, tt('measure.ctaSub'));
-  track('measure_clip_stop', {remeasure:!!app._remeasureMode});
+  track('measure_clip_restart', {remeasure:!!app._remeasureMode});
+}
+/* 削顶暂停弹窗（v2.2）：Promise<'resume'|'restart'>，样式复用 iso-overlay（iOS 双通道防吞点击）。 */
+function askClipPause(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.clipPauseTitle'))+'</div>'+
+        '<div class="small mt8" style="text-align:left;line-height:1.7;">'+escapeHtml(tt('measure.clipPauseBody'))+'</div>'+
+        '<button class="btn btn-primary" id="cp-resume">'+escapeHtml(tt('measure.clipResume'))+'</button>'+
+        '<button class="btn btn-ghost" id="cp-restart">'+escapeHtml(tt('measure.clipRestart'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n = Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('cp-resume', 'resume');
+    wire('cp-restart', 'restart');
+  });
 }
 function setStatus(s){ document.getElementById('measure-status').textContent = s; }
 /* ---------- 监听整体进度条（v1.9） ---------- */
@@ -4266,6 +4405,134 @@ async function soundCheckFlow(M, token){
     if(token!==app.runToken) return false;
   }
 }
+/* 电平校准（v2.2）：试音通过＋mic 激活后，边播粉噪边采 mic 电平约 6s，实时电平条。
+ * 三分支：削顶(红)→调小音量；过低(黄)→调大音量；合适(绿)→进正式测试。
+ * 把音量问题拦截在正式测试前（此前试音只问"听得到吗"，音量过大没拦下来，
+ * 26% 削顶保护才爆——用户一脸懵）。
+ * 返回 'ok' | 'retry' | 'back'。 */
+function runLevelCalibOnce(M, token){
+  return new Promise(function(resolve){
+    var btPlay = app.playMode==='bt';
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.levelCalibTitle'))+'</div>'+
+        '<div class="small mt8">'+escapeHtml(tt(btPlay?'measure.levelCalibHint':'measure.levelCalibUsbHint'))+'</div>'+
+        '<div style="height:14px;background:#1c1c1e;border-radius:7px;margin:12px 0 6px;overflow:hidden;">'+
+          '<div id="lc-fill" style="height:100%;width:0%;background:#34D399;border-radius:7px;"></div>'+
+        '</div>'+
+        '<div class="small" id="lc-db" style="color:#8E8E93;">-- dBFS</div>'+
+        '<div class="small mt8" id="lc-status" style="min-height:22px;"></div>'+
+        '<button class="btn btn-primary" id="lc-go" style="display:none;">'+escapeHtml(tt('measure.levelGo'))+'</button>'+
+        '<button class="btn btn-ghost" id="lc-retry" style="display:none;">'+escapeHtml(tt('measure.levelRecalib'))+'</button>'+
+        '<button class="btn btn-ghost" id="lc-back">'+escapeHtml(tt('measure.levelBack'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false, evaluated = false, timer = null;
+    var peaks = [], clipHit = false, t0 = Date.now();
+    var analyser = null, timeBuf = null;
+    try{
+      analyser = M.analyser;
+      timeBuf = new Float32Array(M.fftSize || 8192);
+    }catch(_){}
+    function finish(v){
+      if(done) return; done = true;
+      if(timer){ clearTimeout(timer); timer = null; }
+      try{ M.stopPink(0.2); }catch(_){}
+      try{ document.body.removeChild(ov); }catch(_){}
+      resolve(v);
+    }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n = Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('lc-go', 'ok'); wire('lc-retry', 'retry'); wire('lc-back', 'back');
+    function setBar(pdb, peak){
+      var fill = document.getElementById('lc-fill'), dbEl = document.getElementById('lc-db');
+      if(fill){
+        var frac = Math.max(0, Math.min(1, (pdb+60)/60));
+        fill.style.width = (frac*100).toFixed(1)+'%';
+        fill.style.background = peak>=0.99 ? '#FF453A' : (pdb>=-12 ? '#FFD60A' : '#34D399');
+      }
+      if(dbEl) dbEl.textContent = pdb.toFixed(1)+' dBFS';
+    }
+    function loop(){
+      if(done) return;
+      if(token!==app.runToken){ finish('back'); return; }
+      try{
+        if(analyser){
+          analyser.getFloatTimeDomainData(timeBuf);
+          var peak = 0, k;
+          for(k=0;k<timeBuf.length;k++){ var a = timeBuf[k]<0?-timeBuf[k]:timeBuf[k]; if(a>peak) peak=a; }
+          var pdb = 20*Math.log10(Math.max(1e-6, peak));
+          setBar(pdb, peak);
+          peaks.push(peak);
+          if(peak>=0.99) clipHit = true;
+          if(!evaluated){
+            var stEl = document.getElementById('lc-status');
+            if(stEl){
+              if(clipHit) stEl.innerHTML = '<span style="color:#FF453A;">'+escapeHtml(tt('measure.levelTooLoud'))+'</span>';
+              else if(pdb < -30) stEl.innerHTML = '<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelTooQuietLive'))+'</span>';
+              else stEl.innerHTML = '<span style="color:#8E8E93;">'+escapeHtml(tt('measure.levelCalibHint'))+'</span>';
+            }
+          }
+        }
+      }catch(e){}
+      if(Date.now()-t0 >= 6000){ evaluate(); return; }
+      timer = setTimeout(loop, 60);
+    }
+    function evaluate(){
+      evaluated = true;
+      var n = peaks.length;
+      var tail = peaks.slice(Math.max(0, n-33)); // 最近约 2s
+      var tailAvg = tail.length ? tail.reduce(function(a,b){return a+b;},0)/tail.length : 0;
+      var maxPeak = n ? Math.max.apply(null, peaks) : 0;
+      var stEl = document.getElementById('lc-status');
+      var goBtn = document.getElementById('lc-go'), retryBtn = document.getElementById('lc-retry');
+      try{ console.log('[levelCalib] frames='+n+' maxPeak='+maxPeak.toFixed(3)+' tailAvg='+tailAvg.toFixed(4)+' clipHit='+clipHit); }catch(_){}
+      track('levelcalib_eval', {maxPeak:Number(maxPeak.toFixed(3)), clipHit:clipHit});
+      function show(el){ if(el) el.style.display=''; }
+      if(clipHit){
+        if(stEl) stEl.innerHTML = '<span style="color:#FF453A;">'+escapeHtml(tt('measure.levelTooLoud'))+'</span>';
+        show(retryBtn);
+      }else if(maxPeak < 0.0032){ // -50dBFS：基本无信号
+        if(stEl) stEl.innerHTML = '<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelNoSignal'))+'</span>';
+        show(retryBtn);
+      }else if(tailAvg < 0.0316){ // -30dBFS：太小
+        if(stEl) stEl.innerHTML = '<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelTooQuiet'))+'</span>';
+        show(retryBtn);
+      }else{
+        var hot = maxPeak >= 0.708; // -3dBFS
+        if(stEl) stEl.innerHTML = '<span style="color:#34D399;">'+escapeHtml(tt(hot?'measure.levelHot':'measure.levelOk'))+'</span>';
+        show(goBtn); show(retryBtn);
+      }
+    }
+    // 起播（蓝牙模式 app 播；USB 模式用户已在车机播放）
+    try{ if(btPlay){ M.playPink(null, 0.3); console.log('[levelCalib] pink started (bt)'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED', e); }
+    loop();
+  });
+}
+async function levelCalibFlow(M, token){
+  if(!M.analyser){ try{ console.warn('[levelCalib] no analyser, skip'); }catch(_){} track('levelcalib_skip'); return true; }
+  for(;;){
+    var r = await runLevelCalibOnce(M, token);
+    if(token!==app.runToken) return false;
+    if(r==='ok'){ track('levelcalib_ok'); return true; }
+    if(r==='back'){ track('levelcalib_back'); return false; }
+    track('levelcalib_retry');
+  }
+}
 /* 无信号熔断（v2.1）：40s 全程没录到测试音——诚实报错，不产出垃圾报告。
  * 触发条件见 measureMerged：信号段相对底噪抬升 <3dB@500Hz–4kHz。 */
 function failNoSignal(token){
@@ -4368,12 +4635,23 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
+  // ③b 电平校准（v2.2）：边播粉噪边采 mic 电平，音量问题拦截在正式测试前
+  var _lcOK = await levelCalibFlow(M, token);
+  if(token!==app.runToken) return;
+  if(!_lcOK){
+    setStatus('');
+    CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+    renderCTA(CTA.measure);
+    return;
+  }
+  if(token!==app.runToken) return;
+
   // ④ 40s 合并测量（v2.1）：底噪 10s → 立体声 30s，一次跑完无停顿
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40;
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
@@ -4453,7 +4731,7 @@ async function startLrOptIn(){
 
   // 40s 合并 L/R：底噪 10s＋左 15s＋右 15s，一次跑完（相位切换处 fade 过渡，无爆音）
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40;
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
