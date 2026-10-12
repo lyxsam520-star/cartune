@@ -26,8 +26,8 @@
 html,body{margin:0;padding:0;}
 body{
   background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
-  font-size:14px;line-height:1.6;
+  font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  font-size:17px;line-height:1.6;
   -webkit-text-size-adjust:100%;
 }
 #app{max-width:480px;margin:0 auto;min-height:100vh;padding:0 16px calc(96px + var(--sat));}
@@ -39,8 +39,8 @@ body{
 .sec.active{display:block;}
 @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 /* 字号层级 */
-.hero{font-size:28px;font-weight:800;line-height:1.35;margin:12px 0 8px;letter-spacing:.5px;}
-.h{font-size:17px;font-weight:600;margin:0 0 6px;}
+.hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;}
+.h{font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.5;}
 .body14{font-size:14px;color:var(--text);}
 .small{font-size:12px;color:var(--sub);}
 .num{font-variant-numeric:tabular-nums;}
@@ -62,7 +62,7 @@ body{
 #cta-bar .inner{max-width:480px;margin:0 auto;display:flex;gap:10px;}
 .btn{
   flex:1;display:block;width:100%;border:none;border-radius:14px;
-  font-size:16px;font-weight:700;padding:15px 12px;cursor:pointer;
+  font-size:18px;font-weight:700;padding:15px 12px;cursor:pointer;
   font-family:inherit;
 }
 .btn-primary{background:var(--amber);color:#231400;}
@@ -100,10 +100,19 @@ body{
 #model-results li{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;}
 #model-results li:last-child{border-bottom:none;}
 #model-results li:active{background:#1a2230;}
+/* 三级联选 */
+.picklist{list-style:none;margin:6px 0 0;padding:0;max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#0f141c;display:none;}
+.picklist.show{display:block;}
+.picklist li{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.picklist li:last-child{border-bottom:none;}
+.picklist li:active{background:#1a2230;}
+.picklist li.sel{color:var(--amber);}
+.picklist li.sel::after{content:'\2713';font-weight:700;}
+#band-btns .btn.picked{border-color:var(--amber);color:var(--amber);}
 /* 步骤条 */
 .step{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);}
 .step:last-child{border-bottom:none;}
-.stepdot{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--border);color:var(--sub);font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.stepdot{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--border);color:var(--sub);font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px;}
 .step.active .stepdot{border-color:var(--cyan);color:var(--cyan);}
 .step.done .stepdot{border-color:var(--green);color:var(--green);}
 .prog{height:6px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;}
@@ -119,7 +128,7 @@ body{
 #bars-wrap{margin:8px 0;}
 #bars{width:100%;height:190px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;}
 #bar-labels{display:flex;margin-top:6px;}
-#bar-labels span{flex:1;text-align:center;font-size:11px;color:var(--sub);line-height:1.3;padding:0 2px;}
+#bar-labels span{flex:1;text-align:center;font-size:10px;color:var(--sub);line-height:1.5;padding:0 2px;}
 #bars31{width:100%;height:64px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:10px;margin-top:8px;}
 /* 电平条 */
 .levelrow{display:flex;align-items:center;gap:10px;margin-top:10px;}
@@ -127,7 +136,7 @@ body{
 #levelfill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--amber));}
 #leveldb{font-size:12px;color:var(--sub);min-width:76px;text-align:right;}
 /* 报警 */
-.alert{display:none;border-radius:12px;padding:12px 14px;font-size:13px;margin:10px 0;}
+.alert{display:none;border-radius:12px;padding:12px 14px;font-size:14px;margin:10px 0;}
 .alert.show{display:block;}
 .alert.red.show{display:block;background:rgba(255,77,77,.1);border:1px solid rgba(255,77,77,.45);color:#ffb3b3;}
 .alert.amber.show{display:block;background:rgba(255,159,28,.08);border:1px solid rgba(255,159,28,.4);color:#ffd9a0;}
@@ -139,25 +148,25 @@ body{
 .gaincard .gl{flex:1;}
 .gaincard .gt{font-size:15px;font-weight:700;}
 .gaincard .gc{font-size:12px;color:var(--sub);margin-top:2px;}
-.gaincard .gv{font-size:22px;font-weight:800;color:var(--cyan);}
+.gaincard .gv{font-size:20px;font-weight:800;color:var(--cyan);}
 .gaincard.boost .gv{color:var(--amber);}
 .gaincard.comb{border-color:rgba(255,77,77,.5);background:rgba(255,77,77,.05);}
 .gaincard.comb .gv{color:var(--red);}
-.gaincard .tag{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
+.gaincard .tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
 /* 图例 */
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:8px;}
 .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 canvas.chart{width:100%;height:220px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;}
 /* 分享卡 */
 #share-card{background:linear-gradient(160deg,#18202e,#10151d);border:1px solid rgba(255,159,28,.35);border-radius:var(--r);padding:20px;margin:14px 0;}
-#share-card .st{font-size:16px;font-weight:800;}
+#share-card .st{font-size:17px;font-weight:800;}
 /* 列表 */
 ul.clean{margin:8px 0;padding-left:20px;color:var(--text);}
 ul.clean li{margin:6px 0;}
-.kv{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border);}
+.kv{display:flex;justify-content:space-between;font-size:14px;padding:8px 0;border-bottom:1px solid var(--border);}
 .kv:last-child{border-bottom:none;}
 .kv .k{color:var(--sub);}
-.price{font-size:34px;font-weight:800;color:var(--amber);}
+.price{font-size:20px;font-weight:800;color:var(--amber);}
 .center{text-align:center;}
 .mt8{margin-top:8px;}.mt16{margin-top:16px;}
 .hidden{display:none !important;}
@@ -204,29 +213,51 @@ ul.clean li{margin:6px 0;}
     <div class="topbar"><button class="backbtn" data-back="sec-checklist" id="bk-car"></button></div>
     <div class="h" id="car-title"></div>
     <div class="small" id="car-sub"></div>
-    <div class="field">
+    <!-- 一级：品牌（可搜索） -->
+    <div class="field" id="car-lv1-wrap">
       <label id="car-brand-label"></label>
-      <input class="input" id="car-search" autocomplete="off">
-      <ul id="model-results"></ul>
+      <input class="input" id="car-brand-search" autocomplete="off">
+      <ul id="brand-results" class="picklist"></ul>
     </div>
-    <div class="field">
-      <label id="car-year-label"></label>
-      <input class="input num" id="car-year" inputmode="numeric" placeholder="2026">
-      <div class="errtext" id="car-year-err"></div>
+    <!-- 二级：车系 -->
+    <div class="field hidden" id="car-lv2-wrap">
+      <label id="car-series-label"></label>
+      <ul id="series-results" class="picklist show"></ul>
+    </div>
+    <!-- 三级：年款 -->
+    <div class="field hidden" id="car-lv3-wrap">
+      <label id="car-year-label2"></label>
+      <ul id="year-results" class="picklist show"></ul>
+    </div>
+    <!-- 已选汇总 -->
+    <div id="car-selected" class="card hidden">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;">
+          <div class="small" id="car-selected-k"></div>
+          <div class="h" style="font-size:17px;margin-top:2px;" id="car-selected-text"></div>
+        </div>
+        <button class="linklike" id="car-change"></button>
+      </div>
+    </div>
+    <div id="eqspec-panel"></div>
+    <div id="band-picker" class="card hidden">
+      <div class="small" id="band-picker-tip" style="margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;" id="band-btns"></div>
     </div>
     <div class="field">
       <label id="car-hu-label"></label>
       <input class="input num" id="car-hu" inputmode="decimal">
       <div class="hint" id="car-hu-hint"></div>
     </div>
-    <button class="linklike" id="car-manual"></button>
-    <div id="band-picker" class="card hidden">
-      <div class="small" id="band-picker-tip" style="margin-bottom:10px;"></div>
-      <div style="display:flex;gap:8px;" id="band-btns"></div>
+    <button class="linklike" id="car-manual-toggle"></button>
+    <div id="car-manual-box" class="hidden">
+      <div class="field">
+        <label id="car-year-manual-label"></label>
+        <input class="input num" id="car-year-manual" inputmode="numeric" placeholder="2026">
+        <div class="errtext" id="car-year-err"></div>
+      </div>
     </div>
-    <div id="eqspec-panel"></div>
   </section>
-
   <!-- ============ 4. 测量 ============ -->
   <section class="sec" id="sec-measure">
     <div class="topbar"><button class="backbtn" data-back="sec-car" id="bk-measure"></button></div>
@@ -333,6 +364,22 @@ ul.clean li{margin:6px 0;}
     </div>
   </section>
 
+  <!-- ============ 悬赏计划 ============ -->
+  <section class="sec" id="sec-bounty">
+    <div class="topbar"><button class="backbtn" data-back="sec-car" id="bk-bounty"></button></div>
+    <div class="h" id="bounty-title"></div>
+    <div class="small" id="bounty-sub"></div>
+    <div class="card"><div class="small" id="bounty-intro"></div></div>
+    <div class="card">
+      <div class="h" style="font-size:15px;" id="bounty-steps-t"></div>
+      <ul class="clean" id="bounty-steps"></ul>
+    </div>
+    <div class="card" style="border-color:rgba(255,159,28,.45);">
+      <div class="small" id="bounty-reward"></div>
+    </div>
+    <button class="btn btn-primary" id="bounty-signup" style="width:100%;"></button>
+    <div class="small mt8" style="color:var(--sub);" id="bounty-note"></div>
+  </section>
   <!-- ============ 9. 技术原理 ============ -->
   <section class="sec" id="sec-tech">
     <div class="topbar"><button class="backbtn" data-back="sec-home" id="bk-tech"></button></div>
@@ -436,6 +483,887 @@ ul.clean li{margin:6px 0;}
     }
     return { bands: n, labels: labels, centers: centers, rangeDb: 9, stepDb: 1 };
   };
+
+  /* ============================================================
+ * 车型数据库 MODELS_DB（品牌→车系→年款，结构仿懂车帝/汽车之家）
+ * series 字段：name | years[] | eq_bands?（缺失=未知，0=车机不可调） | eq_note?
+ * v0 本地内置；v1+ 由 H5 采集 + 云端聚合补充
+ * ============================================================ */
+var MODELS_DB = {
+ "version": "2026-10-13",
+ "brands": [
+  {
+   "name": "比亚迪",
+   "series": [
+    {
+     "name": "秦PLUS",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    },
+    {
+     "name": "宋PLUS新能源",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    },
+    {
+     "name": "海鸥",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    },
+    {
+     "name": "元PLUS",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "媒体实测5段：80/500/1k/5k/16kHz"
+    },
+    {
+     "name": "汉",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2020款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    },
+    {
+     "name": "唐新能源",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2022款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    },
+    {
+     "name": "海豹",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    },
+    {
+     "name": "宋Pro新能源",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
+    }
+   ]
+  },
+  {
+   "name": "吉利",
+   "series": [
+    {
+     "name": "星越L",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2022款",
+      "2021款"
+     ],
+     "eq_bands": 7,
+     "eq_note": "用户实测7段：重低音/低音/中低音/中音/中高音/高音/超高音，±9dB"
+    },
+    {
+     "name": "星愿",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "博越",
+     "years": [
+      "2025款",
+      "2023款",
+      "2022款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "帝豪",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "银河E5",
+     "years": [
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "银河L7",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    },
+    {
+     "name": "缤越",
+     "years": [
+      "2024款",
+      "2022款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "领克",
+   "series": [
+    {
+     "name": "领克01",
+     "years": [
+      "2025款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "极氪",
+   "series": [
+    {
+     "name": "极氪001",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "极氪007",
+     "years": [
+      "2025款",
+      "2024款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "长安",
+   "series": [
+    {
+     "name": "CS75 PLUS",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "逸动",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "UNI-V",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "UNI-K",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "CS55 PLUS",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "深蓝",
+   "series": [
+    {
+     "name": "深蓝SL03",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "哈弗",
+   "series": [
+    {
+     "name": "哈弗H6",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "哈弗大狗",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "哈弗M6",
+     "years": [
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "坦克",
+   "series": [
+    {
+     "name": "坦克300",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "坦克500",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "奇瑞",
+   "series": [
+    {
+     "name": "瑞虎8",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "瑞虎7",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 8,
+     "eq_note": "车主实测疑似8段（64/250/500/1000/3150/8000Hz等），待确认"
+    },
+    {
+     "name": "艾瑞泽8",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "捷途",
+   "series": [
+    {
+     "name": "捷途X70",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "捷途旅行者",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "五菱",
+   "series": [
+    {
+     "name": "宏光MINIEV",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "缤果",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    },
+    {
+     "name": "星光",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    },
+    {
+     "name": "星辰",
+     "years": [
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "特斯拉",
+   "series": [
+    {
+     "name": "Model Y",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "Model 3",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "小鹏",
+   "series": [
+    {
+     "name": "MONA M03",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "P7",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "G6",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款"
+     ]
+    },
+    {
+     "name": "X9",
+     "years": [
+      "2025款",
+      "2024款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "理想",
+   "series": [
+    {
+     "name": "L6",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "L7",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "L8",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "L9",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "ONE",
+     "years": [
+      "2021款",
+      "2020款"
+     ],
+     "eq_bands": 5,
+     "eq_note": "媒体实测5段：低音/中低音/中音/中高音/高音（无Hz标注），约±6dB"
+    }
+   ]
+  },
+  {
+   "name": "蔚来",
+   "series": [
+    {
+     "name": "ES6",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "ET5",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "EC6",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "ET9",
+     "years": [
+      "2025款"
+     ],
+     "eq_bands": 0,
+     "eq_note": "无用户EQ可调（媒体实测）"
+    }
+   ]
+  },
+  {
+   "name": "问界",
+   "series": [
+    {
+     "name": "M7",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    },
+    {
+     "name": "M9",
+     "years": [
+      "2026款",
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "M5",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "小米",
+   "series": [
+    {
+     "name": "SU7",
+     "years": [
+      "2025款",
+      "2024款"
+     ]
+    },
+    {
+     "name": "YU7",
+     "years": [
+      "2025款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "零跑",
+   "series": [
+    {
+     "name": "C10",
+     "years": [
+      "2025款",
+      "2024款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "大众",
+   "series": [
+    {
+     "name": "朗逸",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+    },
+    {
+     "name": "速腾",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+    },
+    {
+     "name": "迈腾",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "途观L",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "探岳",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "帕萨特",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+    }
+   ]
+  },
+  {
+   "name": "丰田",
+   "series": [
+    {
+     "name": "卡罗拉",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "凯美瑞",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "RAV4荣放",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2020款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "汉兰达",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "威兰达",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2020款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "TNGA同源推断3段：高音/中音/低音，待验证"
+    }
+   ]
+  },
+  {
+   "name": "本田",
+   "series": [
+    {
+     "name": "雅阁",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "CR-V",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "手册实锤3段：高音/中音/低音"
+    },
+    {
+     "name": "思域",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "同源Display Audio推断3段：高音/中音/低音，待验证"
+    },
+    {
+     "name": "皓影",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ],
+     "eq_bands": 3,
+     "eq_note": "同源Display Audio推断3段：高音/中音/低音，待验证"
+    }
+   ]
+  },
+  {
+   "name": "日产",
+   "series": [
+    {
+     "name": "轩逸",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "天籁",
+     "years": [
+      "2024款",
+      "2023款",
+      "2022款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "逍客",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "别克",
+   "series": [
+    {
+     "name": "昂科威",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2020款"
+     ]
+    },
+    {
+     "name": "君越",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2021款"
+     ]
+    },
+    {
+     "name": "GL8",
+     "years": [
+      "2025款",
+      "2024款",
+      "2023款",
+      "2022款"
+     ]
+    }
+   ]
+  }
+ ]
+};
 
   /* ============================================================
    * 车型种子库（v0：本地内置；v1+ 由 H5 采集 + 云端聚合补充）
@@ -1250,6 +2178,26 @@ ul.clean li{margin:6px 0;}
    * 保存一次调音方案（规则引擎输出 + 用户确认的最终 EQ）
    * obj: {measurementId, car, eqSpec, engineResult, finalBands, priceTier}
    */
+  /**
+   * 悬赏计划报名（v1 本地存储；云端报名 v2）
+   * 同一车型去重
+   */
+  DSP.saveBountySignup = function (car) {
+    var store = loadStore();
+    if (!store.bountySignups) store.bountySignups = [];
+    car = car || {};
+    store.bountySignups.push({ ts: Date.now(), brand: car.brand || '', series: car.series || '', year: car.year || '' });
+    var seen = {}, out = [];
+    store.bountySignups.forEach(function (s) {
+      var k = s.brand + '|' + s.series + '|' + s.year;
+      if (!seen[k]) { seen[k] = 1; out.push(s); }
+    });
+    store.bountySignups = out;
+    return persistStore(store);
+  };
+  DSP.getBountySignups = function () {
+    try { return loadStore().bountySignups || []; } catch (_) { return []; }
+  };
   DSP.savePlan = function (obj) {
     var store = loadStore();
     var p = {
@@ -1356,19 +2304,49 @@ window.COPY = {
   car: {
     title: "选择你的车",
     sub: "车型决定车机 EQ 有几段。方案严格按实际段数生成，不承诺做不到的精度。",
-    brandPh: "品牌，如：吉利",
+    brandPh: "品牌",
+    brandSearchPh: "搜索品牌，如：吉利",
     seriesPh: "车系，如：星越L",
+    seriesLabel: "车系",
+    yearLabel2: "年款",
     yearLabel: "年款",
     yearRequired: "年款必填：不同年款的车机可能不一样",
     huLabel: "车机版本（选填）",
     huPh: "如：Flyme Auto 1.2",
     huHint: "只填大版本号（如 1.2），小版本更新不用管",
-    manualEntry: "列表里没有？手动填写",
+    manualEntry: "手动输入",
+    manualToggle: "找不到我的车？手动输入",
+    selectedK: "已选车型",
+    changeBtn: "重新选择",
+    bandsRequired: "请先点上面的数字，选择车机 EQ 段数",
+    unknownBandsTip: "该车系暂无 EQ 实测数据，请手动选择车机 EQ 段数",
+    eqSpecNote: "已匹配该车系的 EQ 规格：共 {n} 段，可信度「{c}」。非官方参数，仅供参考。",
     ctaNext: "下一步",
     eqFoundNote: "已匹配该车型的 EQ 实测数据：共 {n} 段，可调 ±{r}dB。用户实测数据，非官方参数，仅供参考。",
     eqUnknownNote: "暂无该车型的 EQ 实测数据。请手动选择你的车机 EQ 段数，方案将按所选段数生成；也欢迎按指引补传实测，帮车型库更准。",
     et9Title: "该车型暂不支持方案生成",
-    et9Body: "该车型车机未开放 EQ 调节，给不出可执行的调整动作，不建议购买 9 元方案。测量与曲线查看仍免费。"
+    et9Body: "该车型车机未开放 EQ 调节，给不出可执行的调整动作，不建议购买 9 元方案。测量与曲线查看仍免费。",
+    et9CarNote: "该车型车机未开放 EQ 调节，无法给出可执行的调整动作，付费页将不再推荐购买。",
+    centersPending: "待实测",
+    huNormalized: "已忽略小版本更新（如 2.3.1→2.3）",
+    bountyCardTitle: "该车型 EQ 参数悬赏中",
+    bountyCardBody: "完成校准任务（拍照＋逐段+6dB 测量＋标准粉噪），奖一次免费高级调音方案",
+    bountyCardCta: "查看悬赏计划 →"
+  },
+  bounty: {
+    title: "EQ 参数悬赏计划",
+    sub: "帮你的车型把 EQ 参数测准，全车车友受益",
+    intro: "该车型的车机 EQ 关键参数（如中心频率）还是空白。按下面步骤完成一次标准校准，你的数据就是该车型的第一份实测档案。",
+    stepsTitle: "校准任务",
+    steps: [
+      "给车机 EQ 界面拍张照片（记录段数、标签与当前数值）",
+      "逐段 +6dB 播放粉噪，手机测出每段的峰值位置（应用内校准向导会一步步带你做）",
+      "标准粉噪完整测量一次（左、右声道各 8 秒）"
+    ],
+    reward: "完成后奖励一次免费高级调音方案（18 元档），任务通过质检后自动发放到你的账户。",
+    ctaSignup: "报名参加",
+    signed: "已报名 ✓ 完成校准任务后发放奖励",
+    note: "v1 报名记录保存在本机；云端同步与奖励发放 v2 上线。"
   },
   measure: {
     title: "开始测量",
@@ -1643,7 +2621,7 @@ function initChecklist(){
     }
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;">'+
             '<span class="small ck-tip">'+escapeHtml(skipTip)+'</span>'+
-            '<button class="btn btn-ghost ck-skip" style="flex:0 0 auto;padding:8px 16px;font-size:13px;">'+escapeHtml(tt('common.skip'))+'</button></div>';
+            '<button class="btn btn-ghost ck-skip" style="flex:0 0 auto;padding:8px 16px;font-size:14px;">'+escapeHtml(tt('common.skip'))+'</button></div>';
     card.innerHTML = html;
     box.appendChild(card);
     card.querySelector('.ck-skip').onclick = function(){
@@ -1672,82 +2650,301 @@ function escapeHtml(s){
 }
 
 /* =====================================================================
- * 车型选择
+ * 车型选择（三级联选：品牌→车系→年款，数据源 MODELS_DB）
  * ===================================================================== */
+/* 品牌模糊搜索（大小写不敏感，子串匹配） */
+/* 归一化：去空格、小写（"吉利 星越L"/"星越 L"/"吉利星越L" 统一命中同一条） */
+function normCarText(s){
+  return String(s == null ? '' : s).toLowerCase().replace(/\s+/g, '');
+}
+/**
+ * 品牌+车系联合归一化搜索
+ * @returns {{brands:Array, series:Array<{b,se}>}} brands:品牌命中；series:车系直达
+ */
+function carSearch(q){
+  var nq = normCarText(q);
+  var brands = [], series = [], seenB = {}, i, j;
+  var all = MODELS_DB.brands;
+  for (i = 0; i < all.length; i++){
+    var b = all[i], nb = normCarText(b.name);
+    if (!nq || nb.indexOf(nq) !== -1 || nq.indexOf(nb) !== -1){
+      if (!seenB[b.name]){ seenB[b.name] = 1; brands.push(b); }
+    }
+    for (j = 0; j < b.series.length; j++){
+      var se = b.series[j];
+      var ns = normCarText(se.name), nbs = normCarText(b.name + se.name);
+      if (nq && (ns.indexOf(nq) !== -1 || nq.indexOf(ns) !== -1 ||
+                 nbs.indexOf(nq) !== -1 || nq.indexOf(nbs) !== -1)){
+        series.push({ b: b, se: se });
+      }
+    }
+  }
+  return { brands: brands, series: series };
+}
+/* 由 eq_note 文案推导可信度等级 */
+function carConfidenceFromNote(note){
+  note = String(note || '');
+  if (note.indexOf('用户实') !== -1) return '用户实测';
+  if (note.indexOf('媒体实测') !== -1) return 'media实测';
+  if (note.indexOf('手册实锤') !== -1) return 'manual手册';
+  if (note.indexOf('推断') !== -1) return '推断';
+  if (note.indexOf('待确认') !== -1 || note.indexOf('车主实测') !== -1) return 'forum论坛';
+  return '推断';
+}
+/* 已知车系的标签/中心频率/范围覆盖（源自 25 车系调研实锤） */
+var CAR_LABEL_OVERRIDES = {
+  '吉利|星越L':    { labels: ['重低音','低音','中低音','中音','中高音','高音','超高音'], centers: null, rangeDb: 9, stepDb: 1 },
+  '比亚迪|元PLUS': { labels: ['80Hz','500Hz','1kHz','5kHz','16kHz'], centers: [80,500,1000,5000,16000], rangeDb: 9, stepDb: 1 },
+  '理想|ONE':      { labels: ['低音','中低音','中音','中高音','高音'], centers: null, rangeDb: 6, stepDb: 1 }
+};
+/**
+ * 由 models.json 车系条目推导 EQ 规格
+ * @returns {object|null} 规格对象；null = 无数据，走手动选段数流程
+ */
+function carSpecFromSeries(brand, se){
+  var bands = se.eq_bands;
+  if (bands === undefined || bands === null) return null;
+  if (bands === 0){
+    return { bands: 0, labels: [], centers: [], rangeDb: 0, stepDb: 1,
+             confidence: carConfidenceFromNote(se.eq_note), note: se.eq_note || '',
+             centersVerified: false };
+  }
+  var ov = CAR_LABEL_OVERRIDES[brand + '|' + se.name];
+  var labels, centers = null, rangeDb = 9, stepDb = 1;
+  if (ov){ labels = ov.labels; centers = ov.centers; rangeDb = ov.rangeDb; stepDb = ov.stepDb; }
+  else if (bands === 3){ labels = ['低音','中音','高音']; rangeDb = 6; }
+  else if (bands === 5 && brand === '比亚迪'){ labels = ['80Hz','500Hz','1kHz','5kHz','16kHz']; centers = [80,500,1000,5000,16000]; }
+  else if (bands === 5){ labels = ['低音','中低音','中音','中高音','高音']; }
+  else if (bands === 7){ labels = ['重低音','低音','中低音','中音','中高音','高音','超高音']; }
+  else if (bands === 8){ labels = ['B1','B2','B3','B4','B5','B6','B7','B8']; centers = [64,250,500,1000,3150,8000]; }
+  else { labels = []; for (var i = 0; i < bands; i++) labels.push('B' + (i + 1)); }
+  var conf = carConfidenceFromNote(se.eq_note);
+  return { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
+           confidence: conf, note: se.eq_note || '',
+           centersVerified: !!(centers && (conf === '用户实测' || conf === 'media实测')) };
+}
 function initCar(){
   setText('car-title','car.title');
   setText('car-sub','car.sub');
   setText('car-brand-label','car.brandPh');
-  setText('car-year-label','car.yearLabel');
+  setText('car-series-label','car.seriesLabel');
+  setText('car-year-label2','car.yearLabel2');
+  setText('car-year-manual-label','car.yearLabel');
   setText('car-hu-label','car.huLabel');
-  setText('car-manual','car.manualEntry');
+  setText('car-manual-toggle','car.manualToggle');
+  setText('car-selected-k','car.selectedK');
+  setText('car-change','car.changeBtn');
   setText('bk-car','common.back');
-  var si = document.getElementById('car-search');
-  si.placeholder = tt('car.seriesPh');
+  var bsi = document.getElementById('car-brand-search');
+  bsi.placeholder = tt('car.brandSearchPh');
   document.getElementById('car-hu').placeholder = tt('car.huPh');
   setText('car-hu-hint','car.huHint');
-  setText('car-year-err','car.yearRequired');
-  setText('band-picker-tip','car.eqUnknownNote');
-
-  var results = document.getElementById('model-results');
-  var timer = 0;
-  si.addEventListener('input', function(){
-    clearTimeout(timer);
-    timer = setTimeout(function(){
-      var q = si.value.trim();
-      results.innerHTML = '';
-      if(!q){ results.classList.remove('show'); return; }
-      var list = [];
-      try{ list = DSP.findModels(q) || []; }catch(e){ list = []; }
-      if(!list.length){ results.classList.remove('show'); return; }
-      list.slice(0,8).forEach(function(m){
-        var li = document.createElement('li');
-        li.textContent = [m.brand, m.series, m.year].filter(Boolean).join(' ');
-        li.onclick = function(){ selectModel(m); results.classList.remove('show'); si.value = li.textContent; };
-        results.appendChild(li);
-      });
-      results.classList.add('show');
-    }, 250);
+  var huInput = document.getElementById('car-hu');
+  huInput.addEventListener('change', function(){
+    var v = huInput.value.trim();
+    var m = v.match(/^(\d+)\.(\d+)(?:\.\d+.*)?$/);
+    if(m){
+      var nv = m[1] + '.' + m[2];
+      if(nv !== v){
+        huInput.value = nv;
+        var hint = document.getElementById('car-hu-hint');
+        hint.textContent = tt('car.huNormalized');
+        hint.style.color = 'var(--amber)';
+        setTimeout(function(){ setText('car-hu-hint','car.huHint'); hint.style.color = ''; }, 3000);
+        track('car_hu_normalized', {from:v, to:nv});
+      }
+    }
   });
-  document.getElementById('car-manual').onclick = function(){
-    document.getElementById('band-picker').classList.remove('hidden');
+  setText('car-year-err','car.yearRequired');
+
+  var brandSel = null, seriesSel = null, yearSel = null, manualMode = false;
+  var brandResults = document.getElementById('brand-results');
+  var lv2 = document.getElementById('car-lv2-wrap');
+  var seriesResults = document.getElementById('series-results');
+  var lv3 = document.getElementById('car-lv3-wrap');
+  var yearResults = document.getElementById('year-results');
+  var selCard = document.getElementById('car-selected');
+  var bandPicker = document.getElementById('band-picker');
+  var bandTip = document.getElementById('band-picker-tip');
+
+  function huVal(){ return document.getElementById('car-hu').value.trim(); }
+
+  function resetCascade(){
+    brandSel = seriesSel = yearSel = null;
+    S().car = null; S().eqSpec = null;
+    bsi.value = '';
+    brandResults.classList.remove('show');
+    lv2.classList.add('hidden'); lv3.classList.add('hidden');
+    selCard.classList.add('hidden');
+    bandPicker.classList.add('hidden');
+    renderEqSpec();
+  }
+
+  function renderBrandList(q){
+    var r = carSearch(q), n = 0;
+    brandResults.innerHTML = '';
+    r.series.slice(0, 4).forEach(function(it){
+      if (n >= 8) return;
+      var li = document.createElement('li');
+      li.innerHTML = '<span>' + escapeHtml(it.se.name) + '</span><span class="badge cyan">' + escapeHtml(it.b.name) + '</span>';
+      li.onclick = (function(b, se){ return function(){ pickBrand(b); pickSeries(se); }; })(it.b, it.se);
+      brandResults.appendChild(li); n++;
+    });
+    r.brands.slice(0, Math.max(0, 8 - n)).forEach(function(b){
+      var li = document.createElement('li');
+      li.innerHTML = '<span>' + escapeHtml(b.name) + '</span><span class="small">' + b.series.length + '车系</span>';
+      li.onclick = function(){ pickBrand(b); };
+      brandResults.appendChild(li); n++;
+    });
+    if (!n){ brandResults.classList.remove('show'); return; }
+    brandResults.classList.add('show');
+  }
+  var timer = 0;
+  bsi.addEventListener('input', function(){
+    clearTimeout(timer);
+    timer = setTimeout(function(){ renderBrandList(bsi.value.trim()); }, 200);
+  });
+  bsi.addEventListener('focus', function(){
+    if (!bsi.value.trim()) renderBrandList('');
+  });
+
+  function pickBrand(b){
+    brandSel = b; seriesSel = yearSel = null;
+    S().car = null; S().eqSpec = null;
+    manualMode = false;
+    document.getElementById('car-manual-box').classList.add('hidden');
+    bsi.value = b.name;
+    brandResults.classList.remove('show');
+    seriesResults.innerHTML = '';
+    b.series.forEach(function(se){
+      var li = document.createElement('li');
+      var badge;
+      if (se.eq_bands === 0) badge = '<span class="badge red">不可调</span>';
+      else if (se.eq_bands) badge = '<span class="badge cyan">' + se.eq_bands + '段</span>';
+      else badge = '<span class="badge amber">EQ未知</span>';
+      li.innerHTML = '<span>' + escapeHtml(se.name) + '</span>' + badge;
+      li.onclick = function(){ pickSeries(se); };
+      seriesResults.appendChild(li);
+    });
+    lv2.classList.remove('hidden');
+    lv3.classList.add('hidden');
+    selCard.classList.add('hidden');
+    bandPicker.classList.add('hidden');
+    renderEqSpec();
+    track('car_brand_pick', {brand: b.name});
+  }
+
+  function pickSeries(se){
+    seriesSel = se; yearSel = null;
+    S().car = null; S().eqSpec = null;
+    var items = seriesResults.children, i;
+    for (i = 0; i < items.length; i++){
+      items[i].classList.toggle('sel', items[i].querySelector('span').textContent === se.name);
+    }
+    yearResults.innerHTML = '';
+    se.years.forEach(function(y){
+      var li = document.createElement('li');
+      li.innerHTML = '<span>' + escapeHtml(y) + '</span>';
+      li.onclick = function(){ pickYear(y); };
+      yearResults.appendChild(li);
+    });
+    lv3.classList.remove('hidden');
+    selCard.classList.add('hidden');
+    bandPicker.classList.add('hidden');
+    renderEqSpec();
+    track('car_series_pick', {brand: brandSel.name, series: se.name});
+  }
+
+  function pickYear(y){
+    yearSel = y;
+    var items = yearResults.children, i;
+    for (i = 0; i < items.length; i++){
+      items[i].classList.toggle('sel', items[i].querySelector('span').textContent === y);
+    }
+    document.getElementById('car-selected-text').textContent =
+      brandSel.name + ' \u00b7 ' + seriesSel.name + ' \u00b7 ' + y;
+    selCard.classList.remove('hidden');
+    S().car = { brand: brandSel.name, series: seriesSel.name, year: y };
+    var spec = carSpecFromSeries(brandSel.name, seriesSel);
+    if (spec){
+      S().eqSpec = spec;
+      bandPicker.classList.add('hidden');
+      renderEqSpec();
+      track('car_cascade_pick', {car: brandSel.name + ' ' + seriesSel.name, year: y, bands: spec.bands});
+    } else {
+      S().eqSpec = null;
+      renderEqSpec();
+      showBandPicker('unknown');
+      track('car_cascade_unknown', {car: brandSel.name + ' ' + seriesSel.name, year: y});
+    }
+  }
+
+  document.getElementById('car-change').onclick = function(){
+    resetCascade();
+    track('car_change');
+  };
+
+  /* 段数选择器：手动模式 + 未知车系共用 */
+  function showBandPicker(mode){
+    bandTip.textContent = tt(mode === 'unknown' ? 'car.unknownBandsTip' : 'car.eqUnknownNote');
     var bb = document.getElementById('band-btns'); bb.innerHTML = '';
     [3,5,7,8].forEach(function(n){
       var b = document.createElement('button');
-      b.className = 'btn btn-ghost num'; b.style.flex='1'; b.textContent = n;
+      b.className = 'btn btn-ghost num'; b.style.flex = '1'; b.textContent = n;
       b.onclick = function(){
-        S().car = { brand:'', series: tt('car.manualEntry'), year: document.getElementById('car-year').value.trim(), manual:true };
+        if (manualMode){
+          var y = document.getElementById('car-year-manual').value.trim();
+          S().car = { brand: '', series: tt('car.manualEntry'), year: y, manual: true };
+        }
         S().eqSpec = resolvePreset(n);
         renderEqSpec();
-        track('car_manual_bands', {bands:n});
+        var items = bb.children, i;
+        for (i = 0; i < items.length; i++) items[i].classList.toggle('picked', items[i].textContent == String(n));
+        track(manualMode ? 'car_manual_bands' : 'car_cascade_manual_bands', {bands: n});
       };
       bb.appendChild(b);
     });
-    track('car_manual_open');
+    bandPicker.classList.remove('hidden');
+  }
+
+  document.getElementById('car-manual-toggle').onclick = function(){
+    manualMode = !manualMode;
+    document.getElementById('car-manual-box').classList.toggle('hidden', !manualMode);
+    if (manualMode){
+      resetCascade();
+      showBandPicker('manual');
+      track('car_manual_open');
+    } else {
+      bandPicker.classList.add('hidden');
+      S().car = null; S().eqSpec = null;
+      renderEqSpec();
+    }
   };
-  CTA.car = [{ text: tt('car.ctaNext')||tt('common.next'), onClick: function(){
-    var y = document.getElementById('car-year').value.trim();
-    var ye = document.getElementById('car-year-err');
-    if(!y){ ye.classList.add('show'); document.getElementById('car-year').classList.add('err'); return; }
-    ye.classList.remove('show'); document.getElementById('car-year').classList.remove('err');
-    if(!S().eqSpec){ S().eqSpec = resolvePreset(3); } // 兜底：未知车型默认 3 段经验预设
-    if(S().car) S().car.year = y;
-    track('car_selected', {car: S().car && (S().car.brand+' '+S().car.series), year:y, bands:S().eqSpec.bands});
+
+  CTA.car = [{ text: tt('car.ctaNext') || tt('common.next'), onClick: function(){
+    if (manualMode){
+      var y = document.getElementById('car-year-manual').value.trim();
+      var ye = document.getElementById('car-year-err');
+      var yi = document.getElementById('car-year-manual');
+      if (!y){ ye.classList.add('show'); yi.classList.add('err'); return; }
+      ye.classList.remove('show'); yi.classList.remove('err');
+      if (S().car) S().car.year = y;
+    } else if (!(brandSel && seriesSel && yearSel)){
+      renderBrandList(bsi.value.trim());
+      bsi.focus();
+      return;
+    }
+    if (!S().eqSpec){
+      showBandPicker(seriesSel ? 'unknown' : 'manual');
+      bandTip.textContent = tt('car.bandsRequired');
+      bandPicker.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+    if (S().car) S().car.huVersion = huVal();
+    track('car_selected', {car: S().car && (S().car.brand + ' ' + S().car.series),
+      year: S().car && S().car.year, bands: S().eqSpec.bands, manual: manualMode});
     show('measure');
   }}];
-}
-function selectModel(m){
-  S().car = m;
-  var spec = m.eqSpec || null;
-  if(!spec){
-    // 优先用 DSP 预设解析，其次用内置置信度映射
-    var bands = m.bands || 3;
-    spec = resolvePreset(bands);
-    spec.confidence = spec.confidence || '推断';
-  }
-  S().eqSpec = spec;
-  renderEqSpec();
-  track('car_model_pick', {model:[m.brand,m.series,m.year].filter(Boolean).join(' ')});
 }
 /* 由段数取 DSP 预设（置信度=经验预设），多层降级保证不崩 */
 function resolvePreset(bands){
@@ -1767,21 +2964,87 @@ function resolvePreset(bands){
              centers:null, rangeDb:9, stepDb:1, confidence:'经验预设', note:'' };
   }
   spec.confidence = spec.confidence || '经验预设';
+  spec.centersVerified = false; // 手动/预设的中心频率均为经验值，展示时标"待实测"
   return spec;
 }
 function renderEqSpec(){
   var spec = S().eqSpec, box = document.getElementById('eqspec-panel');
   if(!spec){ box.innerHTML=''; return; }
+  if(spec.bands === 0){
+    box.innerHTML =
+      '<div class="card" style="border-color:rgba(255,77,77,.5);">'+
+      '<div class="h" style="font-size:15px;color:var(--red);">'+escapeHtml(tt('car.et9Title'))+'</div>'+
+      '<div class="small mt8">'+escapeHtml(tt('car.et9CarNote'))+'</div>'+
+      (spec.note?'<div class="small mt8" style="color:var(--sub);">'+escapeHtml(spec.note)+'</div>':'')+'</div>';
+    return;
+  }
   var labels = (spec.labels||[]).join(' / ');
-  var centers = spec.centers ? spec.centers.map(function(c){return c+'Hz';}).join(' / ') : '—';
+  var centers = spec.centersVerified ? spec.centers.map(function(c){return c+'Hz';}).join(' / ') : escapeHtml(tt('car.centersPending'));
+  var measured = (spec.confidence==='用户实测'||spec.confidence==='media实测');
+  var noteTxt = measured ? tt('car.eqFoundNote') : tt('car.eqSpecNote');
+  noteTxt = noteTxt.split('{n}').join(spec.bands).split('{r}').join(spec.rangeDb).split('{c}').join(spec.confidence||'');
+  var badgeCls = measured ? 'green'
+    : ((spec.confidence==='经验预设'||spec.confidence==='推断') ? 'amber' : 'cyan');
   box.innerHTML =
-    '<div class="card"><div class="small" style="margin-bottom:8px;">'+escapeHtml(tt('car.eqFoundNote'))+'</div>'+
+    '<div class="card"><div class="small" style="margin-bottom:8px;">'+escapeHtml(noteTxt)+'</div>'+
     '<div class="kv"><span class="k">EQ 段数</span><span class="num"><b>'+spec.bands+'</b></span></div>'+
     '<div class="kv"><span class="k">标签</span><span>'+escapeHtml(labels)+'</span></div>'+
     '<div class="kv"><span class="k">中心频率</span><span class="num">'+escapeHtml(centers)+'</span></div>'+
     '<div class="kv"><span class="k">范围 / 步进</span><span class="num">±'+spec.rangeDb+'dB / '+spec.stepDb+'dB</span></div>'+
-    '<div style="margin-top:10px;"><span class="badge '+(spec.confidence==='用户实测'?'green':(spec.confidence==='经验预设'||spec.confidence==='推断'?'amber':'cyan'))+'">'+escapeHtml(spec.confidence)+'</span></div>'+
+    '<div style="margin-top:10px;"><span class="badge '+badgeCls+'">'+escapeHtml(spec.confidence||'')+'</span></div>'+
     (spec.note?'<div class="small mt8">'+escapeHtml(spec.note)+'</div>':'')+'</div>';
+  if(!spec.centersVerified){
+    box.innerHTML +=
+      '<div class="card" id="bounty-card" style="border-color:rgba(255,159,28,.45);cursor:pointer;">'+
+      '<div class="h" style="font-size:15px;">🎯 '+escapeHtml(tt('car.bountyCardTitle'))+'</div>'+
+      '<div class="small mt8">'+escapeHtml(tt('car.bountyCardBody'))+'</div>'+
+      '<div class="small mt8" style="color:var(--amber);">'+escapeHtml(tt('car.bountyCardCta'))+'</div></div>';
+    var bc = document.getElementById('bounty-card');
+    if(bc) bc.onclick = function(){ show('bounty'); };
+  }
+}
+/* =====================================================================
+ * 悬赏计划页（v1 静态说明 + 本地报名；云端报名 v2）
+ * ===================================================================== */
+function initBounty(){
+  setText('bounty-title','bounty.title');
+  setText('bounty-sub','bounty.sub');
+  setText('bounty-intro','bounty.intro');
+  setText('bounty-steps-t','bounty.stepsTitle');
+  setText('bounty-reward','bounty.reward');
+  setText('bounty-note','bounty.note');
+  setText('bk-bounty','common.back');
+  var ul = document.getElementById('bounty-steps'); ul.innerHTML = '';
+  (t('bounty.steps') || []).forEach(function(s, i){
+    var li = document.createElement('li');
+    li.textContent = (i + 1) + '. ' + s;
+    ul.appendChild(li);
+  });
+  document.getElementById('bounty-signup').onclick = function(){
+    try{ DSP.saveBountySignup(S().car || {}); }catch(_){}
+    refreshBountyBtn();
+    var car = S().car || {};
+    track('bounty_signup', {car: (car.brand || '') + ' ' + (car.series || '')});
+  };
+  CTA.bounty = [];
+  ON_SHOW.bounty = function(){ refreshBountyBtn(); };
+}
+function refreshBountyBtn(){
+  var btn = document.getElementById('bounty-signup');
+  if(!btn) return;
+  var car = S().car || {}, signed = false;
+  try{
+    (DSP.getBountySignups() || []).forEach(function(s){
+      if(s.brand === car.brand && s.series === car.series && s.year === car.year) signed = true;
+    });
+  }catch(_){}
+  if(signed){
+    btn.textContent = tt('bounty.signed');
+    btn.className = 'btn btn-ghost'; btn.style.width = '100%'; btn.disabled = true;
+  }else{
+    btn.textContent = tt('bounty.ctaSignup');
+    btn.className = 'btn btn-primary'; btn.style.width = '100%'; btn.disabled = false;
+  }
 }
 /* =====================================================================
  * 测量页（核心）
@@ -2242,7 +3505,10 @@ function renderPlan(){
   }
   setText('plan-title','plan.title');
   setText('plan-sub','plan.sub');
-  setText('plan-perband','plan.perBandNote');
+  (function(){
+    var el = document.getElementById('plan-perband');
+    if(el && spec) el.textContent = tt('plan.perBandNote').split('{n}').join(spec.bands);
+  })();
   setText('plan-burnt','plan.burnTitle');
   setText('plan-burnb','plan.burnBody');
   setText('plan-restoret','plan.restoreTitle');
@@ -2264,7 +3530,7 @@ function renderPlan(){
     var isComb = !!bd.comb || combIdx.indexOf(i)>=0;
     card.className = 'gaincard' + (isComb?' comb':'') + ((bd.gainDb||0)>0.5?' boost':'');
     // 中心频率未知时显示"经验预设"
-    var centerTxt = (bd.centerHz!=null) ? (bd.centerHz+' Hz') : '经验预设';
+    var centerTxt = (spec.centersVerified && bd.centerHz!=null) ? (bd.centerHz+' Hz') : tt('car.centersPending');
     var gv = (bd.gainDb>0?'+':'') + (bd.gainDb||0) + 'dB';
     var unfix = '';
     if(bd.unfixable){
@@ -2357,6 +3623,7 @@ function init(){
   initHome();
   initChecklist();
   initCar();
+  initBounty();
   initMeasure();
   initConsent();
   initPay();
