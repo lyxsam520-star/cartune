@@ -257,6 +257,7 @@ ul.clean li{margin:6px 0;}
         <div class="errtext" id="car-year-err"></div>
       </div>
     </div>
+    <div class="errtext" id="car-cta-err" style="margin-bottom:8px;"></div>
   </section>
   <!-- ============ 4. 测量 ============ -->
   <section class="sec" id="sec-measure">
@@ -2319,6 +2320,11 @@ window.COPY = {
     selectedK: "已选车型",
     changeBtn: "重新选择",
     bandsRequired: "请先点上面的数字，选择车机 EQ 段数",
+    errBrand: "请先选择品牌：在上方搜索框输入品牌或车系名",
+    errSeries: "请选择车系",
+    errYear: "请选择年款（必填）",
+    errBands: "请先选择车机 EQ 段数",
+    noResult: "没有找到“{q}”",
     unknownBandsTip: "该车系暂无 EQ 实测数据，请手动选择车机 EQ 段数",
     eqSpecNote: "已匹配该车系的 EQ 规格：共 {n} 段，可信度「{c}」。非官方参数，仅供参考。",
     ctaNext: "下一步",
@@ -2780,6 +2786,57 @@ function initCar(){
     renderEqSpec();
   }
 
+  /* iOS 加固点击：Safari 在键盘收起导致布局跳动时会吞掉 click，
+     touchend 兜底 + 600ms 去重 + 滑动守卫（<12px 才算点按） */
+  function bindTap(li, fn){
+    var fired = 0;
+    function go(e){
+      var now = Date.now();
+      if (now - fired < 600) return;
+      fired = now;
+      fn(e);
+    }
+    li.addEventListener('click', go);
+    var sx = 0, sy = 0;
+    li.addEventListener('touchstart', function(e){
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    }, {passive: true});
+    li.addEventListener('touchend', function(e){
+      var t = e.changedTouches[0];
+      if (Math.abs(t.clientX - sx) < 12 && Math.abs(t.clientY - sy) < 12){
+        if (e.cancelable) e.preventDefault();
+        go(e);
+      }
+    });
+  }
+
+  /* 防御性纠正：品牌框内容若实际是车系名（精确命中），自动反查品牌+车系。
+     覆盖场景：iOS tap 丢失、用户手动输入车系名等导致 brandSel 为空但框内有值。 */
+  function healBrandField(){
+    if (brandSel) return true;
+    var v = normCarText(bsi.value);
+    if (!v) return false;
+    var all = MODELS_DB.brands, i, j;
+    for (i = 0; i < all.length; i++){
+      var b = all[i];
+      if (normCarText(b.name) === v){ pickBrand(b); return true; }
+      for (j = 0; j < b.series.length; j++){
+        var se = b.series[j];
+        if (normCarText(se.name) === v || normCarText(b.name + se.name) === v){
+          pickBrand(b); pickSeries(se); return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function carCtaErr(msg){
+    var e = document.getElementById('car-cta-err');
+    if (!e) return;
+    if (msg){ e.textContent = msg; e.classList.add('show'); }
+    else { e.textContent = ''; e.classList.remove('show'); }
+  }
+
   function renderBrandList(q){
     var r = carSearch(q), n = 0;
     brandResults.innerHTML = '';
@@ -2787,16 +2844,33 @@ function initCar(){
       if (n >= 8) return;
       var li = document.createElement('li');
       li.innerHTML = '<span>' + escapeHtml(it.se.name) + '</span><span class="badge cyan">' + escapeHtml(it.b.name) + '</span>';
-      li.onclick = (function(b, se){ return function(){ pickBrand(b); pickSeries(se); }; })(it.b, it.se);
+      bindTap(li, (function(b, se){ return function(){ pickBrand(b); pickSeries(se); }; })(it.b, it.se));
       brandResults.appendChild(li); n++;
     });
     r.brands.slice(0, Math.max(0, 8 - n)).forEach(function(b){
       var li = document.createElement('li');
       li.innerHTML = '<span>' + escapeHtml(b.name) + '</span><span class="small">' + b.series.length + '车系</span>';
-      li.onclick = function(){ pickBrand(b); };
+      bindTap(li, function(){ pickBrand(b); });
       brandResults.appendChild(li); n++;
     });
-    if (!n){ brandResults.classList.remove('show'); return; }
+    if (!n){
+      /* 无结果：给明确反馈 + 一键进手动输入（下方常驻按钮之外再给一条近路） */
+      if (q) renderNoResultRow(q);
+      else brandResults.classList.remove('show');
+      return;
+    }
+    brandResults.classList.add('show');
+  }
+  /* 无结果提示行：点按直接打开手动输入 */
+  function renderNoResultRow(q){
+    brandResults.innerHTML = '';
+    var li = document.createElement('li');
+    li.innerHTML = '<span class="small">' + escapeHtml((tt('car.noResult') || '没有找到"{q}"').replace('{q}', q)) + '</span><span class="badge amber">' + escapeHtml(tt('car.manualToggle')) + '</span>';
+    bindTap(li, function(){
+      document.getElementById('car-manual-toggle').click();
+      track('car_no_result_manual', {q: q});
+    });
+    brandResults.appendChild(li);
     brandResults.classList.add('show');
   }
   var timer = 0;
@@ -2812,6 +2886,7 @@ function initCar(){
     brandSel = b; seriesSel = yearSel = null;
     S().car = null; S().eqSpec = null;
     manualMode = false;
+    carCtaErr('');
     document.getElementById('car-manual-box').classList.add('hidden');
     bsi.value = b.name;
     brandResults.classList.remove('show');
@@ -2823,7 +2898,7 @@ function initCar(){
       else if (se.eq_bands) badge = '<span class="badge cyan">' + se.eq_bands + '段</span>';
       else badge = '<span class="badge amber">EQ未知</span>';
       li.innerHTML = '<span>' + escapeHtml(se.name) + '</span>' + badge;
-      li.onclick = function(){ pickSeries(se); };
+      bindTap(li, function(){ pickSeries(se); });
       seriesResults.appendChild(li);
     });
     lv2.classList.remove('hidden');
@@ -2845,7 +2920,7 @@ function initCar(){
     se.years.forEach(function(y){
       var li = document.createElement('li');
       li.innerHTML = '<span>' + escapeHtml(y) + '</span>';
-      li.onclick = function(){ pickYear(y); };
+      bindTap(li, function(){ pickYear(y); });
       yearResults.appendChild(li);
     });
     lv3.classList.remove('hidden');
@@ -2922,6 +2997,7 @@ function initCar(){
   };
 
   CTA.car = [{ text: tt('car.ctaNext') || tt('common.next'), onClick: function(){
+    carCtaErr('');
     if (manualMode){
       var y = document.getElementById('car-year-manual').value.trim();
       var ye = document.getElementById('car-year-err');
@@ -2929,15 +3005,35 @@ function initCar(){
       if (!y){ ye.classList.add('show'); yi.classList.add('err'); return; }
       ye.classList.remove('show'); yi.classList.remove('err');
       if (S().car) S().car.year = y;
-    } else if (!(brandSel && seriesSel && yearSel)){
-      renderBrandList(bsi.value.trim());
-      bsi.focus();
-      return;
+    } else {
+      /* 先尝试防御性自愈：品牌框内容可能是车系名（iOS tap 丢失等） */
+      if (!(brandSel && seriesSel && yearSel)) healBrandField();
+      if (!brandSel){
+        carCtaErr(tt('car.errBrand') || '请先选择品牌：在上方搜索框输入品牌或车系名');
+        renderBrandList(bsi.value.trim());
+        bsi.focus();
+        track('car_next_blocked', {at: 'brand'});
+        return;
+      }
+      if (!seriesSel){
+        carCtaErr(tt('car.errSeries') || '请选择车系');
+        document.getElementById('car-lv2-wrap').scrollIntoView({behavior:'smooth', block:'center'});
+        track('car_next_blocked', {at: 'series'});
+        return;
+      }
+      if (!yearSel){
+        carCtaErr(tt('car.errYear') || '请选择年款（必填）');
+        document.getElementById('car-lv3-wrap').scrollIntoView({behavior:'smooth', block:'center'});
+        track('car_next_blocked', {at: 'year'});
+        return;
+      }
     }
     if (!S().eqSpec){
       showBandPicker(seriesSel ? 'unknown' : 'manual');
       bandTip.textContent = tt('car.bandsRequired');
+      carCtaErr(tt('car.errBands') || '请先选择车机 EQ 段数');
       bandPicker.scrollIntoView({behavior:'smooth', block:'center'});
+      track('car_next_blocked', {at: 'bands'});
       return;
     }
     if (S().car) S().car.huVersion = huVal();
