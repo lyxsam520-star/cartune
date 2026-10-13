@@ -232,6 +232,15 @@ ul.clean li{margin:6px 0;}
     <div class="small" id="car-sub"></div>
     <!-- 车型：单一搜索框 → 车系列表 → 年款列表（三步走） -->
     <div class="field" id="car-search-wrap">
+    <div id="car-lastcard" class="card hidden" style="margin-bottom:12px;">
+      <div class="small" id="car-lastcard-k"></div>
+      <div class="h" style="font-size:17px;margin:6px 0 10px;" id="car-lastcard-text"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="btn" id="car-lastcard-use" style="flex:1;"></button>
+        <button class="linklike" id="car-lastcard-change"></button>
+      </div>
+      <div class="hint" id="car-lastcard-privacy" style="margin-top:8px;"></div>
+    </div>
       <label id="car-search-label"></label>
       <div style="position:relative;">
         <input class="input" id="car-q" autocomplete="off" style="padding-right:40px;">
@@ -2413,7 +2422,17 @@ window.COPY = {
     huNormalized: "已忽略小版本更新（如 2.3.1→2.3）",
     bountyCardTitle: "该车型 EQ 参数悬赏中",
     bountyCardBody: "完成校准任务（拍照＋逐段+6dB 测量＋标准粉噪），奖一次免费高级调音方案",
-    bountyCardCta: "查看悬赏计划 →"
+    bountyCardCta: "查看悬赏计划 →",
+    lastCarK: "上次使用",
+    lastCarKEn: "Last used",
+    lastCarUse: "直接使用",
+    lastCarUseEn: "Use this car",
+    lastCarChange: "换车型",
+    lastCarChangeEn: "Change car",
+    lastCarPrivacy: "仅保存在本机，不会上传",
+    lastCarPrivacyEn: "Stored on this device only, never uploaded",
+    lastCarExpired: "存档的车型已失效，请重新选择",
+    lastCarExpiredEn: "Saved car is no longer valid, please pick again",
   },
   bounty: {
     title: "EQ 参数悬赏计划",
@@ -3081,7 +3100,91 @@ function initCar(){
     qResults.classList.remove('show');
     renderEqSpec();
     track('car_back_to_search');
+    renderLastCard();
   }
+  /* ============ 上次使用车型（localStorage 本地记忆，不上传） ============ */
+  var LAST_CAR_KEY = 'cartune_last_car';
+  function readLastCar(){
+    try{
+      var raw = localStorage.getItem(LAST_CAR_KEY);
+      if(!raw) return null;
+      var o = JSON.parse(raw);
+      if(o && o.year && (o.series || o.manual)) return o;
+    }catch(_){}
+    return null;
+  }
+  function saveLastCar(){
+    var car = S().car;
+    if(!car || !car.year) return;
+    try{
+      localStorage.setItem(LAST_CAR_KEY, JSON.stringify({
+        brand: car.brand || '', series: car.series || '', year: car.year,
+        manual: !!car.manual,
+        bands: (S().eqSpec && S().eqSpec.bands) || null,
+        ts: Date.now()
+      }));
+      track('car_saved', {manual: !!car.manual});
+    }catch(_){}
+  }
+  function renderLastCard(){
+    var card = document.getElementById('car-lastcard');
+    if(!card) return;
+    var c = readLastCar();
+    if(!c){ card.classList.add('hidden'); return; }
+    document.getElementById('car-lastcard-k').textContent = tt('car.lastCarK');
+    document.getElementById('car-lastcard-text').textContent =
+      (c.brand ? c.brand + ' \u00b7 ' : '') + c.series + ' \u00b7 ' + c.year;
+    document.getElementById('car-lastcard-use').textContent = tt('car.lastCarUse');
+    document.getElementById('car-lastcard-change').textContent = tt('car.lastCarChange');
+    document.getElementById('car-lastcard-privacy').textContent = tt('car.lastCarPrivacy');
+    card.classList.remove('hidden');
+  }
+  function useLastCar(){
+    var c = readLastCar();
+    if(!c){ renderLastCard(); return; }
+    carCtaErr('');
+    if(c.manual){
+      /* 手动存档：直接恢复，不查库 */
+      manualMode = true;
+      document.getElementById('car-manual-box').classList.remove('hidden');
+      document.getElementById('car-year-manual').value = c.year || '';
+      S().car = { brand: c.brand, series: c.series, year: c.year, manual: true };
+      if(c.bands){ S().eqSpec = resolvePreset(c.bands); }
+      document.getElementById('car-selected-text').textContent =
+        (c.brand ? c.brand + ' \u00b7 ' : '') + c.series + ' \u00b7 ' + c.year;
+      searchWrap.classList.add('hidden');
+      listWrap.classList.add('hidden');
+      document.getElementById('car-lastcard').classList.add('hidden');
+      selCard.classList.remove('hidden');
+      renderEqSpec();
+      track('car_lastcar_use', {manual: true});
+      return;
+    }
+    /* 级联存档：反查 MODELS_DB，库变了就失效 */
+    var b = null, se = null, i, j, all = MODELS_DB.brands;
+    for(i = 0; i < all.length; i++){
+      if(all[i].name === c.brand){
+        b = all[i];
+        for(j = 0; j < b.series.length; j++){
+          if(b.series[j].name === c.series){ se = b.series[j]; break; }
+        }
+        break;
+      }
+    }
+    if(!b || !se || se.years.indexOf(c.year) === -1){
+      carCtaErr(tt('car.lastCarExpired'));
+      try{ localStorage.removeItem(LAST_CAR_KEY); }catch(_){}
+      renderLastCard();
+      track('car_lastcar_expired', {});
+      return;
+    }
+    brandSel = b; seriesSel = se;
+    searchWrap.classList.add('hidden');
+    document.getElementById('car-lastcard').classList.add('hidden');
+    pickYear(c.year); /* 复用：设 yearSel、S().car、eqSpec、渲染规格页 */
+    track('car_lastcar_use', {car: c.brand + ' ' + c.series});
+  }
+
 
   /* 选品牌 → 只显示车系列表；se 非空时直达年款 */
   function goSeries(b, se){
@@ -3264,8 +3367,21 @@ function initCar(){
     if (S().car) S().car.huVersion = huVal();
     track('car_selected', {car: S().car && (S().car.brand + ' ' + S().car.series),
       year: S().car && S().car.year, bands: S().eqSpec.bands, manual: manualMode});
+    saveLastCar();
     show('measure');
   }}];
+  /* 上次使用卡：按钮接线 */
+  (function(){
+    var useBtn = document.getElementById('car-lastcard-use');
+    var chgBtn = document.getElementById('car-lastcard-change');
+    if(useBtn) bindTap(useBtn, useLastCar);
+    if(chgBtn) bindTap(chgBtn, function(){
+      document.getElementById('car-lastcard').classList.add('hidden');
+      track('car_lastcar_change', {});
+    });
+  })();
+  renderLastCard();
+
 }
 /* 由段数取 DSP 预设（置信度=经验预设），多层降级保证不崩 */
 function resolvePreset(bands){
