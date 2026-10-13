@@ -3537,7 +3537,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.31 · 内测版';
+  ver.textContent = 'v2.9.32 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5839,7 +5839,10 @@ function renderReport(){
   ON_SHOW.report = function(){ drawReportChart(); }; // 可见后重绘，保证 canvas 尺寸正确
   track('report_view', {issues:n});
   renderDiag(); // v2-C：深度诊断
-  renderPeq();  // v2-C：DSP PEQ 参数输出
+  // v2.9.32: 隐藏 DSP PEQ 参数（用户：暂时不是目标客户，手机用户为主，后续再加）
+  // renderPeq();  // v2-C：DSP PEQ 参数输出
+  try{ var _peq = document.getElementById('peq-toggle'); if(_peq) _peq.style.display='none'; }catch(_){}
+  try{ var _peqt = document.getElementById('peq-table'); if(_peqt) _peqt.style.display='none'; }catch(_){}
   CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); show('consent'); } }];
   // 已出方案（S().plan）后：报告页也放复测验证入口（__REMEASURE_V1__）
   if(S().plan){ CTA.report.unshift({ text: tt('remeasure.btn'), primary:false, onClick: startRemeasurePrompt }); }
