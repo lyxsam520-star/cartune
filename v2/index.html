@@ -3539,7 +3539,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.33 · 内测版';
+  ver.textContent = 'v2.9.34 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5724,7 +5724,12 @@ function avg31(){
 }
 /* 规则引擎层（v1）：数值方案由 DSP.ruleEngine 产生；LLM 文案层为 v2 预留 */
 function buildPlan(){
-  return DSP.ruleEngine(S().measL, S().measR, S().eqSpec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
+  // v2.9.34: eqSpec 为空时默认 7 段（用户没选车型时也出方案，不再空白）
+  var spec = S().eqSpec;
+  if(!spec || !spec.bands){
+    spec = { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
+  }
+  return DSP.ruleEngine(S().measL, S().measR, spec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
 }
 /* v2-PATCH-01 (V2P01-UI)：报告页曲线切换＋风格预设
  * 切换曲线/风格 → 只换 DSP 目标输入（DSP.setTargetCurve / DSP.setTargetStyle），
