@@ -4765,7 +4765,7 @@ function askSoundTrouble(){
 async function autoGainCalib(M, token){
   setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
   var ctx = M.audioCtx;
-  var START_G = 0.01, END_G = 0.1, RAMP_SEC = 3.0; // -40dB → -20dB
+  var START_G = 0.001, END_G = 0.1, RAMP_SEC = 4.0; // v2.9.2: -60dB → -20dB（HFP 增益极高，-40dB 起播仍炸）
   var buf = null, sampler = null, src = null, g = null;
   var tStart = Date.now();
 
@@ -4791,8 +4791,8 @@ async function autoGainCalib(M, token){
     var t0 = ctx.currentTime;
     g.gain.setValueAtTime(0, t0);
     try{
-      g.gain.linearRampToValueAtTime(START_G, t0 + 0.1);          // 0.1s 极短 fade 到 -40dB，防"乍响"
-      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 3s 爬到 -20dB
+      g.gain.linearRampToValueAtTime(START_G, t0 + 0.1);          // 0.1s 极短 fade 到 -60dB，防"乍响"
+      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 4s 爬到 -20dB
     }catch(e){
       console.error('[autoGain] ramp 调度失败，保持静音', e);
       return {ok:false, reason:'rampfail'};
@@ -4802,7 +4802,7 @@ async function autoGainCalib(M, token){
     catch(e){ g.connect(ctx.destination); }
     src.start(t0 + 0.02);
     M._pinkSrc = src; M._pinkGain = g; // 交给 stopPink 管理
-    console.log('[autoGain] 渐强探测起播：0.01(-40dB)→0.1(-20dB)，3s');
+    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→0.1(-20dB)，4s');
   }catch(e){
     console.error('[autoGain] 起播失败', e);
     return {ok:false, reason:'playfail'};
@@ -4853,7 +4853,7 @@ async function autoGainCalib(M, token){
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain});
         return;
       }
-      // 3.1s 爬完仍未达标
+      // 4.1s 爬完仍未达标
       if(el >= 0.1 + RAMP_SEC + 0.1){
         if(peakDb < -50){
           try{ track('autogain_nosignal', {measDb:Number(peakDb.toFixed(1))}); }catch(_){}
