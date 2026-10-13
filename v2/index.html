@@ -205,6 +205,8 @@ ul.clean li{margin:6px 0;}
 </head>
 <body>
 <div id="wx-banner"></div>
+<!-- v2.9.37: 常驻版本号（右下角，不依赖 CTA 渲染） -->
+<div id="ver-badge" style="position:fixed;right:8px;bottom:8px;z-index:9999;color:#636366;font-size:10px;background:rgba(28,28,30,.7);padding:2px 6px;border-radius:4px;pointer-events:none;">v2.9.37 · 内测版</div>
 <div id="app">
 
   <!-- ============ 1. 首页 ============ -->
@@ -3541,7 +3543,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.36 · 内测版';
+  ver.textContent = 'v2.9.37 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
