@@ -127,6 +127,8 @@ body{
 .step.done .stepdot{border-color:var(--green);color:var(--green);}
 .prog{height:6px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;}
 .prog > i{display:block;height:100%;width:0;background:var(--cyan);border-radius:999px;transition:width .2s linear;}
+.prog > i.averaging{background:repeating-linear-gradient(45deg,var(--cyan),var(--cyan) 8px,#1fb6d4 8px,#1fb6d4 16px);background-size:28px 100%;animation:avgstripes .8s linear infinite;}
+@keyframes avgstripes{to{background-position:28px 0;}}
 .prog.thin{height:4px;margin-top:6px;}
 .overall-row{display:flex;justify-content:space-between;align-items:baseline;}
 /* 选项卡 */
@@ -4413,12 +4415,23 @@ function rafLoop(){
     if(bar) bar.style.width = (p*100).toFixed(1)+'%';
     // 专业反馈：让用户"看到"时间花在哪，而不是干等倒计时
     var remain = app.stepDur - (performance.now()-app.stepStart-(app._pauseAccum||0))/1000;
-    if(remain<=5 && remain>0 && !app.avgShown){
-      app.avgShown = true; // 结束前 5 秒：最终平均
-      setStatus(tt('measure.finalAvg'));
-    }else if(!app.avgShown && app.frameCount>0 && app.frameCount!==app._shownFrames){
-      app._shownFrames = app.frameCount; // 采集进行时：帧计数器（节流到变化才刷新）
-      setStatus(tf('measure.collectingN')(app.frameCount));
+    if(remain<=5 && remain>0){
+      if(!app.avgShown){
+        app.avgShown = true; // 结束前 5 秒：最终平均
+        // v2.9.5: 条纹动画，视觉上区别于正常进度，告诉用户"还在算，没卡死"
+        var avgBar = document.getElementById('step-p-'+app.curStep);
+        if(avgBar) avgBar.classList.add('averaging');
+      }
+      // v2.9.5: 倒计时，每帧刷新（便宜的 textContent）
+      setStatus(tt('measure.finalAvg')+'（'+Math.ceil(remain)+'s）');
+    }else{
+      // v2.9.5: 5 秒结束（remain<=0）移除条纹；正常采集分支保持
+      var avgBar2 = document.getElementById('step-p-'+app.curStep);
+      if(avgBar2) avgBar2.classList.remove('averaging');
+      if(!app.avgShown && app.frameCount>0 && app.frameCount!==app._shownFrames){
+        app._shownFrames = app.frameCount; // 采集进行时：帧计数器（节流到变化才刷新）
+        setStatus(tf('measure.collectingN')(app.frameCount));
+      }
     }
     // 整体监听进度：(已完成步数 + 当前步进度) / 总步数；步内倒计时 0:07/0:30
     var defsAll = stepDefs();
@@ -4589,7 +4602,7 @@ function setStepState(i, cls){
   if(d) d.className = 'step '+cls;
 }
 function resetStepsUI(){
-  stepDefs().forEach(function(_,i){ setStepState(i,''); var p=document.getElementById('step-p-'+i); if(p) p.style.width='0'; });
+  stepDefs().forEach(function(_,i){ setStepState(i,''); var p=document.getElementById('step-p-'+i); if(p){ p.style.width='0'; p.classList.remove('averaging'); } });
 }
 function hideAlerts(){
   ['clip-alert','snr-alert','valid-alert','mix-alert'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
@@ -4672,20 +4685,20 @@ function askSoundCheckSimple(){
 }
 /* 音量三问弹窗（v2.7）：客观电平读数＋主观感受二合一。
  * @param {number} peakDb 实测峰值 dBFS（<= -100 表示无数据，不显示读数区）。
- * 阈值（对应底层算法）：
- *  - 峰值 <-30dBFS：偏小——粉噪峰值比 RMS 高约 10–12dB，此时 RMS < -40dBFS，
- *    相对典型底噪（-50dBFS）SNR < 10dB，分频段门控会标灰/黄，测不准；
- *  - -30～-12dBFS：合适——RMS 约 -42～-24dBFS，SNR > 15dB 全绿灯，
- *    且峰值离 0dBFS 有 12dB 安全垫，不削顶；
- *  - >-12dBFS：偏大——峰值逼近 0dBFS，有削顶风险，削顶数据直接作废。
+ * 阈值（对应底层算法，v2.9.5 上调 4dB）：
+ *  - 峰值 <-26dBFS：偏小——粉噪峰值比 RMS 高约 10–12dB，此时 RMS < -38dBFS，
+ *    相对实测底噪（约 -40dBFS）SNR 不足，分频段门控会标灰/黄，测不准；
+ *  - -16～-8dBFS：合适——RMS 约 -28～-20dBFS，SNR 12～20dB，
+ *    且峰值离 0dBFS 有 8dB 安全垫，不削顶；
+ *  - >-8dBFS：偏大——峰值逼近 0dBFS，有削顶风险，削顶数据直接作废。
  * 返回 'ok' | 'small' | 'big' | 'fail'。 */
 function askSoundCheck(peakDb){
   return new Promise(function(resolve){
     var showPeak = (typeof peakDb==='number' && peakDb > -100);
     var interpKey, interpColor;
     if(showPeak){
-      if(peakDb < -30){ interpKey='measure.soundCheckPeakLow'; interpColor='#FFD60A'; }
-      else if(peakDb <= -12){ interpKey='measure.soundCheckPeakOk'; interpColor='#34D399'; }
+      if(peakDb < -26){ interpKey='measure.soundCheckPeakLow'; interpColor='#FFD60A'; }
+      else if(peakDb <= -8){ interpKey='measure.soundCheckPeakOk'; interpColor='#34D399'; }
       else { interpKey='measure.soundCheckPeakHigh'; interpColor='#FF453A'; }
     }
     var pct = showPeak ? Math.max(0, Math.min(100, (peakDb+50)/50*100)) : 0;
@@ -4697,10 +4710,10 @@ function askSoundCheck(peakDb){
         (showPeak ?
           '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckPeakLabel'))+'<b>'+peakDb.toFixed(1)+' dBFS</b></div>'+
           '<div style="position:relative;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 2px;background:#1c1c1e;">'+
-            '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+            '<div style="position:absolute;left:68%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
             '<div style="position:absolute;top:-1px;bottom:-1px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:'+pct.toFixed(1)+'%;"></div>'+
           '</div>'+
-          '<div class="small" style="color:#8E8E93;font-size:11px;">-50&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#34D399;">-20～-12</span>&nbsp;&nbsp;&nbsp;&nbsp;0</div>'+
+          '<div class="small" style="color:#8E8E93;font-size:11px;">-50&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#34D399;">-16～-8</span>&nbsp;&nbsp;&nbsp;&nbsp;0</div>'+
           '<div class="small mt8" style="color:'+interpColor+';">'+escapeHtml(tt(interpKey))+'</div>'
         : '')+
         '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ3'))+'</div>'+
@@ -4775,9 +4788,9 @@ function askSoundTrouble(){
  * 播 3s 粉噪 @ 固定 -20dB（0.1），测 mic 峰值 measDb，算补偿增益把峰值搬到 -16dBFS。
  * A2DP/HFP/用户误操作/音箱自带音量——全兼容，因为测的是最终声压。
  *
- * 目标 -16dBFS（绿区 -20～-12 中点）：粉噪峰值比 RMS 高约 12dB，
- * → RMS≈-28dBFS，相对典型底噪 -50dBFS 则 SNR≈22dB（>15dB 绿灯线），
- * → 离 0dBFS 有 16dB 削顶余量。两头都安全。
+ * 目标 -12dBFS（绿区 -16～-8 中点，v2.9.5 上调 4dB）：粉噪峰值比 RMS 高约 12dB，
+ * → RMS≈-24dBFS，相对实测底噪（约 -40dBFS）则 SNR≈16dB（>15dB 绿灯线），
+ * → 离 0dBFS 有 12dB 削顶余量。两头都安全。
  *
  * @returns Promise<{ok, measDb, gainDb, autoGain, reason?}>
  *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
@@ -4866,16 +4879,17 @@ async function autoGainCalib(M, token){
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, emergency:true});
         return;
       }
-      // 削顶边缘：>-6dBFS 立即停播，增益减半（-6dB），提示"已自动压低"
-      if(peakDb > -6){
-        console.log('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -6，停播并减半增益');
+      // 削顶边缘：>-4dBFS 立即停播，增益减半（-6dB），提示"已自动压低"
+      // v2.9.5: 绿区上沿 -8，留 4dB 余量；紧急线 >-3dBFS 保持
+      if(peakDb > -4){
+        console.log('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -4，停播并减半增益');
         M._autoGain = Math.max(0.001, Math.min(1.0, cg / 2));
         try{ track('autogain_clipguard', {peakDb:Number(peakDb.toFixed(1))}); }catch(_){}
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, clipped:true});
         return;
       }
-      // 达标：峰值进入 -20～-12dBFS → 冻结当前增益，停播，校准完成
-      if(peakDb >= -20 && peakDb <= -12){
+      // 达标：峰值进入 -16～-8dBFS → 冻结当前增益，停播，校准完成
+      if(peakDb >= -16 && peakDb <= -8){
         console.log('[autoGain] 达标：峰值 '+peakDb.toFixed(1)+'dBFS，冻结增益 '+cg.toFixed(4));
         M._autoGain = Math.max(0.001, Math.min(1.0, cg));
         try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
@@ -5016,10 +5030,10 @@ async function soundCheckFlow(M, token, connectivityOnly){
   }
 }
 /* 电平校准 v2.4（目标电平指引）：连续可视化电平表，指针进绿区即放行。
- * 表头 -50～0 dBFS；绿区 -20～-12 dBFS（原理：粉噪峰值比 RMS 高约 10–12dB，
- * RMS 落在此区时实测峰值在 -8～0dBFS 之下——有顶无削顶，SNR 最佳）；
- * 黄区 -30～-20（偏小，SNR 打折）/-12～-6（偏大，接近削顶）；
- * 红区 <-30（太小）/>-6（太大，有削顶风险）。
+ * 表头 -50～0 dBFS；绿区 -16～-8 dBFS（v2.9.5 上调 4dB；原理：粉噪峰值比 RMS 高约 10–12dB，
+ * RMS 落在此区约 -28～-20dBFS，相对实测底噪 -40dBFS 则 SNR 12～20dB；离 0dBFS 有 8dB 削顶余量）；
+ * 黄区 -26～-16（偏小，SNR 打折）/-8～-4（偏大，接近削顶）；
+ * 红区 <-26（太小）/>-4（太大，有削顶风险）。
  * 白针＝实时峰值；绿区判定用平滑电平（防抖）；指针进绿区 → [开始正式测试] 立即亮起，
  * 离开绿区 → 重新灰掉。削顶只警告不掐死。
  * 原则：专业易用——门槛只设在"必要"处，不设在"完美"处。绿区即合格，不考验用户耐心。
@@ -5036,19 +5050,19 @@ function runLevelCalibOnce(M, token){
         '<div class="small" style="color:#8E8E93;">'+escapeHtml(tt('measure.levelTargetWhy'))+'</div>'+
         '<div class="small mt8" style="color:#8E8E93;">'+escapeHtml(tt(btPlay?'measure.levelCalibHint':'measure.levelCalibUsbHint'))+'</div>'+
         '<div id="lc-meter" style="position:relative;height:20px;border-radius:10px;overflow:hidden;margin:14px 0 4px;background:#1c1c1e;">'+
-          '<div style="position:absolute;left:0%;width:40%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
-          '<div style="position:absolute;left:40%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
-          '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
-          '<div style="position:absolute;left:76%;width:12%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
-          '<div style="position:absolute;left:88%;width:12%;top:0;bottom:0;background:rgba(255,69,58,.50);"></div>'+
+          '<div style="position:absolute;left:0%;width:48%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
+          '<div style="position:absolute;left:48%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:68%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+          '<div style="position:absolute;left:84%;width:8%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:92%;width:8%;top:0;bottom:0;background:rgba(255,69,58,.50);"></div>'+
           '<div id="lc-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;box-shadow:0 0 4px rgba(255,255,255,.6);"></div>'+
         '</div>'+
         '<div class="small" style="position:relative;height:14px;margin-bottom:8px;color:#8E8E93;">'+
           '<span style="position:absolute;left:0;">-50</span>'+
-          '<span style="position:absolute;left:40%;transform:translateX(-50%);">-30</span>'+
-          '<span style="position:absolute;left:60%;transform:translateX(-50%);color:#34D399;">-20</span>'+
-          '<span style="position:absolute;left:76%;transform:translateX(-50%);color:#34D399;">-12</span>'+
-          '<span style="position:absolute;left:88%;transform:translateX(-50%);">-6</span>'+
+          '<span style="position:absolute;left:48%;transform:translateX(-50%);">-26</span>'+
+          '<span style="position:absolute;left:68%;transform:translateX(-50%);color:#34D399;">-16</span>'+
+          '<span style="position:absolute;left:84%;transform:translateX(-50%);color:#34D399;">-8</span>'+
+          '<span style="position:absolute;left:92%;transform:translateX(-50%);">-4</span>'+
           '<span style="position:absolute;right:0;">0</span>'+
         '</div>'+
         '<div class="small" id="lc-db" style="color:#8E8E93;">-- dBFS</div>'+
@@ -5066,10 +5080,12 @@ function runLevelCalibOnce(M, token){
         stEl=document.getElementById('lc-status'),
         goBtn=document.getElementById('lc-go');
     function zoneOf(db){
-      if(db<-30) return 'redlow';
-      if(db<-20) return 'yellowlow';
-      if(db<=-12) return 'green';
-      if(db<=-6) return 'yellowhigh';
+      // v2.9.5: 绿区上调 4dB（用户实测：旧绿区 -20～-12 峰值→RMS -32～-24，环境底噪高于假设时 SNR 不够）。
+      // 新绿区 -16～-8dBFS 峰值 → RMS -28～-20dBFS，底噪 -40dBFS 时 SNR 12～20dB；离 0dBFS 有 8dB 削顶余量。
+      if(db<-26) return 'redlow';
+      if(db<-16) return 'yellowlow';
+      if(db<=-8) return 'green';
+      if(db<=-4) return 'yellowhigh';
       return 'redhigh';
     }
     var ZONE_TXT={
@@ -6403,6 +6419,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.4 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.5 · 内测版</div>
 </body>
 </html>
