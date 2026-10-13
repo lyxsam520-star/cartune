@@ -2191,8 +2191,11 @@ var MODELS_DB = {
         if (pi !== curPhaseIdx) {
           curPhaseIdx = pi; self._curPhaseIdx = pi;
           switchAudio(ph);
+          if (ph.key === 'floor') { self._floorElapsedMs = 0; self._floorLoudStreak = 0; } // v2.9.15: floor 开始计时
           if (onPhase) { try { onPhase(ph.key, ph); } catch (_) {} }
         }
+        // v2.9.15: floor 相位内累积毫秒（用于熔断静置期）
+        if (ph.key === 'floor' && self._floorElapsedMs != null) { self._floorElapsedMs += 16; } // ~60fps
         if (!sigChecked && firstSigIdx >= 0 && el >= CHECK_AT) {
           sigChecked = true;
           var fA = avg31('floor'), sA = avg31(phases[firstSigIdx].key);
@@ -2216,13 +2219,18 @@ var MODELS_DB = {
         var clipped = peak >= 0.99;
         // v2.3 floor 相位异常熔断：底噪阶段本该安静，若持续出现大信号（>0.3 连续 20 帧≈333ms），
         // 说明有播放信号漏进来（调度 bug），立即熔断，不产垃圾数据
+        // v2.9.15: 前 1 秒不判定（探针 stopPink 的 0.15s fade＋HFP 切换 pop 需要静置期），防误报
         if (ph.key === 'floor') {
-          if (peak > 0.3) { self._floorLoudStreak = (self._floorLoudStreak || 0) + 1; }
-          else { self._floorLoudStreak = 0; }
-          if (self._floorLoudStreak >= 20) {
-            console.error('[measureMerged] floor 相位持续大信号，熔断');
-            try { self.stopPink(0.05); } catch (_) {}
-            finish(false, true); return;
+          if (self._floorElapsedMs == null) self._floorElapsedMs = 0;
+          // 注意：_floorElapsedMs 在 tick 里累加（见下方）
+          if (self._floorElapsedMs > 1000) {
+            if (peak > 0.3) { self._floorLoudStreak = (self._floorLoudStreak || 0) + 1; }
+            else { self._floorLoudStreak = 0; }
+            if (self._floorLoudStreak >= 20) {
+              console.error('[measureMerged] floor 相位持续大信号，熔断');
+              try { self.stopPink(0.05); } catch (_) {}
+              finish(false, true); return;
+            }
           }
         } else { self._floorLoudStreak = 0; }
         if (onFrame) {
@@ -6516,6 +6524,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.14 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.15 · 内测版</div>
 </body>
 </html>
