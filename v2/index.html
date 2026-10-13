@@ -3005,6 +3005,8 @@ window.COPY = {
     progressMergedEn: "Listening progress: 50s combined",
     soundCheckTitle: "试音",
     soundCheckTitleEn: "Sound check",
+    soundCheckOkSimple: "听到了",
+    soundCheckOkSimpleEn: "Heard it",
     soundCheckQ2: "刚才的测试音，音量怎么样？",
     soundCheckQ2En: "How was the test tone volume?",
     soundCheckPerfect: "正好，开始测试",
@@ -4576,6 +4578,39 @@ function closeIsoOverlay(){
   app._isoOverlay = null;
 }
 /* 试音弹窗（v2.1）：Promise<'ok'|'fail'>。弹窗样式复用 iso-overlay（iOS 双通道防吞点击）。 */
+/* 连通性试音弹窗（v2.6）：只问"听得到吗"，不问音量。Promise<'ok'|'fail'> */
+function askSoundCheckSimple(){
+  return new Promise(function(resolve){
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
+        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ'))+'</div>'+
+        '<button class="btn btn-primary" id="scs-ok">'+escapeHtml(tt('measure.soundCheckOkSimple'))+'</button>'+
+        '<button class="btn btn-ghost" id="scs-fail">'+escapeHtml(tt('measure.soundCheckFail'))+'</button>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n=Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('scs-ok', 'ok');
+    wire('scs-fail', 'fail');
+  });
+}
 function askSoundCheck(){
   return new Promise(function(resolve){
     var ov = document.createElement('div');
@@ -4645,10 +4680,11 @@ function askSoundTrouble(){
     wire('st-back', 'back');
   });
 }
-/* 试音流程（v2.6）：3s 粉噪（-20dB 安全电平，fade in/out）→ 音量三问 → 指引调整 → 通过。
- * v2.6 重构：电平 meter 下线（连续播放有炸音箱风险），音量指引并入试音三问。
+/* 试音流程（v2.6）：3s 粉噪（-20dB 安全电平，fade in/out）→ 确认 → 指引调整 → 通过。
+ * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
+ *   false=音量三问"太大/太小/正好"（麦克风激活后，音量确认，与正式测试同一会话）。
  * 3 秒短 burst + 人话问题 = 专业易用。返回 true=通过；false=用户返回/放弃/token 失效。 */
-async function soundCheckFlow(M, token){
+async function soundCheckFlow(M, token, connectivityOnly){
   async function play3s(){
     setStatus(tt('measure.soundCheckTitle')+'…');
     try{ M.playPink(null, 0.15); }catch(_){}
@@ -4688,7 +4724,13 @@ async function soundCheckFlow(M, token){
   await play3s();
   if(token!==app.runToken) return false;
   for(;;){
-    var ans = await askSoundCheck();
+    var ans;
+    if(connectivityOnly){
+      // 连通性模式：只问"听得到吗"，不问音量（音量在麦克风激活后确认）
+      ans = await askSoundCheckSimple();
+    } else {
+      ans = await askSoundCheck();
+    }
     if(token!==app.runToken) return false;
     if(ans==='ok'){ track('soundcheck_ok'); return true; }
     if(ans==='fail'){
@@ -4941,10 +4983,12 @@ async function startMeasureFlow(opts){
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
 
-  // ② 试音（仅蓝牙模式）：3s 粉噪 → 三问确认 → 不通过则排查指引
-  // 在 initMic 之前做：麦克风未激活＝干净的播放会话，蓝牙 A2DP 最稳定、音量键有效
+  // ② 试音（仅蓝牙模式）：3s 粉噪 → 确认能出声 → 不通过则排查指引
+  // v2.6: 只做连通性确认（"听得到吗"），音量确认移到麦克风激活后——
+  // iOS 在 initMic 时切换音频会话会改变蓝牙音量，试音音量≠正式测试音量。
+  // 在 initMic 之前做连通性：麦克风未激活＝干净的播放会话，蓝牙 A2DP 最稳定
   if(app.playMode==='bt'){
-    var _scOK = await soundCheckFlow(M, token);
+    var _scOK = await soundCheckFlow(M, token, true); // connectivityOnly=true
     if(token!==app.runToken) return;
     if(!_scOK){
       setStatus('');
@@ -4955,7 +4999,7 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ③ 激活麦克风（试音通过后）
+  // ③ 激活麦克风（连通性通过后）
   try{
     await M.initMic();
   }catch(e){
@@ -4969,16 +5013,18 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ③b 电平校准（v2.6 已下线）：meter 连续播放有炸音箱风险，音量指引已并入试音三问（soundCheckFlow）。
-  // runLevelCalibOnce / levelCalibFlow 保留代码但不再调用。如需恢复，取消下行注释。
-  // var _lcOK = await levelCalibFlow(M, token);
-  // if(token!==app.runToken) return;
-  // if(!_lcOK){
-  //   setStatus('');
-  //   CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
-  //   renderCTA(CTA.measure);
-  //   return;
-  // }
+  // ③b 音量确认（v2.6）：麦克风激活后，iOS 可能改变蓝牙音量。在此确认音量，
+  // 与正式测试同一音频会话，音量一致。3s @ -20dB → "音量合适吗？"
+  if(app.playMode==='bt'){
+    var _vcOK = await soundCheckFlow(M, token, false); // connectivityOnly=false → 音量三问
+    if(token!==app.runToken) return;
+    if(!_vcOK){
+      setStatus('');
+      CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+      renderCTA(CTA.measure);
+      return;
+    }
+  }
   if(token!==app.runToken) return;
 
   // ④ 30s 合并测量：底噪 5s → 立体声 25s，一次跑完无停顿
