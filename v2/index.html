@@ -3581,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.48 · 内测版';
+  ver.textContent = 'v2.9.49 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6462,26 +6462,30 @@ function renderPlan(){
   // v2.9.3: buildPlan 抛异常不再静默吞（此前 catch 后 plan={bands:[]} → 空白页，用户以为"方案出不来"）。
   // 主因：S().measL 为空（页面刷新/状态丢失）。失败时打埋点＋人话红字卡＋返回重测按钮。
   if(!plan){
-    // v2.9.48: 诊断日志——记录 measL 状态，帮助定位"数据丢了"问题
+    // v2.9.48: 诊断信息直接显示在错误页（iPhone 无 console）
+    var _diag = '';
     try{
-      console.error('[renderPlan] DIAG measL:', S().measL ? 'present, len=' + (S().measL.length || S().measL.band31?.length || '?') : 'NULL');
-      console.error('[renderPlan] DIAG measR:', S().measR ? 'present' : 'NULL');
-      console.error('[renderPlan] DIAG floor31:', S().floor31 ? 'present' : 'NULL');
-      console.error('[renderPlan] DIAG eqSpec:', S().eqSpec ? JSON.stringify(S().eqSpec).slice(0,100) : 'NULL');
+      _diag = 'measL:' + (S().measL ? 'OK(' + (S().measL.length||'?') + ')' : 'NULL') +
+              ' measR:' + (S().measR ? 'OK' : 'NULL') +
+              ' floor:' + (S().floor31 ? 'OK' : 'NULL') +
+              ' spec:' + (S().eqSpec ? 'OK' : 'NULL');
       trackSecurity('plan_diag', {
         measL: !!S().measL, measR: !!S().measR, floor31: !!S().floor31,
         eqSpec: !!S().eqSpec, car: !!(S().car && (S().car.id || S().car.name))
       });
-    }catch(_){}
+    }catch(_){ _diag = 'diag-fail'; }
     try{ plan = buildPlan(); S()._planDraft = plan; }
     catch(e){
       try{ track('plan_build_fail', {err:String(e&&e.message||e).slice(0,100)}); }catch(_){}
-      console.error('[renderPlan] buildPlan failed', e);
+      console.error('[renderPlan] buildPlan failed', e, _diag);
       document.getElementById('plan-normal').classList.add('hidden');
       document.getElementById('plan-et9').classList.add('hidden');
       document.getElementById('plan-error').classList.remove('hidden');
       setText('plan-errt','plan.errTitle');
-      setText('plan-errb','plan.errBody');
+      // v2.9.48: 错误页追加诊断码，方便定位
+      try{
+        document.getElementById('plan-errb').innerHTML = tt('plan.errBody') + '<br><br><span style="font-size:11px;color:#666;">诊断码：' + _diag + '｜' + String(e&&e.message||e).slice(0,60) + '</span>';
+      }catch(_){ setText('plan-errb','plan.errBody'); }
       setText('plan-err-retry','plan.errRetry');
       document.getElementById('plan-err-retry').onclick = function(){ show('measure'); };
       CTA.plan = [];
