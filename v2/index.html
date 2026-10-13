@@ -430,8 +430,7 @@ ul.clean li{margin:6px 0;}
     <div class="card">
       <label class="checkrow"><input type="checkbox" id="c1">
         <span><span class="body14" id="consent-c1t" style="font-weight:600;"></span><br><span class="small" id="consent-c1d"></span></span></label>
-      <label class="checkrow"><input type="checkbox" id="c2">
-        <span><span class="body14" id="consent-c2t" style="font-weight:600;"></span><br><span class="small" id="consent-c2d"></span></span></label>
+      <!-- v2.9.47: c2 已移除（与首页"参与车型数据优化"开关重复） -->
     </div>
   </section>
 
@@ -3582,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.46 · 内测版';
+  ver.textContent = 'v2.9.47 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6362,13 +6361,12 @@ function initConsent(){
   setText('consent-title','consent.title');
   setText('consent-c1t','consent.c1title');
   setText('consent-c1d','consent.c1desc');
-  setText('consent-c2t','consent.c2title');
-  setText('consent-c2d','consent.c2desc');
+  // v2.9.47: c2 已移除（与首页开关重复），setText 对不存在元素有保护
   setText('bk-consent','common.back');
   var c1 = document.getElementById('c1');
   function refresh(){
     CTA.consent = [{ text: tt('consent.agreeBtn'), disabled:!c1.checked,
-      onClick: function(){ track('consent_done',{c2:document.getElementById('c2').checked}); renderPlan(); show('plan'); } }]; // 内测版：跳过付费，直达方案
+      onClick: function(){ track('consent_done',{}); renderPlan(); show('plan'); } }]; // 内测版：跳过付费，直达方案
     renderCTA(CTA.consent);
   }
   c1.addEventListener('change', refresh);
