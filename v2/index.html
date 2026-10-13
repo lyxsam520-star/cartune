@@ -8,6 +8,11 @@
 <meta name="theme-color" content="#0B0E13">
 <title>车载音响调音</title>
 <style>
+/* ============ 加载 spinner（v2.9.3：生成方案时防"假死"） ============ */
+.spin{display:inline-block;width:14px;height:14px;margin-right:8px;vertical-align:-2px;
+  border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;
+  animation:spinrot .8s linear infinite;}
+@keyframes spinrot{to{transform:rotate(360deg);}}
 /* ============ 视觉语言（严格执行） ============ */
 :root{
   --bg:#0B0E13;
@@ -432,7 +437,7 @@ ul.clean li{margin:6px 0;}
 
   <!-- ============ 8. 方案 ============ -->
   <section class="sec" id="sec-plan">
-    <div class="topbar"><button class="backbtn" data-back="sec-pay" id="bk-plan"></button></div>
+    <div class="topbar"><button class="backbtn" data-back="sec-report" id="bk-plan"></button></div>
     <div id="plan-normal">
       <div class="h" id="plan-title"></div>
       <div class="small" id="plan-sub"></div>
@@ -452,6 +457,13 @@ ul.clean li{margin:6px 0;}
     <div id="plan-et9" class="hidden">
       <div class="h" id="plan-et9t"></div>
       <div class="small" id="plan-et9b"></div>
+    </div>
+    <div id="plan-error" class="hidden">
+      <div class="card" style="border-color:rgba(255,77,77,.5);">
+        <div class="h" id="plan-errt" style="color:var(--red);font-size:15px;"></div>
+        <div class="small mt8" id="plan-errb"></div>
+        <div class="mt8"><button class="btn btn-primary" id="plan-err-retry"></button></div>
+      </div>
     </div>
   </section>
 
@@ -2988,6 +3000,8 @@ window.COPY = {
     playingREn: "Playing right-channel test tone, please stay quiet…",
     listenDone: "已完成监听",
     listenDoneEn: "Listening complete",
+    generatingPlan: "正在生成调音方案…",
+    generatingPlanEn: "Generating your tuning plan…",
     progressStep: function (c, t) { return "监听进度 第 " + c + "/" + t + " 步"; },
     progressStepEn: function (c, t) { return "Listening progress: step " + c + "/" + t; },
     collectingN: function (n) { return "正在采集频谱…第 " + n + " 帧"; },
@@ -3247,6 +3261,12 @@ window.COPY = {
   plan: {
     title: "你的调音方案",
     sub: "照着下面的数值，逐段设置车机 EQ 就好。",
+    errTitle: "方案生成失败",
+    errTitleEn: "Plan generation failed",
+    errBody: "测量数据好像丢了（比如页面被刷新）。请返回重测一次，30 秒就好。",
+    errBodyEn: "The measurement data seems lost (e.g. page was refreshed). Please go back and measure again — it only takes 30 seconds.",
+    errRetry: "返回重测",
+    errRetryEn: "Measure again",
     perBandNote: "以下 {n} 个增益值与你车机 EQ 的 {n} 段一一对应，只调这几段，其余不动。",
     combNote: "该频段存在声学干涉谷，EQ 硬拉只会越补越糟，已自动跳过",
     snrWarn: "轻度底噪污染",
@@ -3452,6 +3472,13 @@ var ON_SHOW = {}; // 切到某 section 时的刷新钩子（canvas 需可见后�
 function show(id){
   document.querySelectorAll('.sec').forEach(function(s){ s.classList.remove('active'); });
   var el = document.getElementById('sec-'+id);
+  // v2.9.3 防御：目标 section 不存在 / 被 display:none 隐藏（如内测版 sec-pay）时，
+  // console.warn 并回退到 home，不许静默无反应（此前 bk-plan 点返回没反应就是这个坑）。
+  if(!el || el.style.display==='none'){
+    console.warn('[show] target missing or hidden: sec-'+id+', fallback to home');
+    id = 'home';
+    el = document.getElementById('sec-'+id);
+  }
   if(el) el.classList.add('active');
   window.scrollTo(0,0);
   // 测量中途切走：让未完成的 measure promise 失效，防止后台回调污染 UI
@@ -4511,6 +4538,8 @@ function askClipPause(){
   });
 }
 function setStatus(s){ document.getElementById('measure-status').textContent = s; }
+/* 带 spinner 的状态（v2.9.3：耗时操作防"假死"，必须告诉用户在发生什么） */
+function setStatusSpin(s){ document.getElementById('measure-status').innerHTML = '<span class="spin"></span>'+escapeHtml(s); }
 /* ---------- 监听整体进度条（v1.9） ---------- */
 function fmtClock(sec){ // m:ss，如 0:07 / 0:30
   sec = Math.max(0, Math.ceil(sec));
@@ -5410,7 +5439,9 @@ async function startMeasureFlow(opts){
     return;
   }
   // 持久化（经 DSP）
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  // v2.9.3: 先亮"正在生成"防假死；saveMeasurement/renderCTA 都在 try/catch，任何一步抛异常都不白屏
+  setStatusSpin(tt('measure.generatingPlan'));
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(e){ console.error('[measure] saveMeasurement failed', e); }
   setStatus('');
   try{ renderCTA(CTA['measure_done']); }catch(e){
     console.error('[measure] renderCTA failed', e);
@@ -5480,7 +5511,9 @@ async function startLrOptIn(){
   snrGate(L31, 'L'); snrGate(R31, 'R');
   S().measL = L31; S().measR = R31;
   S().channelIsolated = true;
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:res.floor31, measL:L31, measR:R31, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(_){}
+  // v2.9.3: 先亮"正在生成"防假死
+  setStatusSpin(tt('measure.generatingPlan'));
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:res.floor31, measL:L31, measR:R31, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(e){ console.error('[measure] saveMeasurement failed', e); }
   setStepState(0,'done');
   setStatus(tt('measure.listenDone'));
   setOverallObj(tt('measure.listenDone'));
@@ -6091,6 +6124,8 @@ function mockPay(){
  * ===================================================================== */
 function renderPlan(){
   setText('bk-plan','common.back');
+  // v2.9.3: 每次渲染先藏起错误卡，成功路径才显示正常内容
+  document.getElementById('plan-error').classList.add('hidden');
   var spec = S().eqSpec;
   var isET9 = !spec || spec.bands===0;
   document.getElementById('plan-normal').classList.toggle('hidden', isET9);
@@ -6118,7 +6153,25 @@ function renderPlan(){
   (Array.isArray(rs)?rs:[]).forEach(function(s){ var li=document.createElement('li'); li.textContent=s; rul.appendChild(li); });
 
   var plan = S()._planDraft;
-  if(!plan){ try{ plan = buildPlan(); S()._planDraft = plan; }catch(e){ plan={bands:[]}; } }
+  // v2.9.3: buildPlan 抛异常不再静默吞（此前 catch 后 plan={bands:[]} → 空白页，用户以为"方案出不来"）。
+  // 主因：S().measL 为空（页面刷新/状态丢失）。失败时打埋点＋人话红字卡＋返回重测按钮。
+  if(!plan){
+    try{ plan = buildPlan(); S()._planDraft = plan; }
+    catch(e){
+      try{ track('plan_build_fail', {err:String(e&&e.message||e).slice(0,100)}); }catch(_){}
+      console.error('[renderPlan] buildPlan failed', e);
+      document.getElementById('plan-normal').classList.add('hidden');
+      document.getElementById('plan-et9').classList.add('hidden');
+      document.getElementById('plan-error').classList.remove('hidden');
+      setText('plan-errt','plan.errTitle');
+      setText('plan-errb','plan.errBody');
+      setText('plan-err-retry','plan.errRetry');
+      document.getElementById('plan-err-retry').onclick = function(){ show('measure'); };
+      CTA.plan = [];
+      renderCTA(CTA.plan);
+      return;
+    }
+  }
   S().plan = plan;
   var bands = plan.bands||[];
   // 梳状谷检测（规则引擎层 v1 标注）
@@ -6449,6 +6502,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.2 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.3 · 内测版</div>
 </body>
 </html>
