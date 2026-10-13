@@ -213,8 +213,23 @@ ul.clean li{margin:6px 0;}
       <span class="badge amber" id="home-badge"></span>
       <div class="hero" id="home-title"></div>
       <div class="small" id="home-sub" style="max-width:340px;margin:0 auto;"></div>
-      <!-- v2.9.44: 调优计数 -->
-      <div class="small mt8" id="home-tune-count" style="color:var(--amber);font-weight:600;"></div>
+    </div>
+    <!-- v2.9.45: 调优计数 + 数据贡献二合一卡 -->
+    <div class="card mt16" style="background:linear-gradient(135deg, rgba(255,159,10,.12), rgba(255,159,10,.04));border:1px solid rgba(255,159,10,.25);">
+      <div class="center">
+        <div style="font-size:28px;font-weight:800;color:var(--amber);" id="home-tune-num">0</div>
+        <div class="small" style="margin-top:2px;">辆车已调优</div>
+      </div>
+      <div class="small mt8" style="line-height:1.6;color:var(--sub);">
+        你的测量数据（去标识化后）会帮助同款车车友调得更准。每多一份数据，所有人的方案都更可靠。
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,159,10,.15);">
+        <div style="flex:1;text-align:left;">
+          <div style="font-size:14px;font-weight:700;">参与车型数据优化</div>
+          <div class="small">关闭不影响测量与方案功能</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="privacy-data-toggle" checked><span class="knob"></span></label>
+      </div>
     </div>
     <div class="card center mt16">
       <div class="switchrow" style="padding:4px 0 12px;">
@@ -231,15 +246,6 @@ ul.clean li{margin:6px 0;}
         <div class="small" id="home-tech-desc"></div>
       </div>
       <div style="color:var(--sub);font-size:20px;line-height:1;">&rsaquo;</div>
-    </div>
-    <!-- v2.9.42: 隐私设置（v1.2 协议 5.2：聚合数据授权开关） -->
-    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:10px;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:15px;font-weight:700;">参与车型数据优化</div>
-        <div class="small">将去标识化后的测量数据用于同年款车型方案优化。关闭不影响测量与方案功能。</div>
-      </div>
-      <label class="switch"><input type="checkbox" id="privacy-data-toggle" checked><span class="knob"></span></label>
-    </div>
     </div>
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
@@ -3562,12 +3568,12 @@ function show(id){
   if(wasMeasuring) app.runToken++;
   renderCTA(CTA[id]||[]);
   if(ON_SHOW[id]){ try{ ON_SHOW[id](); }catch(_){} }
-  // v2.9.44: 首页刷新调优计数
+  // v2.9.45: 首页刷新调优计数（二合一卡）
   if(id==='home'){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
-      var _el = document.getElementById('home-tune-count');
-      if(_el) _el.textContent = _tc > 0 ? ('已调优 ' + _tc + ' 辆车') : '';
+      var _el = document.getElementById('home-tune-num');
+      if(_el) _el.textContent = _tc;
     }catch(_){}
   }
   track('view_'+id);
@@ -3578,7 +3584,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.44 · 内测版';
+  ver.textContent = 'v2.9.45 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
