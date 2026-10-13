@@ -2174,6 +2174,13 @@ var MODELS_DB = {
   DSP.Measurer.prototype.measureMerged = function (opts) {
     var self = this;
     opts = opts || {};
+    // v2.9.60: 入口诊断（用户反馈 v2.9.59 弹窗未出现）
+    try{
+      if(!window._mmDbg){
+        window._mmDbg = true;
+        alert('measureMerged 入口\nanalyser:'+(self.analyser?'Y':'N')+' audioCtx:'+(self.audioCtx?self.audioCtx.state:'N'));
+      }
+    }catch(_){}
     var phases = opts.phases || [
       { key: 'floor', dur: 10, side: 'off' },
       { key: 'sig', dur: 30, side: null }
@@ -3613,7 +3620,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.59 · 内测版';
+  ver.textContent = 'v2.9.60 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
