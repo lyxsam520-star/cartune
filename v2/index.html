@@ -6039,6 +6039,24 @@ function mockPay(){
 /* =====================================================================
  * 方案页
  * ===================================================================== */
+/* 频段中文名（v2.9.6）：bd.label 缺失时的兜底。
+ * 命名来源：用户星越L 7 段车机实测（重低音/低音/中低音/中音/中高音/高音/超高音），
+ * 3/5 段为同体系简化版。En 数组预留（当前中文单语，无语言切换逻辑）。 */
+var BAND_LABELS_CN = {
+  3: ['低音','中音','高音'],
+  5: ['低音','中低音','中音','中高音','高音'],
+  7: ['重低音','低音','中低音','中音','中高音','高音','超高音']
+};
+var BAND_LABELS_EN = {
+  3: ['Bass','Mid','Treble'],
+  5: ['Bass','Low-mid','Mid','High-mid','Treble'],
+  7: ['Sub-bass','Bass','Low-mid','Mid','High-mid','Treble','Super-treble']
+};
+function bandLabel(i, nBands, en){
+  var arr = (en ? BAND_LABELS_EN : BAND_LABELS_CN)[nBands];
+  if(arr && arr[i]) return arr[i];
+  return 'B'+(i+1);
+}
 function renderPlan(){
   setText('bk-plan','common.back');
   // v2.9.3: 每次渲染先藏起错误卡，成功路径才显示正常内容
@@ -6095,7 +6113,9 @@ function renderPlan(){
   var combIdx = [];
   try{ combIdx = DSP.detectComb(avg31()) || []; }catch(_){}
   var box = document.getElementById('plan-bands'); box.innerHTML='';
+  var _nBands = (spec && spec.bands) || bands.length || 7;
   bands.forEach(function(bd, i){
+    var dispLabel = bd.label || bandLabel(i, _nBands, false);
     var card = document.createElement('div');
     var isComb = !!bd.comb || combIdx.indexOf(i)>=0;
     card.className = 'gaincard' + (isComb?' comb':'') + ((bd.gainDb||0)>0.5?' boost':'');
@@ -6115,7 +6135,7 @@ function renderPlan(){
               '，车机只能到 '+(bd.unfixable.maxDb||bd.unfixable.max)+'（如实告知：此段无法完全修正）</div>';
     }
     card.innerHTML =
-      '<div class="gl"><div class="gt">'+escapeHtml(bd.label||('B'+(i+1)))+snrDot+
+      '<div class="gl"><div class="gt">'+escapeHtml(dispLabel)+snrDot+
         (isComb?' <span class="tag" style="color:var(--red);border-color:rgba(255,77,77,.5);">梳状谷</span>':'')+'</div>'+
         '<div class="gc num">'+escapeHtml(centerTxt)+(bd.action?' · '+escapeHtml(String(bd.action)):'')+'</div>'+
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
@@ -6146,7 +6166,8 @@ function saveShareCard(){
   var card = document.getElementById('share-card');
   var car = S().car, carName = car ? [car.brand,car.series,car.year].filter(Boolean).join(' ') : '';
   var plan = S().plan||{bands:[]};
-  var gains = (plan.bands||[]).map(function(bd){ return (bd.label||'')+((bd.gainDb>0?'+':'')+(bd.gainDb||0)+'dB'); }).join(' · ');
+  var _scBands = (plan.bands||[]).length || 7;
+  var gains = (plan.bands||[]).map(function(bd, bi){ return (bd.label||bandLabel(bi,_scBands,false))+((bd.gainDb>0?'+':'')+(bd.gainDb||0)+'dB'); }).join(' · ');
   var d = new Date();
   var dateStr = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
   card.innerHTML =
@@ -6419,6 +6440,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.5 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.6 · 内测版</div>
 </body>
 </html>
