@@ -3009,6 +3009,16 @@ window.COPY = {
     soundCheckOkSimpleEn: "Heard it",
     soundCheckQ2: "刚才的测试音，音量怎么样？",
     soundCheckQ2En: "How was the test tone volume?",
+    soundCheckQ3: "你听着呢？音量怎么样？",
+    soundCheckQ3En: "How did it sound to you?",
+    soundCheckPeakLabel: "刚才实测峰值：",
+    soundCheckPeakLabelEn: "Measured peak: ",
+    soundCheckPeakLow: "偏小——这个音量测出来信噪比不够，结果不准",
+    soundCheckPeakLowEn: "Too quiet — SNR would be too low for an accurate test",
+    soundCheckPeakOk: "合适——这个音量测得准",
+    soundCheckPeakOkEn: "Good — this volume will measure accurately",
+    soundCheckPeakHigh: "偏大——有削顶风险，会测坏",
+    soundCheckPeakHighEn: "Too loud — clipping risk, would ruin the test",
     soundCheckPerfect: "正好，开始测试",
     soundCheckPerfectEn: "Perfect, start the test",
     soundCheckSmall: "太小了",
@@ -4611,14 +4621,40 @@ function askSoundCheckSimple(){
     wire('scs-fail', 'fail');
   });
 }
-function askSoundCheck(){
+/* 音量三问弹窗（v2.7）：客观电平读数＋主观感受二合一。
+ * @param {number} peakDb 实测峰值 dBFS（<= -100 表示无数据，不显示读数区）。
+ * 阈值（对应底层算法）：
+ *  - 峰值 <-30dBFS：偏小——粉噪峰值比 RMS 高约 10–12dB，此时 RMS < -40dBFS，
+ *    相对典型底噪（-50dBFS）SNR < 10dB，分频段门控会标灰/黄，测不准；
+ *  - -30～-12dBFS：合适——RMS 约 -42～-24dBFS，SNR > 15dB 全绿灯，
+ *    且峰值离 0dBFS 有 12dB 安全垫，不削顶；
+ *  - >-12dBFS：偏大——峰值逼近 0dBFS，有削顶风险，削顶数据直接作废。
+ * 返回 'ok' | 'small' | 'big' | 'fail'。 */
+function askSoundCheck(peakDb){
   return new Promise(function(resolve){
+    var showPeak = (typeof peakDb==='number' && peakDb > -100);
+    var interpKey, interpColor;
+    if(showPeak){
+      if(peakDb < -30){ interpKey='measure.soundCheckPeakLow'; interpColor='#FFD60A'; }
+      else if(peakDb <= -12){ interpKey='measure.soundCheckPeakOk'; interpColor='#34D399'; }
+      else { interpKey='measure.soundCheckPeakHigh'; interpColor='#FF453A'; }
+    }
+    var pct = showPeak ? Math.max(0, Math.min(100, (peakDb+50)/50*100)) : 0;
     var ov = document.createElement('div');
     ov.className = 'iso-overlay';
     ov.innerHTML =
       '<div class="iso-card">'+
         '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
-        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ2'))+'</div>'+
+        (showPeak ?
+          '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckPeakLabel'))+'<b>'+peakDb.toFixed(1)+' dBFS</b></div>'+
+          '<div style="position:relative;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 2px;background:#1c1c1e;">'+
+            '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+            '<div style="position:absolute;top:-1px;bottom:-1px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:'+pct.toFixed(1)+'%;"></div>'+
+          '</div>'+
+          '<div class="small" style="color:#8E8E93;font-size:11px;">-50&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#34D399;">-20～-12</span>&nbsp;&nbsp;&nbsp;&nbsp;0</div>'+
+          '<div class="small mt8" style="color:'+interpColor+';">'+escapeHtml(tt(interpKey))+'</div>'
+        : '')+
+        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ3'))+'</div>'+
         '<button class="btn btn-primary" id="sc-perfect">'+escapeHtml(tt('measure.soundCheckPerfect'))+'</button>'+
         '<button class="btn btn-ghost" id="sc-small">'+escapeHtml(tt('measure.soundCheckSmall'))+'</button>'+
         '<button class="btn btn-ghost" id="sc-big">'+escapeHtml(tt('measure.soundCheckBig'))+'</button>'+
@@ -4680,16 +4716,33 @@ function askSoundTrouble(){
     wire('st-back', 'back');
   });
 }
-/* 试音流程（v2.6）：3s 粉噪（-20dB 安全电平，fade in/out）→ 确认 → 指引调整 → 通过。
+/* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
- *   false=音量三问"太大/太小/正好"（麦克风激活后，音量确认，与正式测试同一会话）。
- * 3 秒短 burst + 人话问题 = 专业易用。返回 true=通过；false=用户返回/放弃/token 失效。 */
+ *   false=音量确认（麦克风激活后，与正式测试同一会话）：播完显示实测峰值 dBFS＋电平条＋三档解读，
+ *   再问"你听着呢？音量怎么样？"。
+ * 3 秒短 burst + 客观数据 + 人话问题 = 专业易用。返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function soundCheckFlow(M, token, connectivityOnly){
+  /* 播 3s 粉噪并做 peak hold（v2.7：音量确认与电平读数合并）。
+   * 返回线性峰值 0..1；无 analyser（连通性模式，麦克风未激活）时返回 0。 */
   async function play3s(){
     setStatus(tt('measure.soundCheckTitle')+'…');
+    var peakHold = 0, sampler = null, buf = null;
+    try{
+      if(M.analyser){
+        buf = new Float32Array(M.analyser.fftSize);
+        sampler = setInterval(function(){
+          try{
+            M.analyser.getFloatTimeDomainData(buf);
+            for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peakHold) peakHold=a; }
+          }catch(_){}
+        }, 50);
+      }
+    }catch(_){}
     try{ M.playPink(null, 0.15); }catch(_){}
     await new Promise(function(r){ setTimeout(r, 3000); });
     try{ M.stopPink(0.2); }catch(_){}
+    if(sampler) clearInterval(sampler);
+    return peakHold;
   }
   async function askAdjust(kind){
     // kind: 'small' | 'big' → 显示调整指引，返回 'retry' | 'back'
@@ -4721,7 +4774,7 @@ async function soundCheckFlow(M, token, connectivityOnly){
       wire('sa-retry','retry'); wire('sa-back','back');
     });
   }
-  await play3s();
+  var peakHold = await play3s();
   if(token!==app.runToken) return false;
   for(;;){
     var ans;
@@ -4729,16 +4782,17 @@ async function soundCheckFlow(M, token, connectivityOnly){
       // 连通性模式：只问"听得到吗"，不问音量（音量在麦克风激活后确认）
       ans = await askSoundCheckSimple();
     } else {
-      ans = await askSoundCheck();
+      var pdb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
+      ans = await askSoundCheck(pdb);
     }
     if(token!==app.runToken) return false;
-    if(ans==='ok'){ track('soundcheck_ok'); return true; }
+    if(ans==='ok'){ track('soundcheck_ok', {peakDb: peakHold>0 ? Number((20*Math.log10(peakHold)).toFixed(1)) : null}); return true; }
     if(ans==='fail'){
       track('soundcheck_fail');
       var act = await askSoundTrouble();
       if(token!==app.runToken) return false;
       if(act==='back'){ track('soundcheck_back'); return false; }
-      await play3s();
+      peakHold = await play3s();
       if(token!==app.runToken) return false;
       continue;
     }
@@ -4747,7 +4801,7 @@ async function soundCheckFlow(M, token, connectivityOnly){
     var adj = await askAdjust(ans);
     if(token!==app.runToken) return false;
     if(adj==='back'){ track('soundcheck_back'); return false; }
-    await play3s();
+    peakHold = await play3s();
     if(token!==app.runToken) return false;
   }
 }
