@@ -3518,7 +3518,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.20 · 内测版';
+  ver.textContent = 'v2.9.21 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5060,31 +5060,11 @@ async function autoGainCalib(M, token){
  * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
  * 返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function autoGainFlow(M, token){
-  // 1. 自动校准（ascending probe → M._autoGain）：粗调，找安全增益
-  var cal = await autoGainCalib(M, token);
-  if(token!==app.runToken) return false;
-  if(!cal.ok){
-    if(cal.reason==='nosignal'){
-      // 无信号 → 原排查流程
-      track('autogain_fail_nosignal');
-      var act = await askSoundTrouble();
-      if(token!==app.runToken) return false;
-      if(act==='back'){ track('soundcheck_back'); return false; }
-      return autoGainFlow(M, token); // 重试整套
-    }
-    if(cal.reason==='hfp_usb'){
-      // 用户选了看 USB 说明 → 跳 USB 指引页（或回模式选择）
-      track('autogain_hfp_usb');
-      setStatus(tt('measure.hfpUseUsb'));
-      // 简单起见：切到 USB 模式 tab，返回 false 让外层重来
-      try{ setMode('usb'); }catch(_){}
-      return false;
-    }
-    return false;
-  }
-  // 2. v2.9.10: 探针即终点（HFP 下用户无法手动调音量，meter 微调步删除）。
-  //    探针 8s 爬完已冻结在绿区顶部，直接返回 true，外层显示 [开始正式测试]。
-  track('autogain_calib_done', {gainDb:Number(cal.gainDb.toFixed(1))});
+  // v2.9.21: 砍掉探针——用户定调"保证能通过测试的电平"，固定 -10dB（0.316）。
+  // 原理：HFP 底噪 -37dBFS，-10dB 数字增益＋正常听音音量 → mic 峰值 -10～-5dBFS → SNR 15-20dB，必过。
+  // 削顶风险由正式测试的 clip 熔断器兜底（>-3dBFS 停播）。
+  M._autoGain = 0.316;
+  try{ track('autogain_fixed', {gainDb:-10}); }catch(_){}
   return true;
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
