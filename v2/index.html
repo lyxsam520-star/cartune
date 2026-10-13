@@ -2835,6 +2835,8 @@ window.COPY = {
   car: {
     title: "选择你的车",
     sub: "车型决定车机 EQ 有几段。方案严格按实际段数生成，不承诺做不到的精度。",
+    requiredHint: "请先选择车型（或手动输入），才能开始测量",
+    requiredHintEn: "Please select your car model (or enter manually) before measuring",
     brandPh: "品牌",
     brandSearchPh: "搜索品牌，如：吉利",
     searchLabel: "品牌 / 车系",
@@ -3539,7 +3541,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.34 · 内测版';
+  ver.textContent = 'v2.9.35 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4466,13 +4468,14 @@ function rafLoop(){
     if(remain<=5 && remain>0){
       if(!app.avgShown){
         app.avgShown = true; // 结束前 5 秒：最终平均
-        // v2.9.5: 条纹动画，视觉上区别于正常进度，告诉用户"还在算，没卡死"
+        // v2.9.35: 进入最终平均就停粉噪（用户：算平均时别再响了，45 秒数据已够）
+        try{ if(app.measurer && app.measurer.stopPink) app.measurer.stopPink(0.2); }catch(_){}
+        // v2.9.35: 进度条直接 100%，不再显示卡住的"1s"倒数
         var avgBar = document.getElementById('step-p-'+app.curStep);
-        if(avgBar) avgBar.classList.add('averaging');
+        if(avgBar){ avgBar.classList.add('averaging'); avgBar.style.width = '100%'; }
+        // v2.9.28: 用 setStatusSpin 带 spinner 动画
+        setStatusSpin(tt('measure.finalAvg'));
       }
-      // v2.9.5: 倒计时，每帧刷新（便宜的 textContent）
-      // v2.9.28: 用 setStatusSpin 带 spinner 动画，用户抱怨"没有动画进度"
-      setStatusSpin(tt('measure.finalAvg')+'（'+Math.ceil(remain)+'s）');
     }else{
       // v2.9.5: 5 秒结束（remain<=0）移除条纹；正常采集分支保持
       var avgBar2 = document.getElementById('step-p-'+app.curStep);
@@ -5490,6 +5493,25 @@ function snrGate(meas, chLabel){
 }
 /* 测量主流程：由按钮 onclick 直接调用（iOS 手势链） */
 async function startMeasureFlow(opts){
+  // v2.9.35: 车型必选——没选车型（自定义也行）不让进测量页
+  if(!S().car){
+    try{
+      var carSec = document.getElementById('sec-car');
+      if(carSec){ show('car'); }
+      var hint = document.getElementById('car-required-hint');
+      if(!hint){
+        hint = document.createElement('div');
+        hint.id = 'car-required-hint';
+        hint.className = 'alert yellow';
+        hint.style.margin = '8px 0';
+        hint.textContent = tt('car.requiredHint');
+        var anchor = document.getElementById('car-manual-box');
+        if(anchor && anchor.parentNode) anchor.parentNode.insertBefore(hint, anchor);
+      } else { hint.classList.remove('hidden'); }
+      try{ hint.scrollIntoView({behavior:'smooth', block:'center'}); }catch(_){}
+    }catch(_){}
+    return;
+  }
   var isRemeasure = !!(opts && opts.isRemeasure);
   app._remeasureMode = isRemeasure; // 复测失败/削顶时重试仍走复测入口
   hideAlerts();
