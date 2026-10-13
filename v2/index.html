@@ -4788,10 +4788,9 @@ function askSoundTrouble(){
  * 播 3s 粉噪 @ 固定 -20dB（0.1），测 mic 峰值 measDb，算补偿增益把峰值搬到 -16dBFS。
  * A2DP/HFP/用户误操作/音箱自带音量——全兼容，因为测的是最终声压。
  *
- * 目标 -7dBFS（绿区 -10～-4 中点，v2.9.7 定死够响版）：粉噪峰值比 RMS 高约 12dB，
- * → RMS≈-19dBFS，相对 HFP 实测底噪（-37dBFS）则 SNR≈18dB（>15dB 绿灯线），
- * → 离 0dBFS 有 7dB 削顶余量。两头都安全。
- * 专业易用：先把最低门槛（测得出结果）做对，不搞自适应复杂度。
+ * 目标 -5dBFS（绿区 -10～-4 顶部，v2.9.9 用户要求"能偏大尽量偏大"）：粉噪峰值比 RMS 高约 12dB，
+ * → RMS≈-17dBFS，相对 HFP 实测底噪（-37dBFS）则 SNR≈20dB（最大冗余），
+ * → 离 0dBFS 有 5dB 削顶余量。响到顶，安全线内。
  *
  * @returns Promise<{ok, measDb, gainDb, autoGain, reason?}>
  *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
@@ -4892,8 +4891,9 @@ async function autoGainCalib(M, token){
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, clipped:true});
         return;
       }
-      // 达标：峰值进入 -10～-4dBFS → 冻结当前增益，停播，校准完成
-      if(peakDb >= -10 && peakDb <= -4){
+      // 达标：峰值进入 -6～-4dBFS（绿区顶部，用户要求"能偏大尽量偏大"，最大 SNR 冗余）→ 冻结，停播
+      // 绿区 UI 仍显示 -10～-4（可接受范围），探针只认顶部 2dB
+      if(peakDb >= -6 && peakDb <= -4){
         console.log('[autoGain] 达标：峰值 '+peakDb.toFixed(1)+'dBFS，冻结增益 '+cg.toFixed(4));
         M._autoGain = Math.max(0.001, Math.min(1.0, cg));
         try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
@@ -6445,6 +6445,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.8 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.9 · 内测版</div>
 </body>
 </html>
