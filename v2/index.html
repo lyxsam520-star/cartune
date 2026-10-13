@@ -1900,6 +1900,16 @@ var MODELS_DB = {
     this.analyser.fftSize = this.fftSize;
     this.analyser.smoothingTimeConstant = 0; // 不做时域平滑，平均在功率域做
     this.source.connect(this.analyser);
+    // v2.9.58: iOS Safari 必须让音频图"活"起来——analyser 接零增益到 destination，
+    // 否则 mic 数据不流动（时域有削顶但频域 -89dB 的根因）
+    try{
+      if(!this._zeroGain){
+        this._zeroGain = this.audioCtx.createGain();
+        this._zeroGain.gain.value = 0;
+        this._zeroGain.connect(this.audioCtx.destination);
+      }
+      this.analyser.connect(this._zeroGain);
+    }catch(_){}
   };
 
   // 帧成本自适应：连续 30 帧 getFloatFrequencyData+聚合 >16ms 则降一档
@@ -3591,7 +3601,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.57 · 内测版';
+  ver.textContent = 'v2.9.58 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6181,15 +6191,6 @@ function drawReportChart(){
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
   var meas = avg31();
-  // v2.9.57: 诊断弹窗（用户要求：所有诊断码都弹窗）
-  try{
-    if(!window._chartDbg){
-      window._chartDbg = true;
-      var _t0 = '';
-      try{ _t0 = DSP.targetDbAt(1000).toFixed(1); }catch(e){ _t0 = 'ERR:'+e.message; }
-      alert('CHART iso:'+iso.length+' meas:'+meas.length+' tgt1000:'+_t0+'\nmeas0:'+(typeof meas[0]==='number'?meas[0].toFixed(1):meas[0]));
-    }
-  }catch(_){}
   var tgt = iso.map(function(f){ try{ return DSP.targetDbAt(f); }catch(_){ return 0; } });
   var sim = meas.slice();
   try{
