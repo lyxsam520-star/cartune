@@ -2624,10 +2624,12 @@ var MODELS_DB = {
       return { ok: false,
                reason: '100Hz–8kHz 内有 ' + weak + ' 个频段未明显高于底噪（要求 ≤5 个）：粉噪可能未正常播放或麦克风被遮挡' };
     }
-    for (i = 1; i < 31; i++) {
-      if (Math.abs(meas31[i] - meas31[i - 1]) >= 18) {
+    // v2.9.33: 纯音检测只认"凸起"不认"掉落"——之前 Math.abs 把高频自然滚降（如 -63→-89dB）误判为纯音干扰。
+    // 纯音 = 某段比左右邻居都高 ≥18dB（尖峰）；滚降是越往高越低，不触发。
+    for (i = 1; i < 30; i++) {
+      if (meas31[i] - meas31[i - 1] >= 18 && meas31[i] - meas31[i + 1] >= 18) {
         return { ok: false,
-                 reason: '在 ' + DSP.ISO31[i] + 'Hz 附近检测到疑似纯音干扰（相邻段跳变 ≥18 dB）：请关闭提示音/来电后重测' };
+                 reason: '在 ' + DSP.ISO31[i] + 'Hz 附近检测到疑似纯音干扰（该段比相邻段高 ≥18 dB）：请关闭提示音/来电后重测' };
       }
     }
     return { ok: true, reason: '' };
@@ -3537,7 +3539,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.32 · 内测版';
+  ver.textContent = 'v2.9.33 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
