@@ -3052,10 +3052,10 @@ window.COPY = {
     soundCheckPeakOkEn: "Good — this volume will measure accurately",
     soundCheckPeakHigh: "偏大——有削顶风险，会测坏",
     soundCheckPeakHighEn: "Too loud — clipping risk, would ruin the test",
-    autoGainProbing: "正在小声探测合适音量，请别动音箱音量…",
-    autoGainProbingEn: "Probing for the right volume quietly, please don't touch the speaker volume…",
-    autoGainMeterHint: "正在自动探测合适音量，针进绿区即锁定",
-    autoGainMeterHintEn: "Auto-probing optimal volume, locks when needle hits green",
+    autoGainProbing: "正在探测合适音量，可用手机蓝牙音量键微调…",
+    autoGainProbingEn: "Probing for the right volume, you can fine-tune with phone Bluetooth volume keys…",
+    autoGainMeterHint: "正在自动探测，可用手机蓝牙音量键微调，针进绿区即锁定",
+    autoGainMeterHintEn: "Auto-probing, fine-tune with phone BT volume keys, locks when needle hits green",
     autoGainLocked: function(db){ return "已锁定 "+db+" dB"; },
     autoGainLockedEn: function(db){ return "Locked at "+db+" dB"; },
     autoGainClipped: "探测到音量过大，已自动压低",
@@ -3508,7 +3508,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.18 · 内测版';
+  ver.textContent = 'v2.9.19 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
