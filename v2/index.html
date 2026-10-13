@@ -164,11 +164,6 @@ body{
 .checkrow input[type=checkbox]{width:22px;height:22px;margin-top:2px;accent-color:var(--amber);flex:0 0 auto;}
 /* 增益卡 */
 .gaincard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin:10px 0;display:flex;align-items:center;gap:12px;}
-/* v2.9.20: App 内音量滑杆（iOS 友好，绕开 HFP 系统音量键失效） */
-#lc-vol::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;}
-#lc-vol::-moz-range-thumb{width:28px;height:28px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;}
-#lc-vol::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#2c2c2e;}
-#lc-vol::-moz-range-track{height:6px;border-radius:3px;background:#2c2c2e;}
 .gaincard .gl{flex:1;}
 .gaincard .gt{font-size:15px;font-weight:700;}
 .gaincard .gc{font-size:12px;color:var(--sub);margin-top:2px;}
@@ -2003,8 +1998,6 @@ var MODELS_DB = {
    * 无则回退 -20dB（0.1）安全电平；USB/其他模式 1.0。 */
   DSP.Measurer.prototype._defaultGain = function(){
     if(this._btPlay){
-      // v2.9.20: 优先手动滑杆锁定的增益（用户在电平表拖出来的），其次自动探针值，最后回退 0.1
-      if(typeof this._manualGain === 'number' && this._manualGain > 0 && this._manualGain <= 1) return this._manualGain;
       if(typeof this._autoGain === 'number' && this._autoGain > 0 && this._autoGain <= 1) return this._autoGain;
       return 0.1;
     }
@@ -2951,14 +2944,8 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
-    levelSliderLabel: "音量",
-    levelSliderLabelEn: "Volume",
-    levelSliderHint: "拖动滑杆调音量，让指针进入绿色区域",
-    levelSliderHintEn: "Drag the slider to adjust volume until the needle enters the green zone",
-    levelTooLoudAuto: "音量过大，已自动调低",
-    levelTooLoudAutoEn: "Too loud, auto-reduced",
-    levelTargetGuide: "调节音箱音量，让指针进入绿色区域",
-    levelTargetGuideEn: "Adjust the speaker volume to bring the needle into the green zone",
+    levelTargetGuide: "正在自动校准音量，请保持安静不要动",
+    levelTargetGuideEn: "Auto-calibrating volume, please stay quiet and don't move",
     levelTargetWhy: "指针在绿区时，音量正合适",
     levelTargetWhyEn: "When the needle is in the green zone, the volume is just right",
     levelZoneLowRed: "电平太低，请调大音量",
@@ -3065,6 +3052,14 @@ window.COPY = {
     soundCheckPeakOkEn: "Good — this volume will measure accurately",
     soundCheckPeakHigh: "偏大——有削顶风险，会测坏",
     soundCheckPeakHighEn: "Too loud — clipping risk, would ruin the test",
+    autoGainProbing: "正在小声探测合适音量，请别动音箱音量…",
+    autoGainProbingEn: "Probing for the right volume quietly, please don't touch the speaker volume…",
+    autoGainMeterHint: "正在自动探测合适音量，针进绿区即锁定",
+    autoGainMeterHintEn: "Auto-probing optimal volume, locks when needle hits green",
+    autoGainLocked: function(db){ return "已锁定 "+db+" dB"; },
+    autoGainLockedEn: function(db){ return "Locked at "+db+" dB"; },
+    autoGainClipped: "探测到音量过大，已自动压低",
+    autoGainClippedEn: "Volume was too loud, auto-reduced",
     autoGainDone: function(db){ return "已自动校准播放音量（"+db+" dB），适应当前蓝牙模式"; },
     autoGainDoneEn: function(db){ return "Playback volume auto-calibrated ("+db+" dB) for current Bluetooth mode"; },
     autoGainTrimUp: "已自动调大 6dB，再听听",
@@ -3513,7 +3508,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.20 · 内测版';
+  ver.textContent = 'v2.9.18 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4799,16 +4794,253 @@ function askSoundTrouble(){
     wire('st-back', 'back');
   });
 }
-/* 电平校准流程 v2.9.19：手动 meter（用户调音箱音量进绿区）。
- * 探针已删（用户要求改回手动）。播粉噪固定 -20dB（0.1），正式测试同增益，音量一致。
+/* 自动增益校准 v2.8（解决 iOS 蓝牙 A2DP→HFP 音量跳变）。
+ *
+ * 根因：iOS 蓝牙双 profile——A2DP（媒体音量）vs HFP（通话音量），音量轨独立。
+ * 麦克风激活（initMic）触发 iOS 从 A2DP 切到 HFP，用户调的 A2DP 音量管不了 HFP，
+ * 手动调音量无解（用户根本不知道 HFP 音量是多少）。
+ *
+ * 解法：不依赖任何音量假设，直接测 mic 端实际声压，反推数字增益。
+ * 播 3s 粉噪 @ 固定 -20dB（0.1），测 mic 峰值 measDb，算补偿增益把峰值搬到 -16dBFS。
+ * A2DP/HFP/用户误操作/音箱自带音量——全兼容，因为测的是最终声压。
+ *
+ * 目标 -5dBFS（绿区 -10～-4 顶部，v2.9.9 用户要求"能偏大尽量偏大"）：粉噪峰值比 RMS 高约 12dB，
+ * → RMS≈-17dBFS，相对 HFP 实测底噪（-37dBFS）则 SNR≈20dB（最大冗余），
+ * → 离 0dBFS 有 5dB 削顶余量。响到顶，安全线内。
+ *
+ * @returns Promise<{ok, measDb, gainDb, autoGain, reason?}>
+ *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
+ *   ok=false, reason='nosignal': measDb<-50dBFS，无信号，走排查。
+ */
+/* v2.9 渐强探测（2026-10-13 真机：点"启动麦克风"后 HFP 音量在最大，-20dB 探测本身也炸）。
+ * 原理：HFP 音量独立且可能在最大，渐强探测是唯一安全的首触达方式。
+ * 探测永远从 -60dB（0.001）起，8s 线性爬到 0dB（1.0），绝不直接大音量。
+ * HFP 下用户无法手动调音量，全靠数字增益自动找绿区。
+ * 安全红线：任何时刻峰值 >-3dBFS → 立即停播。
+ * 返回 {ok, reason?, measDb?, gainDb?, autoGain?, emergency?, clipped?, low?}
+ *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
+ *   ok=false, reason='nosignal': measDb<-50dBFS，无信号，走排查。
+ */
+async function autoGainCalib(M, token){
+  setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
+  // v2.9.18: 探针前强制静默 1s——试音的粉噪残留会干扰探针首采样，导致"一闪而过"误锁定
+  try{ M.stopPink(0.1); }catch(_){}
+  await new Promise(function(r){ setTimeout(r, 1000); });
+  if(token!==app.runToken) return {ok:false, reason:'token'};
+  var ctx = M.audioCtx;
+  // v2.9.14: END_G 回落到 0.1（-20dB）。v2.9.8 曾放到 1.0（0dB），但探针 8 秒爬完未进绿区时会停在最大，
+  // 正式测试直接炸。探针找不到绿区 = 物理链路问题（音箱太小声/太远），应提示用户调物理音量，而非数字爆表。
+  // 用户可在两次测试之间（A2DP 模式）调音箱物理音量，HFP 探测时按键才失效。
+  var START_G = 0.001, END_G = 0.1, RAMP_SEC = 8.0; // -60dB → -20dB
+  var buf = null, sampler = null, src = null, g = null;
+  var tStart = Date.now();
+
+  function currentGain(){
+    var el = (Date.now() - tStart) / 1000;
+    if(el <= 0.1) return START_G * Math.max(0, el / 0.1);
+    if(el >= 0.1 + RAMP_SEC) return END_G;
+    return START_G + (END_G - START_G) * ((el - 0.1) / RAMP_SEC);
+  }
+  function stopProbe(){
+    // v2.9.16: 硬停——lockAndWait 冻结后 stopPink 的 cancelScheduledValues 会清掉冻结值导致淡出异常。
+    // 直接拿 gain 节点，取消一切调度，50ms 拉到 0，停 src。
+    try{
+      var gg = M._pinkGain || g, ss = M._pinkSrc || src, ctx2 = M.audioCtx;
+      if(gg && ctx2){
+        var t2 = ctx2.currentTime;
+        try{ gg.gain.cancelScheduledValues(t2); }catch(_){}
+        try{ gg.gain.setValueAtTime(gg.gain.value || 0, t2); }catch(_){}
+        try{ gg.gain.linearRampToValueAtTime(0, t2 + 0.05); }catch(_){ try{ gg.gain.setValueAtTime(0, t2); }catch(_){} }
+      }
+      if(ss){ try{ ss.stop(ctx2 ? ctx2.currentTime + 0.1 : undefined); }catch(_){ try{ ss.stop(); }catch(_){} } }
+    }catch(_){}
+    try{ M.stopPink(0.05); }catch(_){}
+    if(sampler){ clearInterval(sampler); sampler = null; }
+    src = null; g = null;
+  }
+
+  // 建链：手动控制 ramp（不用 playPink，因需从 0.01 起、3s 爬坡、随时冻结）
+  try{ M.stopPink(0.1); }catch(_){} // 防旧播放在跑
+  try{
+    var pbuf = DSP.makeStereoPink(ctx, 35, null);
+    src = ctx.createBufferSource();
+    src.buffer = pbuf; src.loop = true;
+    g = ctx.createGain();
+    var t0 = ctx.currentTime;
+    g.gain.setValueAtTime(0, t0);
+    try{
+      g.gain.linearRampToValueAtTime(START_G, t0 + 0.1);          // 0.1s 极短 fade 到 -60dB，防"乍响"
+      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 8s 爬到 0dB
+    }catch(e){
+      console.error('[autoGain] ramp 调度失败，保持静音', e);
+      return {ok:false, reason:'rampfail'};
+    }
+    src.connect(g);
+    try{ g.connect(M._masterOut || ctx.destination); }
+    catch(e){ g.connect(ctx.destination); }
+    src.start(t0 + 0.02);
+    M._pinkSrc = src; M._pinkGain = g; // 交给 stopPink 管理
+    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→0.1(-20dB)，8s');
+  }catch(e){
+    console.error('[autoGain] 起播失败', e);
+    return {ok:false, reason:'playfail'};
+  }
+  try{ if(M.analyser) buf = new Float32Array(M.analyser.fftSize); }catch(_){}
+
+  // v2.9.12: 探针实时表 overlay（用户："电平测试直接没了"——8 秒爬坡时要看着针动，进绿区才安心）。
+  // 表只在探针里显示一次，不搞两步；levelCalibFlow 不恢复。
+  var ov = null, ovNeedle = null, ovDb = null, ovStatus = null, ovGo = null, ovBack = null;
+  function closeOv(){ if(ov){ try{ document.body.removeChild(ov); }catch(_){} ov = null; } }
+  function showProbeMeter(){
+    closeOv();
+    ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    // 表盘 -32～+8（v2.9.11），绿区 -12～-4 居中 50%～70%
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.levelCalibTitle'))+'</div>'+
+        '<div class="small mt8" id="agm-hint">'+escapeHtml(tt('measure.autoGainMeterHint'))+'</div>'+
+        '<div id="agm-meter" style="position:relative;height:20px;border-radius:10px;overflow:hidden;margin:14px 0 4px;background:#1c1c1e;">'+
+          '<div style="position:absolute;left:0%;width:30%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
+          '<div style="position:absolute;left:30%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:50%;width:20%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+          '<div style="position:absolute;left:70%;width:10%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:80%;width:20%;top:0;bottom:0;background:rgba(255,69,58,.50);"></div>'+
+          '<div id="agm-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;box-shadow:0 0 4px rgba(255,255,255,.6);"></div>'+
+        '</div>'+
+        '<div class="small" style="position:relative;height:14px;margin-bottom:8px;color:#8E8E93;">'+
+          '<span style="position:absolute;left:0;">-32</span>'+
+          '<span style="position:absolute;left:30%;transform:translateX(-50%);">-20</span>'+
+          '<span style="position:absolute;left:50%;transform:translateX(-50%);color:#34D399;">-12</span>'+
+          '<span style="position:absolute;left:70%;transform:translateX(-50%);color:#34D399;">-4</span>'+
+          '<span style="position:absolute;left:80%;transform:translateX(-50%);">0</span>'+
+          '<span style="position:absolute;right:0;color:#636366;">+8</span>'+
+        '</div>'+
+        '<div class="small num" id="agm-db" style="color:#8E8E93;">-- dBFS</div>'+
+        '<div class="small mt8" id="agm-status" style="min-height:22px;"></div>'+
+        '<div class="mt8"><button class="btn btn-primary hidden" id="agm-go">'+escapeHtml(tt('measure.levelGo'))+'</button></div>'+
+        '<div class="mt8"><button class="btn btn-ghost" id="agm-back">'+escapeHtml(tt('common.back'))+'</button></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    ovNeedle = document.getElementById('agm-needle');
+    ovDb = document.getElementById('agm-db');
+    ovStatus = document.getElementById('agm-status');
+    ovGo = document.getElementById('agm-go');
+    ovBack = document.getElementById('agm-back');
+  }
+  function updateProbeMeter(peakDb){
+    if(!ov) return;
+    var pct = Math.max(0, Math.min(100, (peakDb+32)/40*100));
+    if(ovNeedle) ovNeedle.style.left = pct.toFixed(1)+'%';
+    if(ovDb) ovDb.textContent = (peakDb<=-99?'--':peakDb.toFixed(1))+' dBFS';
+  }
+
+  return new Promise(function(resolve){
+    var done = false;
+    function finish(r){
+      if(done) return; done = true;
+      closeOv();
+      stopProbe();
+      resolve(r);
+    }
+    // 绿区锁定：冻结增益（取消爬坡、保持当前值，粉噪继续播），overlay 显示"已锁定"＋[开始正式测试]，等用户点。
+    var lockResult = null;
+    function lockAndWait(r){
+      if(done) return;
+      lockResult = r;
+      // 冻结：取消后续 ramp，保持当前增益值
+      try{
+        var cc = M._pinkGain || g;
+        if(cc){ cc.gain.cancelScheduledValues(ctx.currentTime); cc.gain.setValueAtTime(Math.max(0.001, Math.min(1.0, currentGain())), ctx.currentTime); }
+      }catch(_){}
+      if(sampler){ clearInterval(sampler); sampler = null; } // 停采样，针定格
+      try{ track('autogain_locked_ui', {measDb:Number(r.measDb.toFixed(1))}); }catch(_){}
+      if(ovStatus) ovStatus.innerHTML = '<span style="color:#34D399;">'+escapeHtml(tf('measure.autoGainLocked')(r.measDb.toFixed(1)))+'</span>';
+      if(ovGo){
+        ovGo.classList.remove('hidden');
+        ovGo.onclick = function(){ finish(lockResult); };
+      }
+      // 注意：此时粉噪仍在播（锁定电平），点按钮才 stopProbe
+    }
+    showProbeMeter();
+    if(ovBack){ ovBack.onclick = function(){ finish({ok:false, reason:'back'}); }; }
+    sampler = setInterval(function(){
+      if(token !== app.runToken){ finish({ok:false, reason:'token'}); return; }
+      var peak = 0;
+      try{
+        if(M.analyser && buf){
+          M.analyser.getFloatTimeDomainData(buf);
+          for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peak) peak=a; }
+        }
+      }catch(_){}
+      var peakDb = peak > 0 ? 20*Math.log10(peak) : -120;
+      updateProbeMeter(peakDb);
+      var cg = currentGain();
+      var el = (Date.now() - tStart) / 1000;
+
+      // 安全红线：>-3dBFS 立即停播，增益降 12dB
+      if(peakDb > -3){
+        console.error('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -3，紧急停播');
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg / 4));
+        try{ track('autogain_emergency', {peakDb:Number(peakDb.toFixed(1))}); }catch(_){}
+        finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, emergency:true});
+        return;
+      }
+      // 削顶边缘：>-4dBFS 立即停播，增益减半（-6dB），提示"已自动压低"
+      if(peakDb > -4){
+        console.log('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -4，停播并减半增益');
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg / 2));
+        try{ track('autogain_clipguard', {peakDb:Number(peakDb.toFixed(1))}); }catch(_){}
+        finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, clipped:true});
+        return;
+      }
+      // 达标：峰值进入 -8～-4dBFS（绿区上半，用户要宽容度＋偏响亮）→ 冻结＋等用户点[开始正式测试]
+      if(peakDb >= -8 && peakDb <= -4){
+        console.log('[autoGain] 达标：峰值 '+peakDb.toFixed(1)+'dBFS，冻结增益 '+cg.toFixed(4));
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg));
+        try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
+        lockAndWait({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain});
+        return;
+      }
+      // 8.1s 爬完仍未达标（已µ½ 0dB 数字上限，仍不够响→提示用户环境/设备问题）
+      if(el >= 0.1 + RAMP_SEC + 0.1){
+        if(peakDb < -50){
+          try{ track('autogain_nosignal', {measDb:Number(peakDb.toFixed(1))}); }catch(_){}
+          finish({ok:false, reason:'nosignal', measDb:peakDb});
+        }else{
+          console.log('[autoGain] 爬完未达标，峰值 '+peakDb.toFixed(1)+'dBFS，用 0.1 并提示调大');
+          M._autoGain = 0.1;
+          try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:0.1, low:true}); }catch(_){}
+          finish({ok:true, measDb:peakDb, gainDb:0, autoGain:0.1, low:true});
+        }
+        return;
+      }
+    }, 50);
+  });
+}
+/* 自动增益确认流程 v2.8：autoGainCalib（3s 实测→算增益）+ 主观二次确认。
+ * UI：显示"已自动校准播放音量（-XX dB）"＋实测峰值＋电平条，再问"你听着呢？"
+ * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
  * 返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function autoGainFlow(M, token){
-  // v2.9.19: 直接手动 meter，用户调音箱音量让指针进绿区（-12～-2dBFS，10dB 宽）。
-  // 正式测试用同一增益 0.1，音量一致。
-  var ok = await levelCalibFlow(M, token);
+  // 1. 自动校准（ascending probe → M._autoGain）：粗调，找安全增益
+  var cal = await autoGainCalib(M, token);
   if(token!==app.runToken) return false;
-  if(ok){ track('levelcalib_manual_ok'); return true; }
-  track('levelcalib_manual_back'); return false;
+  if(!cal.ok){
+    if(cal.reason==='nosignal'){
+      // 无信号 → 原排查流程
+      track('autogain_fail_nosignal');
+      var act = await askSoundTrouble();
+      if(token!==app.runToken) return false;
+      if(act==='back'){ track('soundcheck_back'); return false; }
+      return autoGainFlow(M, token); // 重试整套
+    }
+    return false;
+  }
+  // 2. v2.9.10: 探针即终点（HFP 下用户无法手动调音量，meter 微调步删除）。
+  //    探针 8s 爬完已冻结在绿区顶部，直接返回 true，外层显示 [开始正式测试]。
+  track('autogain_calib_done', {gainDb:Number(cal.gainDb.toFixed(1))});
+  return true;
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
@@ -4922,8 +5154,8 @@ function runLevelCalibOnce(M, token){
         '<div id="lc-meter" style="position:relative;height:20px;border-radius:10px;overflow:hidden;margin:14px 0 4px;background:#1c1c1e;">'+
           '<div style="position:absolute;left:0%;width:30%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
           '<div style="position:absolute;left:30%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
-          '<div style="position:absolute;left:50%;width:25%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
-          '<div style="position:absolute;left:75%;width:5%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:50%;width:20%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+          '<div style="position:absolute;left:70%;width:10%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
           '<div style="position:absolute;left:80%;width:20%;top:0;bottom:0;background:rgba(255,69,58,.50);"></div>'+
           '<div id="lc-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;box-shadow:0 0 4px rgba(255,255,255,.6);"></div>'+
         '</div>'+
@@ -4931,20 +5163,12 @@ function runLevelCalibOnce(M, token){
           '<span style="position:absolute;left:0;">-32</span>'+
           '<span style="position:absolute;left:30%;transform:translateX(-50%);">-20</span>'+
           '<span style="position:absolute;left:50%;transform:translateX(-50%);color:#34D399;">-12</span>'+
-          '<span style="position:absolute;left:75%;transform:translateX(-50%);color:#34D399;">-2</span>'+
+          '<span style="position:absolute;left:70%;transform:translateX(-50%);color:#34D399;">-4</span>'+
           '<span style="position:absolute;left:80%;transform:translateX(-50%);">0</span>'+
           '<span style="position:absolute;right:0;color:#636366;">+8</span>'+
         '</div>'+
         '<div class="small" id="lc-db" style="color:#8E8E93;">-- dBFS</div>'+
         '<div class="small mt8" id="lc-status" style="min-height:22px;"></div>'+
-        '<div class="mt8" style="margin-top:12px;">'+
-          '<div class="small" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
-            '<span>'+escapeHtml(tt('measure.levelSliderLabel'))+'</span>'+
-            '<span id="lc-volpct" class="num">67%</span>'+
-          '</div>'+
-          '<input type="range" id="lc-vol" min="0" max="100" value="67" step="1" style="width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:#2c2c2e;outline:none;cursor:pointer;">'+
-          '<div class="small" style="color:#8E8E93;margin-top:4px;">'+escapeHtml(tt('measure.levelSliderHint'))+'</div>'+
-        '</div>'+
         '<div class="mt8"><button class="btn btn-primary" id="lc-go" disabled style="opacity:.4;">'+escapeHtml(tt('measure.levelGo'))+'</button></div>'+
         '<button class="btn btn-ghost" id="lc-back">'+escapeHtml(tt('measure.levelBack'))+'</button>'+
       '</div>';
@@ -4956,34 +5180,14 @@ function runLevelCalibOnce(M, token){
     var needle=document.getElementById('lc-needle'),
         dbEl=document.getElementById('lc-db'),
         stEl=document.getElementById('lc-status'),
-        goBtn=document.getElementById('lc-go'),
-        volSlider=document.getElementById('lc-vol'),
-        volPct=document.getElementById('lc-volpct');
-    // v2.9.20: App 内音量滑杆 → 数字增益（指数映射，-60dB～0dB），绕开 iOS HFP 系统音量键失效。
-    // 初始 67 ≈ -20dB（0.1），接近之前的固定默认值。
-    function sliderToGain(v){ return 0.001 * Math.pow(1000, Math.max(0,Math.min(100,v))/100); }
-    var manualGain = sliderToGain(67);
-    function applySliderGain(){
-      if(!volSlider) return;
-      var v = Number(volSlider.value)||0;
-      manualGain = sliderToGain(v);
-      if(volPct) volPct.textContent = v+'%';
-      try{
-        var gn = M._pinkGain;
-        if(gn && M.audioCtx){ gn.gain.setValueAtTime(manualGain, M.audioCtx.currentTime); }
-      }catch(_){}
-    }
-    if(volSlider){
-      volSlider.addEventListener('input', applySliderGain);
-      // iOS Safari 上 input 事件在拖动时连续触发，无需 change 兜底
-    }
+        goBtn=document.getElementById('lc-go');
     function zoneOf(db){
-      // v2.9.19: 绿区 -12～-2dBFS（10dB 宽，用户要求宽容度大、容易进下一步）。
-      // 峰值 -12～-2 → RMS -24～-14dBFS；HFP 底噪 -37 时 SNR 13～23dB；离 0dBFS 有 2dB 削顶余量。
+      // v2.9.10: 绿区 -12～-4dBFS（用户要求宽容度高一点；8dB 宽）。
+      // 峰值 -12～-4 → RMS -24～-16dBFS；HFP 底噪 -37 时 SNR 13～21dB；离 0dBFS 有 4dB 削顶余量。
       if(db<-20) return 'redlow';
       if(db<-12) return 'yellowlow';
-      if(db<=-2) return 'green';
-      if(db<=0) return 'yellowhigh';
+      if(db<=-4) return 'green';
+      if(db<=-2) return 'yellowhigh';
       return 'redhigh';
     }
     var ZONE_TXT={
@@ -5000,8 +5204,7 @@ function runLevelCalibOnce(M, token){
     function finish(v){
       if(done) return; done=true;
       if(timer){ clearTimeout(timer); timer=null; }
-      // v2.9.20: 用户点[开始]时，把滑杆锁定的增益存到 M._manualGain，正式测试 _defaultGain() 优先用它
-      if(v==='ok'){ try{ M._manualGain = manualGain; track('levelcalib_ok_db',{db:Number(smoothDb.toFixed(1)), gain:Number(manualGain.toFixed(4))}); }catch(_){} }
+      if(v==='ok'){ try{ track('levelcalib_ok_db',{db:Number(smoothDb.toFixed(1))}); }catch(_){} }
       try{ M.stopPink(0.2); }catch(_){}
       try{ document.body.removeChild(ov); }catch(_){}
       resolve(v);
@@ -5035,14 +5238,6 @@ function runLevelCalibOnce(M, token){
           if(needle) needle.style.left=pct.toFixed(1)+'%';
           if(dbEl) dbEl.textContent=pdb.toFixed(1)+' dBFS';
           smoothDb+=0.35*(pdb-smoothDb);
-          // v2.9.20: 安全——滑杆拉满（0dB）且 mic 峰值 >-3dBFS 时，自动拉回 70（-18dB）防炸
-          if(peak>0.708 && volSlider && Number(volSlider.value)>=95){
-            try{
-              volSlider.value=70; applySliderGain();
-              if(stEl) stEl.innerHTML='<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelTooLoudAuto'))+'</span>';
-              track('levelcalib_autoreduce',{peakDb:Number(pdb.toFixed(1))});
-            }catch(_){}
-          }
           if(peak>=0.99){
             if(clipArmed){ try{ track('levelcalib_clip'); }catch(_){} clipArmed=false; }
             setGo(false);
@@ -5068,9 +5263,11 @@ function runLevelCalibOnce(M, token){
       }catch(e){}
       timer=setTimeout(loop,60);
     }
-    // v2.9.20: 固定 -20dB（0.1）播粉噪，用户手动调音箱音量进绿区。正式测试同增益，音量一致。
-    // v2.9.20: 改用滑杆初始增益（67≈-20dB），用户拖滑杆实时调数字增益。
-    try{ if(btPlay){ M.playPink(null, 0.5, manualGain); console.log('[levelCalib] pink started (bt) gain='+manualGain.toFixed(4)+', 0.5s fade'); applySliderGain(); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
+    // v2.9.4: 用 ascending probe 校准出的安全增益，上限 0.1（-20dB）绝不超。
+    // probe=粗调找安全增益，meter=微调（用户手调音箱到绿区）。满幅播放永不回来。
+    var safeGain = 0.1;
+    try{ if(typeof M._autoGain==='number' && M._autoGain>0) safeGain = Math.min(0.1, M._autoGain); }catch(_){}
+    try{ if(btPlay){ M.playPink(null, 2.0, safeGain); console.log('[levelCalib] pink started (bt) gain='+safeGain.toFixed(4)+', 2s fade'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
     loop();
   });
 }
