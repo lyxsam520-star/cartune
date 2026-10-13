@@ -2911,6 +2911,8 @@ window.COPY = {
     measuringTip: "正在播放测试音频并测量…请保持安静，不要碰手机。",
     snrWarn: "信号太弱，请调大车机音量后再测",
     clipAlert: "检测到麦克风削顶，已停止，请调小音量重测",
+    clipWarn: "音量偏大（麦克风偶发削顶），测量继续，报告会标注",
+    clipWarnEn: "Volume a bit high (mic clipping occasionally), continuing; report will note it",
     clipPaused: "已暂停：检测到麦克风削顶",
     clipPauseTitle: "检测到麦克风削顶",
     clipPauseTitleEn: "Microphone clipping detected",
@@ -3534,7 +3536,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.24 · 内测版';
+  ver.textContent = 'v2.9.25 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4511,7 +4513,15 @@ function onFrame(f){
   var _phEl = (f && typeof f.phaseElapsed === 'number') ? f.phaseElapsed : 99;
   var _inGrace = (f && f.phaseKey === 'floor') || _phEl < 3;
   if(_inGrace && f.clipped){ try{ console.log('[clip] grace: clipped frame ignored (phase='+(f.phaseKey||'?')+' phEl='+_phEl.toFixed(2)+')'); }catch(_){} }
-  if(!_inGrace && app.clipStreak>=5){ app.clipStreak = 0; onClipPause(); return; }
+  // v2.9.25: 削顶改警告不中断——用户正常听感下也会触发旧阈值（5 帧），导致无法完成测试。
+  // 连续 30 帧（0.5s）削顶才弹黄条警告，不暂停测量；数据照收，报告里标可信度。
+  if(!_inGrace && app.clipStreak>=30){
+    app.clipStreak = 0;
+    app._clipWarned = (app._clipWarned || 0) + 1;
+    var clipEl = document.getElementById('clip-alert');
+    if(clipEl){ clipEl.textContent = tt('measure.clipWarn'); clipEl.classList.add('show'); clipEl.classList.remove('red'); clipEl.classList.add('yellow'); }
+    try{ console.log('[clip] warning only, not pausing (count='+app._clipWarned+')'); }catch(_){}
+  }
   // 电平过低提示
   if(typeof f.peak==='number' && f.peak < Math.pow(10,-45/20)){ app.lowStreak++; } else { app.lowStreak=0; }
   var lowEl = document.getElementById('snr-alert');
