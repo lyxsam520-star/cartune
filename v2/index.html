@@ -232,13 +232,7 @@ ul.clean li{margin:6px 0;}
       </div>
     </div>
     <div class="card center mt16">
-      <div class="switchrow" style="padding:4px 0 12px;">
-        <div style="text-align:left;">
-          <div class="h" id="home-pro-label" style="font-size:15px;"></div>
-          <div class="small" id="home-pro-desc"></div>
-        </div>
-        <label class="switch"><input type="checkbox" id="pro-toggle"><span class="knob"></span></label>
-      </div>
+      <!-- v2.9.46: 首页专业模式卡片已移除，开关移到测量页频谱旁 -->
       <div class="card" id="home-tech-link" style="display:flex;align-items:center;gap:12px;cursor:pointer;">
       <div style="font-size:22px;line-height:1;">&#x1F52C;</div>
       <div style="flex:1;min-width:0;">
@@ -347,10 +341,14 @@ ul.clean li{margin:6px 0;}
       <div class="small mt8" id="measure-status"></div>
     </div>
     <div id="bars-wrap">
-      <div class="small" id="bars-caption" style="margin-bottom:6px;"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div class="small" id="bars-caption"></div>
+        <!-- v2.9.46: 频谱旁专业版开关（默认开） -->
+        <label class="switch" style="transform:scale(.85);"><input type="checkbox" id="pro31-toggle" checked><span class="knob"></span></label>
+      </div>
       <canvas id="bars"></canvas>
       <div id="bar-labels"></div>
-      <div id="pro31-wrap" class="hidden">
+      <div id="pro31-wrap">
         <div class="small mt8" style="color:var(--cyan);">内部分析视图 · 31 段</div>
         <canvas id="bars31"></canvas>
       </div>
@@ -3584,7 +3582,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.45 · 内测版';
+  ver.textContent = 'v2.9.46 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -3626,18 +3624,23 @@ function initHome(){
   setText('home-badge','home.badgeFree');
   setText('home-title','home.title');
   setText('home-sub','home.subtitle');
-  setText('home-pro-label','home.ctaPro');
-  var pd = t('home.proDesc'); // 可选 key，缺失则降级
-  document.getElementById('home-pro-desc').textContent = (typeof pd==='string' && pd!=='home.proDesc') ? pd : '';
+  // v2.9.46: 首页专业模式文案已移除（元素不存在，setText 内部有保护）
   setText('home-tech-title','home.linkTech');
   setText('home-tech-desc','home.linkTechDesc');
   setText('home-payhint','home.payHint');
   try{ document.title = tt('home.title'); }catch(_){}
-  document.getElementById('pro-toggle').addEventListener('change', function(e){
-    S().pro = !!e.target.checked;
-    document.getElementById('pro31-wrap').classList.toggle('hidden', !S().pro);
-    track('pro_toggle', {on:S().pro});
-  });
+  // v2.9.46: 专业版默认开，开关在测量页频谱旁（首页卡片已移除）
+  S().pro = true;
+  try{
+    var _p31t = document.getElementById('pro31-toggle');
+    if(_p31t){
+      _p31t.addEventListener('change', function(e){
+        S().pro = !!e.target.checked;
+        document.getElementById('pro31-wrap').classList.toggle('hidden', !S().pro);
+        track('pro_toggle', {on:S().pro});
+      });
+    }
+  }catch(_){}
   // v2.9.42: 隐私数据开关（v1.2 协议 5.2）
   try{
     var _pdt = document.getElementById('privacy-data-toggle');
