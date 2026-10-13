@@ -3581,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.50 · 内测版';
+  ver.textContent = 'v2.9.51 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5839,7 +5839,12 @@ function buildPlan(){
   if(!spec || !spec.bands){
     spec = { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
   }
-  return DSP.ruleEngine(S().measL, S().measR, spec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
+  var result = DSP.ruleEngine(S().measL, S().measR, spec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
+  // v2.9.51: ruleEngine 返回 bandsCombined，renderPlan 取 plan.bands——字段名对齐
+  if(result && !result.bands && result.bandsCombined){
+    result.bands = result.bandsCombined;
+  }
+  return result;
 }
 /* v2-PATCH-01 (V2P01-UI)：报告页曲线切换＋风格预设
  * 切换曲线/风格 → 只换 DSP 目标输入（DSP.setTargetCurve / DSP.setTargetStyle），
