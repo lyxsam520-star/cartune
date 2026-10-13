@@ -3029,6 +3029,10 @@ window.COPY = {
     soundCheckPeakOkEn: "Good — this volume will measure accurately",
     soundCheckPeakHigh: "偏大——有削顶风险，会测坏",
     soundCheckPeakHighEn: "Too loud — clipping risk, would ruin the test",
+    autoGainProbing: "正在小声探测合适音量，请别动音箱音量…",
+    autoGainProbingEn: "Probing for the right volume quietly, please don't touch the speaker volume…",
+    autoGainClipped: "探测到音量过大，已自动压低",
+    autoGainClippedEn: "Volume was too loud, auto-reduced",
     autoGainDone: function(db){ return "已自动校准播放音量（"+db+" dB），适应当前蓝牙模式"; },
     autoGainDoneEn: function(db){ return "Playback volume auto-calibrated ("+db+" dB) for current Bluetooth mode"; },
     autoGainTrimUp: "已自动调大 6dB，再听听",
@@ -4750,51 +4754,120 @@ function askSoundTrouble(){
  *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
  *   ok=false, reason='nosignal': measDb<-50dBFS，无信号，走排查。
  */
+/* v2.9 渐强探测（2026-10-13 真机：点"启动麦克风"后 HFP 音量在最大，-20dB 探测本身也炸）。
+ * 原理：HFP 音量独立且可能在最大，渐强探测是唯一安全的首触达方式。
+ * 探测永远从 -40dB（0.01）起，3s 线性爬到 -20dB（0.1），绝不直接 -20dB。
+ * 安全红线：任何时刻峰值 >-3dBFS → 立即停播。
+ * 返回 {ok, reason?, measDb?, gainDb?, autoGain?, emergency?, clipped?, low?}
+ *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
+ *   ok=false, reason='nosignal': measDb<-50dBFS，无信号，走排查。
+ */
 async function autoGainCalib(M, token){
-  setStatus(tt('measure.soundCheckTitle')+'…');
-  var peakHold = 0, sampler = null, buf = null;
-  try{
-    if(M.analyser){
-      buf = new Float32Array(M.analyser.fftSize);
-      sampler = setInterval(function(){
-        try{
-          M.analyser.getFloatTimeDomainData(buf);
-          for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peakHold) peakHold=a; }
-        }catch(_){}
-      }, 50);
-    }
-  }catch(_){}
-  // 显式传 0.1：校准测量必须用固定基准，绕过 _autoGain（此时未设置，回退也是 0.1，双保险）
-  try{ M.playPink(null, 0.15, 0.1); }catch(e){ console.error('[autoGain] playPink FAILED', e); }
-  await new Promise(function(r){ setTimeout(r, 3000); });
-  try{ M.stopPink(0.2); }catch(_){}
-  if(sampler) clearInterval(sampler);
-  if(token!==app.runToken) return {ok:false, reason:'token'};
+  setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
+  var ctx = M.audioCtx;
+  var START_G = 0.01, END_G = 0.1, RAMP_SEC = 3.0; // -40dB → -20dB
+  var buf = null, sampler = null, src = null, g = null;
+  var tStart = Date.now();
 
-  var measDb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
-  console.log('[autoGain] measDb='+measDb.toFixed(1)+' dBFS');
-
-  // 无信号：不进自动增益，走原排查流程
-  if(measDb < -50){
-    try{ track('autogain_nosignal', {measDb:Number(measDb.toFixed(1))}); }catch(_){}
-    return {ok:false, reason:'nosignal', measDb:measDb};
+  function currentGain(){
+    var el = (Date.now() - tStart) / 1000;
+    if(el <= 0.1) return START_G * Math.max(0, el / 0.1);
+    if(el >= 0.1 + RAMP_SEC) return END_G;
+    return START_G + (END_G - START_G) * ((el - 0.1) / RAMP_SEC);
+  }
+  function stopProbe(){
+    try{ M.stopPink(0.15); }catch(_){}
+    if(sampler){ clearInterval(sampler); sampler = null; }
+    src = null; g = null;
   }
 
-  // 补偿增益：把实测峰值搬到 -16dBFS。measDb>-6（削顶边缘）也直接算，
-  // 大负增益自动压下去——不问用户调音箱（用户调的是 A2DP，管不了 HFP）。
-  var gainDb = -16 - measDb;
-  if(gainDb < -30) gainDb = -30;
-  if(gainDb > 10) gainDb = 10;
-  var autoGain = 0.1 * Math.pow(10, gainDb/20);
-  if(autoGain > 1.0) autoGain = 1.0;   // 数字增益绝不超 1.0
-  if(autoGain < 0.001) autoGain = 0.001;
-  M._autoGain = autoGain;
+  // 建链：手动控制 ramp（不用 playPink，因需从 0.01 起、3s 爬坡、随时冻结）
+  try{ M.stopPink(0.1); }catch(_){} // 防旧播放在跑
+  try{
+    var pbuf = DSP.makeStereoPink(ctx, 35, null);
+    src = ctx.createBufferSource();
+    src.buffer = pbuf; src.loop = true;
+    g = ctx.createGain();
+    var t0 = ctx.currentTime;
+    g.gain.setValueAtTime(0, t0);
+    try{
+      g.gain.linearRampToValueAtTime(START_G, t0 + 0.1);          // 0.1s 极短 fade 到 -40dB，防"乍响"
+      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 3s 爬到 -20dB
+    }catch(e){
+      console.error('[autoGain] ramp 调度失败，保持静音', e);
+      return {ok:false, reason:'rampfail'};
+    }
+    src.connect(g);
+    try{ g.connect(M._masterOut || ctx.destination); }
+    catch(e){ g.connect(ctx.destination); }
+    src.start(t0 + 0.02);
+    M._pinkSrc = src; M._pinkGain = g; // 交给 stopPink 管理
+    console.log('[autoGain] 渐强探测起播：0.01(-40dB)→0.1(-20dB)，3s');
+  }catch(e){
+    console.error('[autoGain] 起播失败', e);
+    return {ok:false, reason:'playfail'};
+  }
+  try{ if(M.analyser) buf = new Float32Array(M.analyser.fftSize); }catch(_){}
 
-  try{ track('autogain_calib', {
-    measDb:Number(measDb.toFixed(1)), gainDb:Number(gainDb.toFixed(1)), autoGain:Number(autoGain.toFixed(4))
-  }); }catch(_){}
-  console.log('[autoGain] gainDb='+gainDb.toFixed(1)+' autoGain='+autoGain.toFixed(4));
-  return {ok:true, measDb:measDb, gainDb:gainDb, autoGain:autoGain};
+  return new Promise(function(resolve){
+    var done = false;
+    function finish(r){
+      if(done) return; done = true;
+      stopProbe();
+      resolve(r);
+    }
+    sampler = setInterval(function(){
+      if(token !== app.runToken){ finish({ok:false, reason:'token'}); return; }
+      var peak = 0;
+      try{
+        if(M.analyser && buf){
+          M.analyser.getFloatTimeDomainData(buf);
+          for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peak) peak=a; }
+        }
+      }catch(_){}
+      var peakDb = peak > 0 ? 20*Math.log10(peak) : -120;
+      var cg = currentGain();
+      var el = (Date.now() - tStart) / 1000;
+
+      // 安全红线：>-3dBFS 立即停播，增益降 12dB
+      if(peakDb > -3){
+        console.error('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -3，紧急停播');
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg / 4));
+        try{ track('autogain_emergency', {peakDb:Number(peakDb.toFixed(1))}); }catch(_){}
+        finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, emergency:true});
+        return;
+      }
+      // 削顶边缘：>-6dBFS 立即停播，增益减半（-6dB），提示"已自动压低"
+      if(peakDb > -6){
+        console.log('[autoGain] 峰值 '+peakDb.toFixed(1)+'dBFS > -6，停播并减半增益');
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg / 2));
+        try{ track('autogain_clipguard', {peakDb:Number(peakDb.toFixed(1))}); }catch(_){}
+        finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, clipped:true});
+        return;
+      }
+      // 达标：峰值进入 -20～-12dBFS → 冻结当前增益，停播，校准完成
+      if(peakDb >= -20 && peakDb <= -12){
+        console.log('[autoGain] 达标：峰值 '+peakDb.toFixed(1)+'dBFS，冻结增益 '+cg.toFixed(4));
+        M._autoGain = Math.max(0.001, Math.min(1.0, cg));
+        try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
+        finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain});
+        return;
+      }
+      // 3.1s 爬完仍未达标
+      if(el >= 0.1 + RAMP_SEC + 0.1){
+        if(peakDb < -50){
+          try{ track('autogain_nosignal', {measDb:Number(peakDb.toFixed(1))}); }catch(_){}
+          finish({ok:false, reason:'nosignal', measDb:peakDb});
+        }else{
+          console.log('[autoGain] 爬完未达标，峰值 '+peakDb.toFixed(1)+'dBFS，用 0.1 并提示调大');
+          M._autoGain = 0.1;
+          try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:0.1, low:true}); }catch(_){}
+          finish({ok:true, measDb:peakDb, gainDb:0, autoGain:0.1, low:true});
+        }
+        return;
+      }
+    }, 50);
+  });
 }
 /* 自动增益确认流程 v2.8：autoGainCalib（3s 实测→算增益）+ 主观二次确认。
  * UI：显示"已自动校准播放音量（-XX dB）"＋实测峰值＋电平条，再问"你听着呢？"
@@ -4884,6 +4957,8 @@ function askAutoGainConfirm(cal){
     ov.innerHTML =
       '<div class="iso-card">'+
         '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
+        (cal.clipped ? '<div class="small mt8" style="color:#FF9F0A;">'+escapeHtml(tt('measure.autoGainClipped'))+'</div>' : '')+
+        (cal.emergency ? '<div class="small mt8" style="color:#FF453A;">'+escapeHtml(tt('measure.autoGainClipped'))+'</div>' : '')+
         '<div class="small mt8" style="color:#34D399;">'+escapeHtml(tf('measure.autoGainDone')(gainDbStr))+'</div>'+
         (showPeak ?
           '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckPeakLabel'))+'<b>'+pdb.toFixed(1)+' dBFS</b></div>'+
