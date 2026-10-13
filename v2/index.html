@@ -3581,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.52 · 内测版';
+  ver.textContent = 'v2.9.53 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6171,18 +6171,14 @@ function drawReportChart(){
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
   var meas = avg31();
-  // v2.9.52: 诊断——在图下方显示数据状态（用户反馈图表空白）
+  // v2.9.53: 诊断弹窗（临时，定位数据问题后删除）
   try{
-    var _dbg = document.getElementById('report-dbg');
-    if(!_dbg){
-      _dbg = document.createElement('div');
-      _dbg.id = 'report-dbg';
-      _dbg.style.cssText = 'font-size:10px;color:#666;margin-top:4px;word-break:break-all;';
-      cv.parentNode.insertBefore(_dbg, cv.nextSibling);
+    if(!window._dbgShown){
+      window._dbgShown = true;
+      var _m0 = meas.slice(0,5).map(function(v){ return (typeof v==='number' && isFinite(v)) ? v.toFixed(1) : String(v); }).join(',');
+      var _hasNaN = meas.some(function(v){ return typeof v!=='number' || !isFinite(v); });
+      alert('DBG measL:' + (S().measL?'Y':'N') + ' len:' + meas.length + '\nhead:[' + _m0 + ']\nNaN:' + _hasNaN + ' iso:' + iso.length);
     }
-    var _m0 = meas.slice(0,3).map(function(v){ return (typeof v==='number' && isFinite(v)) ? v.toFixed(1) : String(v); }).join(',');
-    var _hasNaN = meas.some(function(v){ return typeof v!=='number' || !isFinite(v); });
-    _dbg.textContent = 'DBG measL:' + (S().measL?'Y':'N') + ' len:' + meas.length + ' head:[' + _m0 + '] NaN:' + _hasNaN + ' iso:' + iso.length;
   }catch(_){}
   var tgt = iso.map(function(f){ try{ return DSP.targetDbAt(f); }catch(_){ return 0; } });
   var sim = meas.slice();
