@@ -3207,6 +3207,10 @@ window.COPY = {
   tech: {
     title: "技术原理",
     titleEn: "How It Works",
+    heroTitle: "让每辆车，都有自己的声音。",
+    heroTitleEn: "Every car deserves its own sound.",
+    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、40 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
+    heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 40 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
         t: "1 · 我们怎么测",
@@ -3239,10 +3243,10 @@ window.COPY = {
         bEn: "Every measurement you take (anonymized) builds three assets: the model fingerprint library — more measurements per model, sharper fingerprints; the phone-mic calibration library — new phone models lit up over time; algorithm iteration — re-measurement data flows back and the rule engine self-optimizes.\n\nYour measurement → anonymized → fingerprints / calibration / algorithms improve → better plans → more people measure\n\nThe faster this flywheel spins, the more accurate tuning gets. Early owners literally tune their own model's accuracy into existence."
       },
             {
-        t: "6 · 一车一调：多一个更准的选择",
-        tEn: "6 · One car, one tune: a more accurate choice",
-        b: "车友群里抄一套现成的设置——免费、快，运气好能正好对上。但那是按别人的车调出来的：喇叭位置、车厢声学、车机版本、坐的位置，样样都可能不一样。\n\n或者花 40 秒，实测你自己的车，拿一套只属于你的方案。你的车，你的驾驶位，结合你车机的 EQ 段数（3 段、5 段还是 7 段），一车一调。\n\n我们不拦着你抄，只是给你一个更准的选择。",
-        bEn: "Copying a ready-made preset from an owners' group is free and fast — and if you're lucky, it fits. But it was tuned for someone else's car: speaker placement, cabin acoustics, head-unit version, seating position — any of them can differ.\n\nOr spend 40 seconds measuring your own car, and get a plan that belongs only to you. Your car, your driver\u2019s seat, matched to your head unit\u2019s EQ band count (3, 5 or 7 bands) — one car, one tune.\n\nWe won\u2019t stop you from copying. We just offer a more accurate choice.",
+        t: "6 · 一车一调：只属于你的方案",
+        tEn: "6 · One car, one tune: a plan only yours",
+        b: "每一辆车，都值得拥有自己的声音。\n\n同一条生产线给了它们同样的喇叭，但车厢、用料、用车环境，让每辆车的声学指纹都独一无二。\n\n我们实测你这辆车、你这个驾驶位的真实频响，结合你车机的 EQ 段数，出一套只属于你的方案。\n\n你的车，你的驾驶位，你的声音。",
+        bEn: "Every car deserves its own voice.\n\nThe same production line gave them identical speakers \u2014 but cabin, materials, and driving environment make every car\u2019s acoustic fingerprint unique.\n\nWe measure YOUR car\u2019s real response at YOUR driver\u2019s seat, matched to your head unit\u2019s EQ band count \u2014 a plan that belongs only to you.\n\nYour car. Your driver\u2019s seat. Your sound.",
       },
 {
         t: "7 · 诚实边界：先说做不到什么",
@@ -5580,6 +5584,10 @@ function initTech(){
   setText('bk-tech','common.back');
   var secs = t('tech.sections');
   var box = document.getElementById('tech-sections'); box.innerHTML='';
+  var hero = document.createElement('div'); hero.className='card';
+  hero.innerHTML = '<div style="font-size:19px;font-weight:800;line-height:1.5;margin-bottom:8px;">'+escapeHtml(tt('tech.heroTitle'))+'</div>'+
+                   '<div class="small" style="font-size:14px;line-height:1.8;">'+escapeHtml(tt('tech.heroBody')).replace(/\\n/g,'<br>')+'</div>';
+  box.appendChild(hero);
   (Array.isArray(secs)?secs:[]).forEach(function(s){
     var c = document.createElement('div'); c.className='card';
     c.innerHTML = '<div class="h" style="font-size:15px;">'+escapeHtml(s.t||'')+'</div>'+
