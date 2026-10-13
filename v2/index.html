@@ -2919,6 +2919,14 @@ window.COPY = {
     listeningNowEn: function (n) { return "Listening: " + n; },
     listeningDone: function (n) { return "已完成监听：" + n; },
     listeningDoneEn: function (n) { return "Listening complete: " + n; },
+    detectingFloor: "正在侦测环境声，为后面正式测试做准备…",
+    detectingFloorEn: "Detecting ambient sound, preparing for the formal test…",
+    playingStereo: "正在播放测试音，请保持安静…",
+    playingStereoEn: "Playing test tone, please stay quiet…",
+    playingL: "正在播放左声道测试音，请保持安静…",
+    playingLEn: "Playing left-channel test tone, please stay quiet…",
+    playingR: "正在播放右声道测试音，请保持安静…",
+    playingREn: "Playing right-channel test tone, please stay quiet…",
     listenDone: "已完成监听",
     listenDoneEn: "Listening complete",
     progressStep: function (c, t) { return "监听进度 第 " + c + "/" + t + " 步"; },
@@ -4299,6 +4307,14 @@ function fmtClock(sec){ // m:ss，如 0:07 / 0:30
 }
 function setOverallText(s){ var el=document.getElementById('overall-text'); if(el) el.textContent=s; }
 function setOverallObj(s){ var el=document.getElementById('overall-obj'); if(el) el.textContent=s; }
+/* 人性化状态文案：说人话、讲为什么、预告下一步（2026-10-13 用户要求提示人性化） */
+function liveStatusFor(objKey){
+  if(objKey==='measure.objFloor') return tt('measure.detectingFloor');
+  if(objKey==='measure.objStereo') return tt('measure.playingStereo');
+  if(objKey==='measure.objL') return tt('measure.playingL');
+  if(objKey==='measure.objR') return tt('measure.playingR');
+  return tf('measure.listeningNow')(tt(objKey));
+}
 function setOverallFill(frac){
   var fill=document.getElementById('overall-fill'), pct=document.getElementById('overall-pct');
   var p = Math.max(0, Math.min(1, frac));
@@ -4306,16 +4322,16 @@ function setOverallFill(frac){
   if(pct) pct.textContent = Math.round(p*100)+'%';
 }
 function showOverall(){ var w=document.getElementById('overall-wrap'); if(w) w.classList.remove('hidden'); }
-/* 某步开始：整体文案"监听进度 第 c/t 步"＋"正在监听：对象" */
+/* 某步开始：整体文案"监听进度 第 c/t 步"＋人性化状态（liveStatusFor） */
 function stepStartUI(idx){
   var defs = stepDefs(), def = defs[idx];
   showOverall();
   if(def && def.merged){
     setOverallText(tt('measure.progressMerged'));
-    setOverallObj(tf('measure.listeningNow')(tt('measure.objFloor')));
+    setOverallObj(liveStatusFor('measure.objFloor'));
   }else{
     setOverallText(tf('measure.progressStep')(idx+1, defs.length));
-    setOverallObj(tf('measure.listeningNow')(tt(def.obj)));
+    setOverallObj(liveStatusFor(def.obj));
   }
 }
 /* 某步完成："已完成监听：对象"＋停 1 秒让用户看到；返回 false 表示流程已失效 */
@@ -4737,7 +4753,7 @@ async function startMeasureFlow(opts){
       btPlay: app.playMode==='bt',
       phases: PHASES_STEREO,
       onFrame: function(ph, info){ onFrame(info); },
-      onPhase: function(phKey, ph){ setOverallObj(tf('measure.listeningNow')(tt(ph.obj))); }
+      onPhase: function(phKey, ph){ setOverallObj(liveStatusFor(ph.obj)); }
     });
   }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
@@ -4818,7 +4834,7 @@ async function startLrOptIn(){
       btPlay: app.playMode==='bt',
       phases: PHASES_LR,
       onFrame: function(ph, info){ onFrame(info); },
-      onPhase: function(phKey, ph){ setOverallObj(tf('measure.listeningNow')(tt(ph.obj))); }
+      onPhase: function(phKey, ph){ setOverallObj(liveStatusFor(ph.obj)); }
     });
   }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return;
