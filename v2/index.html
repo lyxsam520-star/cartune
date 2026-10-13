@@ -2866,6 +2866,8 @@ window.COPY = {
   },
   measure: {
     title: "开始测量",
+    floorAnomaly: "底噪阶段检测到播放信号，流程异常，已停止测量。请重试。",
+    floorAnomalyEn: "Playback signal detected during the ambient-floor phase — abnormal flow, measurement stopped. Please retry.",
     safeNote: "请在车辆静止、安全停放时测量",
     btTab: "手机蓝牙播放",
     btNote: "方便，但精度略低：手机连车机蓝牙播放测试音频。",
@@ -4868,6 +4870,7 @@ function failNoSignal(token){
 function failFloorAnomaly(token){
   if(token!==app.runToken) return;
   stopRaf(); app.measuring=false;
+  try{ resetStepsUI(); }catch(_){} // v2.6 fix: 熔断后重置进度条/计时器，不留"假卡死"
   var va = document.getElementById('valid-alert');
   va.textContent = tt('measure.floorAnomaly');
   va.classList.add('show');
@@ -4920,6 +4923,7 @@ async function startMeasureFlow(opts){
   var M;
   try{
     M = new DSP.Measurer();
+    M._btPlay = (app.playMode==='bt'); // v2.6 fix: 试音 playPink 在 measureMerged 之前调用，此时 _btPlay 未设置会导致满幅播放炸音箱。提前设置。
     await M.initAudio();       // ← iOS：AudioContext 在此完成；麦克风等试音通过后再开
   }catch(e){
     document.getElementById('mic-err-card').classList.remove('hidden');
