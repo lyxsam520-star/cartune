@@ -3537,7 +3537,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.29 · 内测版';
+  ver.textContent = 'v2.9.30 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6360,6 +6360,21 @@ function renderPlan(){
   }
   S().plan = plan;
   var bands = plan.bands||[];
+  // v2.9.30: bands 为空也算失败（之前只处理 throw，空数组会静默空白页）
+  if(bands.length === 0){
+    try{ track('plan_build_empty', {}); }catch(_){}
+    console.error('[renderPlan] buildPlan returned empty bands');
+    document.getElementById('plan-normal').classList.add('hidden');
+    document.getElementById('plan-et9').classList.add('hidden');
+    document.getElementById('plan-error').classList.remove('hidden');
+    setText('plan-errt','plan.errTitle');
+    setText('plan-errb','plan.errBody');
+    setText('plan-err-retry','plan.errRetry');
+    document.getElementById('plan-err-retry').onclick = function(){ show('measure'); };
+    CTA.plan = [];
+    renderCTA(CTA.plan);
+    return;
+  }
   // 梳状谷检测（规则引擎层 v1 标注）
   var combIdx = [];
   try{ combIdx = DSP.detectComb(avg31()) || []; }catch(_){}
