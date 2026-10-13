@@ -2219,11 +2219,10 @@ var MODELS_DB = {
         var clipped = peak >= 0.99;
         // v2.3 floor 相位异常熔断：底噪阶段本该安静，若持续出现大信号（>0.3 连续 20 帧≈333ms），
         // 说明有播放信号漏进来（调度 bug），立即熔断，不产垃圾数据
-        // v2.9.15: 前 1 秒不判定（探针 stopPink 的 0.15s fade＋HFP 切换 pop 需要静置期），防误报
+        // v2.9.17: 前 2.5 秒不判定（HFP 蓝牙管道延迟 500ms-1s＋探针 fade＋切换 pop，需要更长静置期）
         if (ph.key === 'floor') {
           if (self._floorElapsedMs == null) self._floorElapsedMs = 0;
-          // 注意：_floorElapsedMs 在 tick 里累加（见下方）
-          if (self._floorElapsedMs > 1000) {
+          if (self._floorElapsedMs > 2500) {
             if (peak > 0.3) { self._floorLoudStreak = (self._floorLoudStreak || 0) + 1; }
             else { self._floorLoudStreak = 0; }
             if (self._floorLoudStreak >= 20) {
@@ -3509,7 +3508,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.16 · 内测版';
+  ver.textContent = 'v2.9.17 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
