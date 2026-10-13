@@ -3479,6 +3479,25 @@ function setText(id, path){
 function track(ev, data){
   try{ if(window.DSP && DSP.track) DSP.track(ev, data||{}); }catch(_){}
 }
+/* v2.9.40: 用户异常行为记录（风控）——本地队列 500 条 FIFO，有后端后批量上传
+ * 事件 schema: { userId, deviceId, event, ts, data }
+ * 详见 docs/用户异常行为记录方案.md */
+function trackSecurity(ev, data){
+  try{
+    var q = [];
+    try{ q = JSON.parse(localStorage.getItem('ct_secq')||'[]'); }catch(_){}
+    if(!Array.isArray(q)) q = [];
+    var devId = null;
+    try{
+      devId = localStorage.getItem('ct_device_id');
+      if(!devId){ devId = 'dvc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10); localStorage.setItem('ct_device_id', devId); }
+    }catch(_){}
+    q.push({ userId: null, deviceId: devId, event: ev, ts: Date.now(), data: data||{} });
+    while(q.length > 500) q.shift();
+    try{ localStorage.setItem('ct_secq', JSON.stringify(q)); }catch(_){}
+    // TODO(v2 云阶段): beacon 批量上传到后端
+  }catch(_){}
+}
 
 /* ---------- 全局状态机 ---------- */
 var app = {
@@ -3541,7 +3560,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.39 · 内测版';
+  ver.textContent = 'v2.9.40 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5473,6 +5492,7 @@ function validityGate(meas, chLabel){
     va.textContent = tt('measure.validityFail') + (vreason?('：'+vreason):'');
     va.classList.add('show');
     track('measure_validity_fail', {ch:chLabel, reason:vreason});
+    trackSecurity('measure_abnormal', {ch:chLabel, reason:(vreason||'').slice(0,80)}); // v2.9.40: 风控
     CTA.measure = [{ text: tt('common.retry'), onClick: startMeasureFlow }];
     renderCTA(CTA.measure);
     return false;
@@ -5523,6 +5543,7 @@ function checkParked(){
             document.body.appendChild(ov);
             ov.querySelector('#drive-ok').onclick = function(){ document.body.removeChild(ov); };
           }catch(_){}
+          trackSecurity('drive_block', {kmh: Math.round(sp*3.6), phase:'pre'}); // v2.9.40: 风控
           finish(false);
         } else {
           finish(true);
