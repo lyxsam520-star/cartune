@@ -3211,8 +3211,8 @@ window.COPY = {
       {
         t: "1 · 我们怎么测",
         tEn: "1 · How we measure",
-        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 30 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。",
-        bEn: "We play standard pink noise in the car — flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice."
+        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 30 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。",
+        bEn: "We play standard pink noise in the car — flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice. The 31 bands are analysis resolution, not EQ bands — a narrow problem like a 712 Hz interference dip disappears under coarse averaging, but fine-grained analysis catches it; the final gain plan always matches your head unit's actual EQ band count: 3 bands on your unit means 3 gain values."
       },
       {
         t: "2 · 目标曲线",
@@ -3238,9 +3238,15 @@ window.COPY = {
         b: "你的每一次测量（经匿名化处理），都在沉淀为三样资产：车型声纹库——同车型测得越多，声纹指纹越准；手机麦克风校准库——新机型逐步点亮；算法迭代——复测数据回流，规则引擎自我优化。\n\n你的测量 → 匿名化入库 → 声纹 / 校准 / 算法变准 → 方案更准 → 更多人测\n\n这台飞轮转得越快，调音就越准。先来的车主，亲手把自己的车型变准。",
         bEn: "Every measurement you take (anonymized) builds three assets: the model fingerprint library — more measurements per model, sharper fingerprints; the phone-mic calibration library — new phone models lit up over time; algorithm iteration — re-measurement data flows back and the rule engine self-optimizes.\n\nYour measurement → anonymized → fingerprints / calibration / algorithms improve → better plans → more people measure\n\nThe faster this flywheel spins, the more accurate tuning gets. Early owners literally tune their own model's accuracy into existence."
       },
-      {
-        t: "6 · 诚实边界：先说做不到什么",
-        tEn: "6 · Honest limits: what we can't do",
+            {
+        t: "6 · 一车一调：你的车，只有你的方案",
+        tEn: "6 · One car, one tune: your car, your plan",
+        b: "车友群里抄来的 EQ 设置，是别人的答案，不是你的考卷。为什么抄不得？\n\n一、声学指纹天生不一样：喇叭位置、车厢容积、内饰材料——每辆车的声学环境都是独一份。二、同车不同命：同一车型不同批次、不同车机版本，EQ 中心频率都可能不一样，抄来的数字对不上你的推子。三、位置即答案：你坐驾驶位、他坐副驾，测出来就是两条曲线，方案自然不同。四、抄错比不调更糟：把别人的“完美曲线”硬贴到你车上，可能把原本平的地方推歪——越调越糟。\n\n我们的做法：实测你这辆车、你这个驾驶位的真实频响，再结合你车机的 EQ 段数（3 段、5 段还是 7 段），一车一方案。\n\n我们不卖通用参数，卖的是你这辆车的答案。",
+        bEn: "An EQ preset copied from an owners' group is someone else's answer — not your test paper. Why copying fails:\n\n1. Acoustic fingerprints are born different: speaker placement, cabin volume, interior materials — every car's acoustic environment is one of a kind. 2. Same model, different fate: different production batches and head-unit versions can shift EQ center frequencies; copied numbers won't match your sliders. 3. Position is the answer: you in the driver's seat, them in the passenger seat — two different curves, two different plans. 4. A wrong copy is worse than no tune: forcing someone else's \"perfect curve\" onto your car can push flat regions off — worse than before.\n\nWhat we do: measure YOUR car's real response at YOUR driver's seat, then combine it with your head unit's EQ band count (3, 5 or 7 bands) — one car, one plan.\n\nWe don't sell generic presets. We sell your car's answer."
+      },
+{
+        t: "7 · 诚实边界：先说做不到什么",
+        tEn: "7 · Honest limits: what we can't do",
         b: "五点事先说明。一、手机麦精度边界：手机麦克风未经逐台校准（除特别标注机型外），测量反映的是相对频响形状，适合指导 EQ 调整，不做实验室级声学认定。二、原厂车机全局 EQ 的局限：多数车机 EQ 同时作用于左右声道，给出的是一套折中方案；左右差异大的频段会如实标注，不硬修。三、EQ 修不了的三类问题：喇叭本身的物理缺陷、严重的声学干涉谷、车机段数不够覆盖的问题频段——报告里如实标注。四、安卓机型：麦克风暂未逐机型校准，报告会明确标注，结果仅供参考。五、与各汽车厂商无任何关联：车型 EQ 数据均为用户实测整理，非官方参数，仅供参考。",
         bEn: "Five things upfront. 1. Phone-mic limits: phone mics aren't individually calibrated (except noted models); measurements capture relative response shape — good for guiding EQ, not lab-grade acoustics. 2. Stock head-unit limits: most apply EQ globally to both channels, so plans are a compromise; bands with large L/R divergence are flagged honestly, not force-fixed. 3. Three things EQ can't fix: physical speaker defects, severe comb-filter valleys, problem bands your head unit's band count can't cover — all flagged in the report. 4. Android models: mics not yet per-model calibrated; reports say so, treat as reference. 5. No affiliation with any carmaker: model EQ data is crowdsourced from user measurements, not official specs."
       }
