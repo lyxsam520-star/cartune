@@ -1980,6 +1980,15 @@ var MODELS_DB = {
    * @param {string|null} side
    * @param {number} fadeInSec 起播淡入秒数（默认 0.1；传 0 则无淡入）
    */
+  /* v2.8 auto-gain 默认增益：BT 模式优先用自动校准增益（麦克风激活后实测），
+   * 无则回退 -20dB（0.1）安全电平；USB/其他模式 1.0。 */
+  DSP.Measurer.prototype._defaultGain = function(){
+    if(this._btPlay){
+      if(typeof this._autoGain === 'number' && this._autoGain > 0 && this._autoGain <= 1) return this._autoGain;
+      return 0.1;
+    }
+    return 1.0;
+  };
   DSP.Measurer.prototype.playPink = function (side, fadeInSec, maxGain) {
     /* v2.6 安全起播（2026-10-13 真机：电平校准满幅起播炸音箱）。
      * 新增 maxGain：校准阶段从小音量起（0.1=-20dB），用户从小往大调，永不先炸。
@@ -2003,7 +2012,8 @@ var MODELS_DB = {
     var fi = (typeof fadeInSec === 'number' && fadeInSec >= 0) ? fadeInSec : 0.1;
     // v2.6: 蓝牙模式默认安全电平 -20dB（0.1）。校准与正式测试必须同电平，
     // 否则校准定的音量在正式测试时会响 20dB 直接削顶。USB 模式不经过此函数。
-    var mg = (typeof maxGain === 'number' && maxGain > 0 && maxGain <= 1) ? maxGain : (this._btPlay ? 0.1 : 1.0);
+    // v2.8: 改走 _defaultGain()——优先 M._autoGain（自动校准值），无则回退 0.1。
+    var mg = (typeof maxGain === 'number' && maxGain > 0 && maxGain <= 1) ? maxGain : this._defaultGain();
     // v2.3: 指数 ramp 在 iOS 会抛异常，catch 回退 setValueAtTime(1.0) = 瞬间满音量爆音。
     // 改线性 ramp（可从 0 起，几乎不抛）；异常时宁可无声（由无信号熔断接管），绝不许爆音。
     g.gain.setValueAtTime(0, t);
@@ -3019,6 +3029,12 @@ window.COPY = {
     soundCheckPeakOkEn: "Good — this volume will measure accurately",
     soundCheckPeakHigh: "偏大——有削顶风险，会测坏",
     soundCheckPeakHighEn: "Too loud — clipping risk, would ruin the test",
+    autoGainDone: function(db){ return "已自动校准播放音量（"+db+" dB），适应当前蓝牙模式"; },
+    autoGainDoneEn: function(db){ return "Playback volume auto-calibrated ("+db+" dB) for current Bluetooth mode"; },
+    autoGainTrimUp: "已自动调大 6dB，再听听",
+    autoGainTrimUpEn: "Auto-boosted 6dB, listen again",
+    autoGainTrimDown: "已自动调小 6dB，再听听",
+    autoGainTrimDownEn: "Auto-reduced 6dB, listen again",
     soundCheckPerfect: "正好，开始测试",
     soundCheckPerfectEn: "Perfect, start the test",
     soundCheckSmall: "太小了",
@@ -4716,6 +4732,199 @@ function askSoundTrouble(){
     wire('st-back', 'back');
   });
 }
+/* 自动增益校准 v2.8（解决 iOS 蓝牙 A2DP→HFP 音量跳变）。
+ *
+ * 根因：iOS 蓝牙双 profile——A2DP（媒体音量）vs HFP（通话音量），音量轨独立。
+ * 麦克风激活（initMic）触发 iOS 从 A2DP 切到 HFP，用户调的 A2DP 音量管不了 HFP，
+ * 手动调音量无解（用户根本不知道 HFP 音量是多少）。
+ *
+ * 解法：不依赖任何音量假设，直接测 mic 端实际声压，反推数字增益。
+ * 播 3s 粉噪 @ 固定 -20dB（0.1），测 mic 峰值 measDb，算补偿增益把峰值搬到 -16dBFS。
+ * A2DP/HFP/用户误操作/音箱自带音量——全兼容，因为测的是最终声压。
+ *
+ * 目标 -16dBFS（绿区 -20～-12 中点）：粉噪峰值比 RMS 高约 12dB，
+ * → RMS≈-28dBFS，相对典型底噪 -50dBFS 则 SNR≈22dB（>15dB 绿灯线），
+ * → 离 0dBFS 有 16dB 削顶余量。两头都安全。
+ *
+ * @returns Promise<{ok, measDb, gainDb, autoGain, reason?}>
+ *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
+ *   ok=false, reason='nosignal': measDb<-50dBFS，无信号，走排查。
+ */
+async function autoGainCalib(M, token){
+  setStatus(tt('measure.soundCheckTitle')+'…');
+  var peakHold = 0, sampler = null, buf = null;
+  try{
+    if(M.analyser){
+      buf = new Float32Array(M.analyser.fftSize);
+      sampler = setInterval(function(){
+        try{
+          M.analyser.getFloatTimeDomainData(buf);
+          for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peakHold) peakHold=a; }
+        }catch(_){}
+      }, 50);
+    }
+  }catch(_){}
+  // 显式传 0.1：校准测量必须用固定基准，绕过 _autoGain（此时未设置，回退也是 0.1，双保险）
+  try{ M.playPink(null, 0.15, 0.1); }catch(e){ console.error('[autoGain] playPink FAILED', e); }
+  await new Promise(function(r){ setTimeout(r, 3000); });
+  try{ M.stopPink(0.2); }catch(_){}
+  if(sampler) clearInterval(sampler);
+  if(token!==app.runToken) return {ok:false, reason:'token'};
+
+  var measDb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
+  console.log('[autoGain] measDb='+measDb.toFixed(1)+' dBFS');
+
+  // 无信号：不进自动增益，走原排查流程
+  if(measDb < -50){
+    try{ track('autogain_nosignal', {measDb:Number(measDb.toFixed(1))}); }catch(_){}
+    return {ok:false, reason:'nosignal', measDb:measDb};
+  }
+
+  // 补偿增益：把实测峰值搬到 -16dBFS。measDb>-6（削顶边缘）也直接算，
+  // 大负增益自动压下去——不问用户调音箱（用户调的是 A2DP，管不了 HFP）。
+  var gainDb = -16 - measDb;
+  if(gainDb < -30) gainDb = -30;
+  if(gainDb > 10) gainDb = 10;
+  var autoGain = 0.1 * Math.pow(10, gainDb/20);
+  if(autoGain > 1.0) autoGain = 1.0;   // 数字增益绝不超 1.0
+  if(autoGain < 0.001) autoGain = 0.001;
+  M._autoGain = autoGain;
+
+  try{ track('autogain_calib', {
+    measDb:Number(measDb.toFixed(1)), gainDb:Number(gainDb.toFixed(1)), autoGain:Number(autoGain.toFixed(4))
+  }); }catch(_){}
+  console.log('[autoGain] gainDb='+gainDb.toFixed(1)+' autoGain='+autoGain.toFixed(4));
+  return {ok:true, measDb:measDb, gainDb:gainDb, autoGain:autoGain};
+}
+/* 自动增益确认流程 v2.8：autoGainCalib（3s 实测→算增益）+ 主观二次确认。
+ * UI：显示"已自动校准播放音量（-XX dB）"＋实测峰值＋电平条，再问"你听着呢？"
+ * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
+ * 返回 true=通过；false=用户返回/放弃/token 失效。 */
+async function autoGainFlow(M, token){
+  // 1. 自动校准（3s @ 0.1 实测 → M._autoGain）
+  var cal = await autoGainCalib(M, token);
+  if(token!==app.runToken) return false;
+  if(!cal.ok){
+    if(cal.reason==='nosignal'){
+      // 无信号 → 原排查流程
+      track('autogain_fail_nosignal');
+      var act = await askSoundTrouble();
+      if(token!==app.runToken) return false;
+      if(act==='back'){ track('soundcheck_back'); return false; }
+      return autoGainFlow(M, token); // 重试整套
+    }
+    return false;
+  }
+  // 2. 显示校准结果 + 主观二次确认（循环）
+  for(;;){
+    var ans = await askAutoGainConfirm(cal);
+    if(token!==app.runToken) return false;
+    if(ans==='ok'){ track('autogain_ok', {gainDb:Number(cal.gainDb.toFixed(1))}); return true; }
+    if(ans==='back'){ track('soundcheck_back'); return false; }
+    if(ans==='fail'){
+      track('soundcheck_fail');
+      var act2 = await askSoundTrouble();
+      if(token!==app.runToken) return false;
+      if(act2==='back'){ track('soundcheck_back'); return false; }
+      var cal2 = await autoGainCalib(M, token);
+      if(token!==app.runToken) return false;
+      if(!cal2.ok) return false;
+      cal = cal2;
+      continue;
+    }
+    // 'small' | 'big' → 数字增益微调 ±6dB，不碰用户音箱，重播验证
+    if(ans==='small'){
+      M._autoGain = Math.min(1.0, M._autoGain * 2);
+      try{ track('autogain_trim', {dir:'up', autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
+      setStatus(tt('measure.autoGainTrimUp')+'…');
+    } else if(ans==='big'){
+      M._autoGain = Math.max(0.001, M._autoGain / 2);
+      try{ track('autogain_trim', {dir:'down', autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
+      setStatus(tt('measure.autoGainTrimDown')+'…');
+    }
+    // 用新增益重播 3s 验证，更新实测峰值（走 _defaultGain 即 M._autoGain）
+    var peakHold = 0;
+    try{
+      if(M.analyser){
+        var buf = new Float32Array(M.analyser.fftSize);
+        var sampler = setInterval(function(){
+          try{
+            M.analyser.getFloatTimeDomainData(buf);
+            for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peakHold) peakHold=a; }
+          }catch(_){}
+        }, 50);
+        try{ M.playPink(null, 0.15); }catch(_){} // 不传 maxGain → 用 M._autoGain
+        await new Promise(function(r){ setTimeout(r, 3000); });
+        try{ M.stopPink(0.2); }catch(_){}
+        clearInterval(sampler);
+      }
+    }catch(_){}
+    if(token!==app.runToken) return false;
+    cal.measDb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
+    cal.gainDb = 20*Math.log10(M._autoGain/0.1);
+    cal.autoGain = M._autoGain;
+    // 回到循环，再次显示 + 确认
+  }
+}
+/* 自动增益确认弹窗：显示校准结果＋"你听着呢？"三问。Promise<'ok'|'small'|'big'|'fail'|'back'> */
+function askAutoGainConfirm(cal){
+  return new Promise(function(resolve){
+    var pdb = cal.measDb;
+    var showPeak = (typeof pdb==='number' && pdb > -100);
+    var gainDbStr = (cal.gainDb >= 0 ? '+' : '') + cal.gainDb.toFixed(1);
+    var interpKey, interpColor;
+    if(showPeak){
+      if(pdb < -30){ interpKey='measure.soundCheckPeakLow'; interpColor='#FFD60A'; }
+      else if(pdb <= -12){ interpKey='measure.soundCheckPeakOk'; interpColor='#34D399'; }
+      else { interpKey='measure.soundCheckPeakHigh'; interpColor='#FF453A'; }
+    }
+    var pct = showPeak ? Math.max(0, Math.min(100, (pdb+50)/50*100)) : 0;
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML =
+      '<div class="iso-card">'+
+        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
+        '<div class="small mt8" style="color:#34D399;">'+escapeHtml(tf('measure.autoGainDone')(gainDbStr))+'</div>'+
+        (showPeak ?
+          '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckPeakLabel'))+'<b>'+pdb.toFixed(1)+' dBFS</b></div>'+
+          '<div style="position:relative;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 2px;background:#1c1c1e;">'+
+            '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+            '<div style="position:absolute;top:-1px;bottom:-1px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:'+pct.toFixed(1)+'%;"></div>'+
+          '</div>'+
+          '<div class="small" style="color:#8E8E93;font-size:11px;">-50&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#34D399;">-20～-12</span>&nbsp;&nbsp;&nbsp;&nbsp;0</div>'+
+          '<div class="small mt8" style="color:'+interpColor+';">'+escapeHtml(tt(interpKey))+'</div>'
+        : '')+
+        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ3'))+'</div>'+
+        '<button class="btn btn-primary" id="ag-perfect">'+escapeHtml(tt('measure.soundCheckPerfect'))+'</button>'+
+        '<button class="btn btn-ghost" id="ag-small">'+escapeHtml(tt('measure.soundCheckSmall'))+'</button>'+
+        '<button class="btn btn-ghost" id="ag-big">'+escapeHtml(tt('measure.soundCheckBig'))+'</button>'+
+        '<div class="small mt8"><a href="javascript:void(0)" id="ag-nosound" style="color:#8E8E93;">'+escapeHtml(tt('measure.soundCheckNoSound'))+'</a></div>'+
+        '<div class="small mt8"><a href="javascript:void(0)" id="ag-back" style="color:#8E8E93;">'+escapeHtml(tt('measure.soundBack'))+'</a></div>'+
+      '</div>';
+    document.body.appendChild(ov);
+    var done = false;
+    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+    function wire(id, val){
+      var el = document.getElementById(id), fired = 0;
+      function go(e){ var n=Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
+      el.addEventListener('click', go);
+      var sx = 0, sy = 0;
+      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
+      el.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          go(e);
+        }
+      });
+    }
+    wire('ag-perfect', 'ok');
+    wire('ag-small', 'small');
+    wire('ag-big', 'big');
+    wire('ag-nosound', 'fail');
+    wire('ag-back', 'back');
+  });
+}
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
  *   false=音量确认（麦克风激活后，与正式测试同一会话）：播完显示实测峰值 dBFS＋电平条＋三档解读，
@@ -5067,10 +5276,11 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ③b 音量确认（v2.6）：麦克风激活后，iOS 可能改变蓝牙音量。在此确认音量，
-  // 与正式测试同一音频会话，音量一致。3s @ -20dB → "音量合适吗？"
+  // ③b 自动增益校准（v2.8）：麦克风激活后，iOS 从 A2DP 切到 HFP，音量轨独立，
+  // 用户调的 A2DP 音量管不了 HFP——手动无解。改自动：3s 实测 mic 声压→算数字增益，
+  // 正式测试 playPink 自动用 M._autoGain。A2DP/HFP/用户误操作全兼容。
   if(app.playMode==='bt'){
-    var _vcOK = await soundCheckFlow(M, token, false); // connectivityOnly=false → 音量三问
+    var _vcOK = await autoGainFlow(M, token);
     if(token!==app.runToken) return;
     if(!_vcOK){
       setStatus('');
