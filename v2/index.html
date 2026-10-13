@@ -3541,7 +3541,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.35 · 内测版';
+  ver.textContent = 'v2.9.36 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5573,10 +5573,9 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ③b 自动增益校准（v2.8）：麦克风激活后，iOS 从 A2DP 切到 HFP，音量轨独立，
-  // 用户调的 A2DP 音量管不了 HFP——手动无解。改自动：3s 实测 mic 声压→算数字增益，
-  // 正式测试 playPink 自动用 M._autoGain。A2DP/HFP/用户误操作全兼容。
-  if(app.playMode==='bt'){
+  // ③b 电平调节（v2.9.24 手动滑杆）：每次正式测试前都让用户确认电平（用户要求）。
+  // v2.9.36: 去掉 playMode==='bt' 门——刷新/复测时 playMode 丢失会导致滑杆被跳过。
+  {
     var _vcOK = await autoGainFlow(M, token);
     if(token!==app.runToken) return;
     if(!_vcOK){
