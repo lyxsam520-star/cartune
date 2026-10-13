@@ -213,6 +213,8 @@ ul.clean li{margin:6px 0;}
       <span class="badge amber" id="home-badge"></span>
       <div class="hero" id="home-title"></div>
       <div class="small" id="home-sub" style="max-width:340px;margin:0 auto;"></div>
+      <!-- v2.9.44: 调优计数 -->
+      <div class="small mt8" id="home-tune-count" style="color:var(--amber);font-weight:600;"></div>
     </div>
     <div class="card center mt16">
       <div class="switchrow" style="padding:4px 0 12px;">
@@ -3560,6 +3562,14 @@ function show(id){
   if(wasMeasuring) app.runToken++;
   renderCTA(CTA[id]||[]);
   if(ON_SHOW[id]){ try{ ON_SHOW[id](); }catch(_){} }
+  // v2.9.44: 首页刷新调优计数
+  if(id==='home'){
+    try{
+      var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
+      var _el = document.getElementById('home-tune-count');
+      if(_el) _el.textContent = _tc > 0 ? ('已调优 ' + _tc + ' 辆车') : '';
+    }catch(_){}
+  }
   track('view_'+id);
 }
 function renderCTA(btns, sub){
@@ -3568,7 +3578,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.43 · 内测版';
+  ver.textContent = 'v2.9.44 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6462,6 +6472,12 @@ function renderPlan(){
     }
   }
   S().plan = plan;
+  // v2.9.44: 调优计数——每次成功生成方案 +1（同一车型重复调优也计数）
+  try{
+    var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
+    localStorage.setItem('ct_tune_count', String(_tc+1));
+    trackSecurity('tune_complete', {count: _tc+1});
+  }catch(_){}
   var bands = plan.bands||[];
   // v2.9.30: bands 为空也算失败（之前只处理 throw，空数组会静默空白页）
   if(bands.length === 0){
