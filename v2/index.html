@@ -2886,26 +2886,26 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
-    levelTargetGuide: "调节音响音量，让指针稳定在绿色区域",
-    levelTargetGuideEn: "Adjust the speaker volume until the needle stays in the green zone",
+    levelTargetGuide: "调节音响音量，让指针进入绿色区域",
+    levelTargetGuideEn: "Adjust the speaker volume until the needle enters the green zone",
     levelTargetWhy: "音量太大失真，太小测不准——绿区最准",
     levelTargetWhyEn: "Too loud distorts, too quiet is inaccurate — the green zone is the sweet spot",
     levelZoneLowRed: "电平太低，请调大音量",
     levelZoneLowRedEn: "Level too low — turn up the volume",
     levelZoneLowYellow: "偏低了，再调大一点，接近绿区了",
     levelZoneLowYellowEn: "A bit low — turn it up a little more, almost in the green",
-    levelInGreen: "在绿区了，保持住…",
-    levelInGreenEn: "In the green — hold it…",
+    levelInGreen: "在绿区了，可以开始",
+    levelInGreenEn: "In the green — ready to go",
     levelHoldLeft: "还差 {s} 秒",
     levelHoldLeftEn: "{s}s to go",
-    levelStable: "电平稳定，可以开始",
-    levelStableEn: "Level stable — ready to go",
+    levelStable: "电平合适，可以开始",
+    levelStableEn: "Level OK — ready to go",
     levelZoneHighYellow: "偏高了，调小一点音量",
     levelZoneHighYellowEn: "A bit hot — turn it down slightly",
     levelZoneHighRed: "太高了！调小音量，有削顶风险",
     levelZoneHighRedEn: "Too hot! Turn it down — clipping risk",
-    levelClipLive: "麦克风削顶了！请调小音量，重新稳定 3 秒",
-    levelClipLiveEn: "Mic clipping! Turn it down and hold green for 3s again",
+    levelClipLive: "麦克风削顶了！请调小音量",
+    levelClipLiveEn: "Mic clipping! Turn it down",
     levelNoSignalLive: "好像没检测到测试声，请确认音响正在播放粉噪",
     levelNoSignalLiveEn: "No test signal detected — make sure the speaker is playing pink noise",
     validityFail: "本次测量有效性未通过，请调好音量后重测",
@@ -4519,13 +4519,14 @@ async function soundCheckFlow(M, token){
     if(token!==app.runToken) return false;
   }
 }
-/* 电平校准 v2.4（目标电平指引）：连续可视化电平表＋绿区 3 秒稳定确认。
+/* 电平校准 v2.4（目标电平指引）：连续可视化电平表，指针进绿区即放行。
  * 表头 -50～0 dBFS；绿区 -20～-12 dBFS（原理：粉噪峰值比 RMS 高约 10–12dB，
  * RMS 落在此区时实测峰值在 -8～0dBFS 之下——有顶无削顶，SNR 最佳）；
  * 黄区 -30～-20（偏小，SNR 打折）/-12～-6（偏大，接近削顶）；
  * 红区 <-30（太小）/>-6（太大，有削顶风险）。
- * 白针＝实时峰值；绿区判定用平滑电平（防抖）；绿区连续 3s → [开始正式测试] 亮起。
- * 削顶只警告＋计时清零，不掐死（要求重新稳定 3 秒）。
+ * 白针＝实时峰值；绿区判定用平滑电平（防抖）；指针进绿区 → [开始正式测试] 立即亮起，
+ * 离开绿区 → 重新灰掉。削顶只警告不掐死。
+ * 原则：专业易用——门槛只设在"必要"处，不设在"完美"处。绿区即合格，不考验用户耐心。
  * 返回 'ok' | 'back'。 */
 function runLevelCalibOnce(M, token){
   return new Promise(function(resolve){
@@ -4556,10 +4557,6 @@ function runLevelCalibOnce(M, token){
         '</div>'+
         '<div class="small" id="lc-db" style="color:#8E8E93;">-- dBFS</div>'+
         '<div class="small mt8" id="lc-status" style="min-height:22px;"></div>'+
-        '<div style="height:4px;background:#1c1c1e;border-radius:2px;margin:8px 0 4px;overflow:hidden;">'+
-          '<div id="lc-holdfill" style="height:100%;width:0%;background:#34D399;border-radius:2px;"></div>'+
-        '</div>'+
-        '<div class="small" id="lc-holdtxt" style="color:#8E8E93;min-height:18px;"></div>'+
         '<div class="mt8"><button class="btn btn-primary" id="lc-go" disabled style="opacity:.4;">'+escapeHtml(tt('measure.levelGo'))+'</button></div>'+
         '<button class="btn btn-ghost" id="lc-back">'+escapeHtml(tt('measure.levelBack'))+'</button>'+
       '</div>';
@@ -4567,13 +4564,10 @@ function runLevelCalibOnce(M, token){
     var done=false, timer=null;
     var analyser=null, timeBuf=null;
     try{ analyser=M.analyser; timeBuf=new Float32Array(M.fftSize||8192); }catch(_){}
-    var smoothDb=-60, greenMs=0, lastT=0, clipArmed=true;
-    var HOLD_NEED=3000;
+    var smoothDb=-60, clipArmed=true;
     var needle=document.getElementById('lc-needle'),
         dbEl=document.getElementById('lc-db'),
         stEl=document.getElementById('lc-status'),
-        holdFill=document.getElementById('lc-holdfill'),
-        holdTxt=document.getElementById('lc-holdtxt'),
         goBtn=document.getElementById('lc-go');
     function zoneOf(db){
       if(db<-30) return 'redlow';
@@ -4592,11 +4586,6 @@ function runLevelCalibOnce(M, token){
       if(!goBtn) return;
       goBtn.disabled=!on;
       goBtn.style.opacity=on?'1':'.4';
-    }
-    function resetHold(){
-      greenMs=0; setGo(false);
-      if(holdFill) holdFill.style.width='0%';
-      if(holdTxt) holdTxt.textContent='';
     }
     function finish(v){
       if(done) return; done=true;
@@ -4625,8 +4614,6 @@ function runLevelCalibOnce(M, token){
     function loop(){
       if(done) return;
       if(token!==app.runToken){ finish('back'); return; }
-      var now=Date.now();
-      var dt=lastT?(now-lastT):60; lastT=now;
       try{
         if(analyser){
           analyser.getFloatTimeDomainData(timeBuf);
@@ -4639,29 +4626,20 @@ function runLevelCalibOnce(M, token){
           smoothDb+=0.35*(pdb-smoothDb);
           if(peak>=0.99){
             if(clipArmed){ try{ track('levelcalib_clip'); }catch(_){} clipArmed=false; }
-            resetHold();
+            setGo(false);
             if(stEl) stEl.innerHTML='<span style="color:#FF453A;">'+escapeHtml(tt('measure.levelClipLive'))+'</span>';
           }else{
             if(peak>=0.9) clipArmed=true;
             if(peak<0.0032){
-              resetHold();
+              setGo(false);
               if(stEl) stEl.innerHTML='<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelNoSignalLive'))+'</span>';
             }else{
               var z=zoneOf(smoothDb);
               if(z==='green'){
-                greenMs+=dt;
                 if(stEl) stEl.innerHTML='<span style="color:#34D399;">'+escapeHtml(tt('measure.levelInGreen'))+'</span>';
-                var left=Math.max(0,HOLD_NEED-greenMs);
-                if(holdFill) holdFill.style.width=Math.min(100,greenMs/HOLD_NEED*100).toFixed(1)+'%';
-                if(left>0){
-                  if(holdTxt) holdTxt.textContent=tt('measure.levelHoldLeft').replace('{s}',(left/1000).toFixed(1));
-                  setGo(false);
-                }else{
-                  if(holdTxt) holdTxt.innerHTML='<span style="color:#34D399;">'+escapeHtml(tt('measure.levelStable'))+'</span>';
-                  setGo(true);
-                }
+                setGo(true);
               }else{
-                resetHold();
+                setGo(false);
                 var zt=ZONE_TXT[z];
                 if(stEl) stEl.innerHTML='<span style="color:'+zt[1]+';">'+escapeHtml(tt(zt[0]))+'</span>';
               }
