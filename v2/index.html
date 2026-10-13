@@ -3581,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.54 · 内测版';
+  ver.textContent = 'v2.9.55 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6171,15 +6171,6 @@ function drawReportChart(){
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
   var meas = avg31();
-  // v2.9.53: 诊断弹窗（临时，定位数据问题后删除）
-  try{
-    if(!window._dbgShown){
-      window._dbgShown = true;
-      var _m0 = meas.slice(0,5).map(function(v){ return (typeof v==='number' && isFinite(v)) ? v.toFixed(1) : String(v); }).join(',');
-      var _hasNaN = meas.some(function(v){ return typeof v!=='number' || !isFinite(v); });
-      alert('DBG measL:' + (S().measL?'Y':'N') + ' len:' + meas.length + '\nhead:[' + _m0 + ']\nNaN:' + _hasNaN + ' iso:' + iso.length);
-    }
-  }catch(_){}
   var tgt = iso.map(function(f){ try{ return DSP.targetDbAt(f); }catch(_){ return 0; } });
   var sim = meas.slice();
   try{
