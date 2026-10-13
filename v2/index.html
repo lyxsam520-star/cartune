@@ -3537,7 +3537,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.30 · 内测版';
+  ver.textContent = 'v2.9.31 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4345,8 +4345,9 @@ function initMeasure(){
   CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
   renderCTA(CTA.measure, tt('measure.ctaSub'));
   CTA['measure_done'] = [
-    { text: tt('measure.ctaReport'), onClick: function(){ renderReport(); show('report'); } },
-    { text: tt('measure.advCta'), primary:false, onClick: startLrOptIn }
+    { text: tt('measure.ctaReport'), onClick: function(){ renderReport(); show('report'); } }
+    // v2.9.31: 隐藏 L/R 进阶卡（用户：容易误导，DSP/外接播放器用户才需要）
+    // { text: tt('measure.advCta'), primary:false, onClick: startLrOptIn }
   ];
   // 进入测量页时（可见后）再生成标签行并取 canvas 尺寸
   ON_SHOW.measure = function(){ buildBarLabels(); sizeCanvases(); };
