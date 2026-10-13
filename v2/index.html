@@ -4891,9 +4891,8 @@ async function autoGainCalib(M, token){
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain, clipped:true});
         return;
       }
-      // 达标：峰值进入 -6～-4dBFS（绿区顶部，用户要求"能偏大尽量偏大"，最大 SNR 冗余）→ 冻结，停播
-      // 绿区 UI 仍显示 -10～-4（可接受范围），探针只认顶部 2dB
-      if(peakDb >= -6 && peakDb <= -4){
+      // 达标：峰值进入 -8～-4dBFS（绿区上半，用户要宽容度＋偏响亮）→ 冻结，停播
+      if(peakDb >= -8 && peakDb <= -4){
         console.log('[autoGain] 达标：峰值 '+peakDb.toFixed(1)+'dBFS，冻结增益 '+cg.toFixed(4));
         M._autoGain = Math.max(0.001, Math.min(1.0, cg));
         try{ track('autogain_calib', {measDb:Number(peakDb.toFixed(1)), autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
@@ -4935,14 +4934,10 @@ async function autoGainFlow(M, token){
     }
     return false;
   }
-  // 2. 实时电平表微调（v2.9.4）：用户手调音箱音量，指针进绿区即"音量适合，可以开始"。
-  //    probe=粗调（安全增益），meter=微调。实时针即答案，去掉主观"你听着呢？"问。
-  //    meter 播放增益 = M._autoGain（上限 0.1），绝不超；红区只警告不掐死；点返回 stopPink。
+  // 2. v2.9.10: 探针即终点（HFP 下用户无法手动调音量，meter 微调步删除）。
+  //    探针 8s 爬完已冻结在绿区顶部，直接返回 true，外层显示 [开始正式测试]。
   track('autogain_calib_done', {gainDb:Number(cal.gainDb.toFixed(1))});
-  var ok = await levelCalibFlow(M, token);
-  if(token!==app.runToken) return false;
-  if(ok){ track('levelcalib_meter_ok'); return true; }
-  track('levelcalib_meter_back'); return false;
+  return true;
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
@@ -5055,8 +5050,8 @@ function runLevelCalibOnce(M, token){
         '<div class="small mt8" style="color:#8E8E93;">'+escapeHtml(tt(btPlay?'measure.levelCalibHint':'measure.levelCalibUsbHint'))+'</div>'+
         '<div id="lc-meter" style="position:relative;height:20px;border-radius:10px;overflow:hidden;margin:14px 0 4px;background:#1c1c1e;">'+
           '<div style="position:absolute;left:0%;width:60%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
-          '<div style="position:absolute;left:60%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
-          '<div style="position:absolute;left:80%;width:12%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+          '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+          '<div style="position:absolute;left:76%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
           '<div style="position:absolute;left:92%;width:4%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
           '<div style="position:absolute;left:96%;width:4%;top:0;bottom:0;background:rgba(255,69,58,.50);"></div>'+
           '<div id="lc-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;box-shadow:0 0 4px rgba(255,255,255,.6);"></div>'+
@@ -5064,7 +5059,7 @@ function runLevelCalibOnce(M, token){
         '<div class="small" style="position:relative;height:14px;margin-bottom:8px;color:#8E8E93;">'+
           '<span style="position:absolute;left:0;">-50</span>'+
           '<span style="position:absolute;left:60%;transform:translateX(-50%);">-20</span>'+
-          '<span style="position:absolute;left:80%;transform:translateX(-50%);color:#34D399;">-10</span>'+
+          '<span style="position:absolute;left:76%;transform:translateX(-50%);color:#34D399;">-12</span>'+
           '<span style="position:absolute;left:92%;transform:translateX(-50%);color:#34D399;">-4</span>'+
           '<span style="position:absolute;left:96%;transform:translateX(-50%);">-2</span>'+
           '<span style="position:absolute;right:0;">0</span>'+
@@ -5084,11 +5079,10 @@ function runLevelCalibOnce(M, token){
         stEl=document.getElementById('lc-status'),
         goBtn=document.getElementById('lc-go');
     function zoneOf(db){
-      // v2.9.7: 绿区定死 -10～-4dBFS（用户 HFP 实测底噪 -37dBFS，旧绿区 -16～-8 在中段 SNR 仅 12dB 不达标）。
-      // 新绿区峰值 -10～-4 → RMS -22～-16dBFS；底噪 -37 时 SNR 15～21dB；离 0dBFS 有 4dB 削顶余量。
-      // 专业易用：先把最低门槛（测得出结果）做对，不搞自适应复杂度。
+      // v2.9.10: 绿区 -12～-4dBFS（用户要求宽容度高一点；8dB 宽）。
+      // 峰值 -12～-4 → RMS -24～-16dBFS；HFP 底噪 -37 时 SNR 13～21dB；离 0dBFS 有 4dB 削顶余量。
       if(db<-20) return 'redlow';
-      if(db<-10) return 'yellowlow';
+      if(db<-12) return 'yellowlow';
       if(db<=-4) return 'green';
       if(db<=-2) return 'yellowhigh';
       return 'redhigh';
@@ -6445,6 +6439,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.9 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.10 · 内测版</div>
 </body>
 </html>
