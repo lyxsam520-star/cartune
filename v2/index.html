@@ -3509,7 +3509,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.15 · 内测版';
+  ver.textContent = 'v2.9.16 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4839,7 +4839,19 @@ async function autoGainCalib(M, token){
     return START_G + (END_G - START_G) * ((el - 0.1) / RAMP_SEC);
   }
   function stopProbe(){
-    try{ M.stopPink(0.15); }catch(_){}
+    // v2.9.16: 硬停——lockAndWait 冻结后 stopPink 的 cancelScheduledValues 会清掉冻结值导致淡出异常。
+    // 直接拿 gain 节点，取消一切调度，50ms 拉到 0，停 src。
+    try{
+      var gg = M._pinkGain || g, ss = M._pinkSrc || src, ctx2 = M.audioCtx;
+      if(gg && ctx2){
+        var t2 = ctx2.currentTime;
+        try{ gg.gain.cancelScheduledValues(t2); }catch(_){}
+        try{ gg.gain.setValueAtTime(gg.gain.value || 0, t2); }catch(_){}
+        try{ gg.gain.linearRampToValueAtTime(0, t2 + 0.05); }catch(_){ try{ gg.gain.setValueAtTime(0, t2); }catch(_){} }
+      }
+      if(ss){ try{ ss.stop(ctx2 ? ctx2.currentTime + 0.1 : undefined); }catch(_){ try{ ss.stop(); }catch(_){} } }
+    }catch(_){}
+    try{ M.stopPink(0.05); }catch(_){}
     if(sampler){ clearInterval(sampler); sampler = null; }
     src = null; g = null;
   }
