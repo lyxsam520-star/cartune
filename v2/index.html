@@ -3056,6 +3056,16 @@ window.COPY = {
     autoGainProbingEn: "Probing for the right volume, you can fine-tune with phone Bluetooth volume keys…",
     autoGainMeterHint: "正在自动探测，可用手机蓝牙音量键微调，针进绿区即锁定",
     autoGainMeterHintEn: "Auto-probing, fine-tune with phone BT volume keys, locks when needle hits green",
+    hfpMicDead: "麦克风无信号（蓝牙通话模式异常）",
+    hfpMicDeadEn: "No mic signal (Bluetooth call mode issue)",
+    hfpTitle: "蓝牙模式受限",
+    hfpTitleEn: "Bluetooth Mode Limited",
+    hfpBody: "当前蓝牙通话模式下，麦克风和音量键无法正常工作。建议切换到 USB 模式（车机 U 盘播放＋手机录音），精度更高。如坚持用蓝牙，将以默认音量测试。",
+    hfpBodyEn: "In Bluetooth call mode, mic and volume keys don't work properly. USB mode (head-unit USB playback + phone recording) is recommended for better accuracy. Continue with Bluetooth at default volume if you insist.",
+    hfpUseUsb: "查看 USB 模式说明",
+    hfpUseUsbEn: "See USB Mode Guide",
+    hfpContinueBt: "继续用蓝牙测试",
+    hfpContinueBtEn: "Continue with Bluetooth",
     autoGainLocked: function(db){ return "已锁定 "+db+" dB"; },
     autoGainLockedEn: function(db){ return "Locked at "+db+" dB"; },
     autoGainClipped: "探测到音量过大，已自动压低",
@@ -3508,7 +3518,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.19 · 内测版';
+  ver.textContent = 'v2.9.20 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4974,6 +4984,33 @@ async function autoGainCalib(M, token){
         }
       }catch(_){}
       var peakDb = peak > 0 ? 20*Math.log10(peak) : -120;
+      // v2.9.20: HFP 下 mic 无数据熔断——2 秒仍 -120dB 说明 analyser 没接到信号，不卡死，直接默认增益
+      var el2 = (Date.now() - tStart) / 1000;
+      if(el2 > 2 && el2 < 2.1 && peakDb <= -119){
+        console.warn('[autoGain] 2s 无 mic 信号，HFP 可能未接通，用默认 0.1');
+        M._autoGain = 0.1;
+        try{ track('autogain_mic_dead', {}); }catch(_){}
+        // 不直接 finish——弹 HFP 异常分流，让用户选
+        if(ovStatus) ovStatus.innerHTML = '<span style="color:#FF9F1C;">'+escapeHtml(tt('measure.hfpMicDead'))+'</span>';
+        if(ovGo){
+          ovGo.classList.remove('hidden');
+          ovGo.textContent = tt('measure.hfpContinueBt');
+          ovGo.onclick = function(){
+            var ov2 = document.createElement('div');
+            ov2.className = 'iso-overlay';
+            ov2.innerHTML = '<div class="iso-card"><div class="h">'+escapeHtml(tt('measure.hfpTitle'))+'</div>'+
+              '<div class="small mt8">'+escapeHtml(tt('measure.hfpBody'))+'</div>'+
+              '<div class="mt8"><button class="btn btn-primary" id="hfp-usb">'+escapeHtml(tt('measure.hfpUseUsb'))+'</button></div>'+
+              '<div class="mt8"><button class="btn btn-ghost" id="hfp-bt">'+escapeHtml(tt('measure.hfpContinueBt'))+'</button></div></div>';
+            document.body.appendChild(ov2);
+            document.getElementById('hfp-usb').onclick = function(){ document.body.removeChild(ov2); finish({ok:false, reason:'hfp_usb'}); };
+            document.getElementById('hfp-bt').onclick = function(){ document.body.removeChild(ov2); finish({ok:true, measDb:peakDb, gainDb:0, autoGain:0.1, micDead:true}); };
+          };
+        }
+        clearInterval(sampler); sampler = null; // 停采样，等用户选
+        return;
+      }
+      var peakDb = peak > 0 ? 20*Math.log10(peak) : -120;
       updateProbeMeter(peakDb);
       var cg = currentGain();
       var el = (Date.now() - tStart) / 1000;
@@ -5034,6 +5071,14 @@ async function autoGainFlow(M, token){
       if(token!==app.runToken) return false;
       if(act==='back'){ track('soundcheck_back'); return false; }
       return autoGainFlow(M, token); // 重试整套
+    }
+    if(cal.reason==='hfp_usb'){
+      // 用户选了看 USB 说明 → 跳 USB 指引页（或回模式选择）
+      track('autogain_hfp_usb');
+      setStatus(tt('measure.hfpUseUsb'));
+      // 简单起见：切到 USB 模式 tab，返回 false 让外层重来
+      try{ setMode('usb'); }catch(_){}
+      return false;
     }
     return false;
   }
