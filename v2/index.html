@@ -2937,8 +2937,8 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
-    levelTargetGuide: "调节音箱音量，让指针进入绿色区域",
-    levelTargetGuideEn: "Adjust the speaker volume until the needle enters the green zone",
+    levelTargetGuide: "正在自动校准音量，请保持安静不要动",
+    levelTargetGuideEn: "Auto-calibrating volume, please stay quiet and don't move",
     levelTargetWhy: "指针在绿区时，音量正合适",
     levelTargetWhyEn: "When the needle is in the green zone, the volume is just right",
     levelZoneLowRed: "电平太低，请调大音量",
@@ -4799,7 +4799,8 @@ function askSoundTrouble(){
  */
 /* v2.9 渐强探测（2026-10-13 真机：点"启动麦克风"后 HFP 音量在最大，-20dB 探测本身也炸）。
  * 原理：HFP 音量独立且可能在最大，渐强探测是唯一安全的首触达方式。
- * 探测永远从 -40dB（0.01）起，3s 线性爬到 -20dB（0.1），绝不直接 -20dB。
+ * 探测永远从 -60dB（0.001）起，8s 线性爬到 0dB（1.0），绝不直接大音量。
+ * HFP 下用户无法手动调音量，全靠数字增益自动找绿区。
  * 安全红线：任何时刻峰值 >-3dBFS → 立即停播。
  * 返回 {ok, reason?, measDb?, gainDb?, autoGain?, emergency?, clipped?, low?}
  *   ok=true: M._autoGain 已设置（正式测试 playPink 自动使用）；
@@ -4808,7 +4809,9 @@ function askSoundTrouble(){
 async function autoGainCalib(M, token){
   setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
   var ctx = M.audioCtx;
-  var START_G = 0.001, END_G = 0.1, RAMP_SEC = 4.0; // v2.9.2: -60dB → -20dB（HFP 增益极高，-40dB 起播仍炸）
+  // v2.9.8: -60dB → 0dB（用户实测：HFP 下手机/音箱音量键全失效，手动调音量走不通，必须全自动）。
+  // 8 秒慢爬＋急停线（>-3dBFS 立停），安全由探针自身保证，不靠用户。
+  var START_G = 0.001, END_G = 1.0, RAMP_SEC = 8.0; // -60dB → 0dB
   var buf = null, sampler = null, src = null, g = null;
   var tStart = Date.now();
 
@@ -4835,7 +4838,7 @@ async function autoGainCalib(M, token){
     g.gain.setValueAtTime(0, t0);
     try{
       g.gain.linearRampToValueAtTime(START_G, t0 + 0.1);          // 0.1s 极短 fade 到 -60dB，防"乍响"
-      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 4s 爬到 -20dB
+      g.gain.linearRampToValueAtTime(END_G, t0 + 0.1 + RAMP_SEC); // 8s 爬到 0dB
     }catch(e){
       console.error('[autoGain] ramp 调度失败，保持静音', e);
       return {ok:false, reason:'rampfail'};
@@ -4845,7 +4848,7 @@ async function autoGainCalib(M, token){
     catch(e){ g.connect(ctx.destination); }
     src.start(t0 + 0.02);
     M._pinkSrc = src; M._pinkGain = g; // 交给 stopPink 管理
-    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→0.1(-20dB)，4s');
+    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→1.0(0dB)，8s');
   }catch(e){
     console.error('[autoGain] 起播失败', e);
     return {ok:false, reason:'playfail'};
@@ -4897,7 +4900,7 @@ async function autoGainCalib(M, token){
         finish({ok:true, measDb:peakDb, gainDb:20*Math.log10(M._autoGain/0.1), autoGain:M._autoGain});
         return;
       }
-      // 4.1s 爬完仍未达标
+      // 8.1s 爬完仍未达标（已µ½ 0dB 数字上限，仍不够响→提示用户环境/设备问题）
       if(el >= 0.1 + RAMP_SEC + 0.1){
         if(peakDb < -50){
           try{ track('autogain_nosignal', {measDb:Number(peakDb.toFixed(1))}); }catch(_){}
@@ -6442,6 +6445,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.7 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.8 · 内测版</div>
 </body>
 </html>
