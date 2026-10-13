@@ -5317,6 +5317,8 @@ async function startMeasureFlow(opts){
   document.getElementById('mic-err-card').classList.add('hidden');
   resetStepsUI();
   var token = ++app.runToken;
+  // v2.9.13: 防旧探针/试音的粉噪漏进新测量的底噪阶段——先停掉老 Measurer 的一切播放
+  try{ if(app.measurer){ app.measurer.stopPink(0.1); } }catch(_){}
   var spec = S().eqSpec;
   // ① 音频初始化（必须在手势回调链内同步触发；只建 AudioContext，不碰麦克风——试音要干净会话）
   var M;
@@ -6513,6 +6515,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.12 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.13 · 内测版</div>
 </body>
 </html>
