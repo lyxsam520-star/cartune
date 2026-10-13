@@ -3581,7 +3581,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.47 · 内测版';
+  ver.textContent = 'v2.9.48 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6462,6 +6462,17 @@ function renderPlan(){
   // v2.9.3: buildPlan 抛异常不再静默吞（此前 catch 后 plan={bands:[]} → 空白页，用户以为"方案出不来"）。
   // 主因：S().measL 为空（页面刷新/状态丢失）。失败时打埋点＋人话红字卡＋返回重测按钮。
   if(!plan){
+    // v2.9.48: 诊断日志——记录 measL 状态，帮助定位"数据丢了"问题
+    try{
+      console.error('[renderPlan] DIAG measL:', S().measL ? 'present, len=' + (S().measL.length || S().measL.band31?.length || '?') : 'NULL');
+      console.error('[renderPlan] DIAG measR:', S().measR ? 'present' : 'NULL');
+      console.error('[renderPlan] DIAG floor31:', S().floor31 ? 'present' : 'NULL');
+      console.error('[renderPlan] DIAG eqSpec:', S().eqSpec ? JSON.stringify(S().eqSpec).slice(0,100) : 'NULL');
+      trackSecurity('plan_diag', {
+        measL: !!S().measL, measR: !!S().measR, floor31: !!S().floor31,
+        eqSpec: !!S().eqSpec, car: !!(S().car && (S().car.id || S().car.name))
+      });
+    }catch(_){}
     try{ plan = buildPlan(); S()._planDraft = plan; }
     catch(e){
       try{ track('plan_build_fail', {err:String(e&&e.message||e).slice(0,100)}); }catch(_){}
