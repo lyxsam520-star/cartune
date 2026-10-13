@@ -5412,7 +5412,11 @@ async function startMeasureFlow(opts){
   // 持久化（经 DSP）
   try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(_){}
   setStatus('');
-  renderCTA(CTA['measure_done']);
+  try{ renderCTA(CTA['measure_done']); }catch(e){
+    console.error('[measure] renderCTA failed', e);
+    // 兜底：直接进报告页，不让用户卡在 100%
+    try{ renderReport(); show('report'); }catch(_){}
+  }
 }
 
 /* 进阶：声道隔离自检 → 解锁 L/R 独立测量（DSP/外接播放器用户）。
@@ -5485,7 +5489,10 @@ async function startLrOptIn(){
   await new Promise(function(r){ setTimeout(r, 1000); });
   if(token!==app.runToken) return;
   setStatus('');
-  renderCTA(CTA['measure_done']);
+  try{ renderCTA(CTA['measure_done']); }catch(e){
+    console.error('[measure] renderCTA failed', e);
+    try{ renderReport(); show('report'); }catch(_){}
+  }
 }
 function failMeasure(token, e){
   if(token!==app.runToken) return;
@@ -6442,5 +6449,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.1 · 内测版</div>
 </body>
 </html>
