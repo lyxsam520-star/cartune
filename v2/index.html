@@ -522,7 +522,7 @@ ul.clean li{margin:6px 0;}
 
 </div><!-- /app -->
 
-<div id="cta-bar"><div style="text-align:center;color:#636366;font-size:11px;padding:4px 0 0;" id="cta-ver">v2.9.15 · 内测版</div><div class="inner" id="cta-inner"></div></div>
+<div id="cta-bar"><div class="inner" id="cta-inner"></div></div>
 
 <!-- DSP 算法层：构建时将 dsp.js 全文替换本占位注释 -->
 <script>
@@ -3506,6 +3506,11 @@ function show(id){
 function renderCTA(btns, sub){
   var box = document.getElementById('cta-inner');
   box.innerHTML = '';
+  // 版本号：按钮上方，flex 全宽独占一行
+  var ver = document.createElement('div');
+  ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
+  ver.textContent = 'v2.9.15 · 内测版';
+  box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
     btn.className = 'btn ' + (b.primary===false ? 'btn-ghost' : 'btn-primary');
