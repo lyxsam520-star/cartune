@@ -3508,7 +3508,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.17 · 内测版';
+  ver.textContent = 'v2.9.18 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4823,6 +4823,10 @@ function askSoundTrouble(){
  */
 async function autoGainCalib(M, token){
   setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
+  // v2.9.18: 探针前强制静默 1s——试音的粉噪残留会干扰探针首采样，导致"一闪而过"误锁定
+  try{ M.stopPink(0.1); }catch(_){}
+  await new Promise(function(r){ setTimeout(r, 1000); });
+  if(token!==app.runToken) return {ok:false, reason:'token'};
   var ctx = M.audioCtx;
   // v2.9.14: END_G 回落到 0.1（-20dB）。v2.9.8 曾放到 1.0（0dB），但探针 8 秒爬完未进绿区时会停在最大，
   // 正式测试直接炸。探针找不到绿区 = 物理链路问题（音箱太小声/太远），应提示用户调物理音量，而非数字爆表。
