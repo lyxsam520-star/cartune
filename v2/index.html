@@ -3560,7 +3560,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.40 · 内测版';
+  ver.textContent = 'v2.9.41 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4548,6 +4548,7 @@ function onFrame(f){
     var clipEl = document.getElementById('clip-alert');
     if(clipEl){ clipEl.textContent = tt('measure.clipWarn'); clipEl.classList.add('show'); clipEl.classList.remove('red'); clipEl.classList.add('yellow'); }
     try{ console.log('[clip] warning only, not pausing (count='+app._clipWarned+')'); }catch(_){}
+    trackSecurity('clip_warning', {count: app._clipWarned, phase:'level'}); // v2.9.41: 喇叭/听力风险行为
   }
   // 电平过低提示
   if(typeof f.peak==='number' && f.peak < Math.pow(10,-45/20)){ app.lowStreak++; } else { app.lowStreak=0; }
@@ -5164,6 +5165,9 @@ async function autoGainFlow(M, token){
       // 太大声保护：>0.5（-6dB）时提示
       if(v > 75) warnEl.textContent = tt('measure.levelTooLoud');
       else warnEl.textContent = '';
+      // v2.9.41: 滑杆拉到 90%+ 记一次（听力/喇叭高风险行为）
+      if(v >= 90 && !slider._volMaxLogged){ slider._volMaxLogged = true; trackSecurity('volume_high', {pct:v, gainDb: Math.round(20*Math.log10(curGain)*10)/10}); }
+      if(v < 90) slider._volMaxLogged = false;
     });
     goBtn.onclick = function(){ finish(true); };
     // 建音频链
@@ -5700,6 +5704,7 @@ async function startMeasureFlow(opts){
     try{
       if(app.measurer){ app.measurer.abort(); if(app.measurer.stopPink) app.measurer.stopPink(0.1); }
     }catch(_){}
+    trackSecurity('drive_abort', {kmh: kmh, phase:'measuring'}); // v2.9.41: 行车中中止
     try{
       var ov = document.createElement('div');
       ov.className = 'iso-overlay';
