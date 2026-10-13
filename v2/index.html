@@ -3541,7 +3541,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.38 · 内测版';
+  ver.textContent = 'v2.9.39 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5492,6 +5492,80 @@ function snrGate(meas, chLabel){
   }catch(_){}
 }
 /* 测量主流程：由按钮 onclick 直接调用（iOS 手势链） */
+/* v2.9.39: 行车检测——GPS 速度锁
+ * 返回 Promise<boolean>：true=已停放可测，false=拦截
+ * - speed > 2.22m/s（8km/h）→ 直接拦截"车辆行驶中"
+ * - GPS 不可用/被拒/超时 → 弹手动确认"我确认车辆已停放"（地库无 GPS 时的逃生口）
+ * - 测量中用 watchPosition 持续监控，超速自动中止（由调用方传入 onSpeeding 回调）
+ */
+function checkParked(){
+  return new Promise(function(resolve){
+    // 无 GPS API（如桌面浏览器）→ 直接过（目标用户是手机）
+    if(!navigator.geolocation){ resolve(true); return; }
+    var done = false;
+    function finish(ok){ if(!done){ done = true; resolve(ok); } }
+    var timer = setTimeout(function(){ manualConfirm(); }, 8000);
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        clearTimeout(timer);
+        var sp = pos.coords.speed; // m/s，可能为 null
+        if(sp != null && sp > 2.22){
+          // 行驶中：弹窗拦截（用 iso-overlay 统一样式）
+          try{
+            var ov = document.createElement('div');
+            ov.className = 'iso-overlay';
+            ov.innerHTML =
+              '<div class="iso-card">' +
+              '<div class="h" style="font-size:17px;color:#FF453A;">🚫 检测到车辆正在行驶</div>' +
+              '<div class="small mt8">当前速度约 ' + Math.round(sp*3.6) + 'km/h。行车中使用本工具极易引发交通事故，且测量数据无效。<br><br>请将车辆停放至安全位置后再测量。</div>' +
+              '<button class="btn btn-primary" id="drive-ok">知道了</button>' +
+              '</div>';
+            document.body.appendChild(ov);
+            ov.querySelector('#drive-ok').onclick = function(){ document.body.removeChild(ov); };
+          }catch(_){}
+          finish(false);
+        } else {
+          finish(true);
+        }
+      },
+      function(err){
+        // PERMISSION_DENIED / POSITION_UNAVAILABLE / TIMEOUT → 手动确认
+        clearTimeout(timer);
+        manualConfirm();
+      },
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 10000 }
+    );
+    function manualConfirm(){
+      // 地库/无 GPS 时的手动确认逃生口
+      try{
+        var ok = confirm('无法获取定位速度（如在地库）。\n\n请确认：车辆已停放于安全位置，且测量全程不会启动车辆。\n\n点"确定"继续测量，点"取消"返回。');
+        finish(!!ok);
+      }catch(_){ finish(true); }
+    }
+  });
+}
+/* v2.9.39: 测量中的持续速度监控——超速自动中止测量 */
+function startDriveWatch(onSpeeding){
+  if(!navigator.geolocation) return null;
+  var wid = null;
+  try{
+    wid = navigator.geolocation.watchPosition(
+      function(pos){
+        var sp = pos.coords.speed;
+        if(sp != null && sp > 2.22){
+          try{ navigator.geolocation.clearWatch(wid); }catch(_){}
+          try{ onSpeeding(Math.round(sp*3.6)); }catch(_){}
+        }
+      },
+      function(){}, // 忽略中途的定位错误
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 5000 }
+    );
+  }catch(_){ return null; }
+  return wid;
+}
+function stopDriveWatch(wid){
+  try{ if(wid != null && navigator.geolocation) navigator.geolocation.clearWatch(wid); }catch(_){}
+}
 async function startMeasureFlow(opts){
   // v2.9.35: 车型必选——没选车型（自定义也行）不让进测量页
   if(!S().car){
@@ -5512,6 +5586,10 @@ async function startMeasureFlow(opts){
     }catch(_){}
     return;
   }
+  // v2.9.39: 行车锁——GPS 速度检测，行驶中禁止测量（用户要求技术层面禁用）
+  // 阈值 8km/h（步行约 5km/h，8km/h 以上判定为车载移动）
+  var _parked = await checkParked();
+  if(!_parked) return;
   var isRemeasure = !!(opts && opts.isRemeasure);
   app._remeasureMode = isRemeasure; // 复测失败/削顶时重试仍走复测入口
   hideAlerts();
@@ -5596,6 +5674,27 @@ async function startMeasureFlow(opts){
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
+  // v2.9.39: 测量中持续监控车速，超速自动中止
+  var _driveWid = startDriveWatch(function(kmh){
+    try{
+      if(app.measurer){ app.measurer.abort(); if(app.measurer.stopPink) app.measurer.stopPink(0.1); }
+    }catch(_){}
+    try{
+      var ov = document.createElement('div');
+      ov.className = 'iso-overlay';
+      ov.innerHTML =
+        '<div class="iso-card">' +
+        '<div class="h" style="font-size:17px;color:#FF453A;">🚫 测量已中止</div>' +
+        '<div class="small mt8">检测到车辆开始行驶（约 ' + kmh + 'km/h）。为安全起见测量已自动停止，粉噪已关闭。<br><br>请停车后重新测量。</div>' +
+        '<button class="btn btn-primary" id="drive-abort-ok">知道了</button>' +
+        '</div>';
+      document.body.appendChild(ov);
+      ov.querySelector('#drive-abort-ok').onclick = function(){
+        document.body.removeChild(ov);
+        try{ show('measure'); }catch(_){}
+      };
+    }catch(_){}
+  });
   var res = null;
   try{
     res = await M.measureMerged({
@@ -5607,6 +5706,7 @@ async function startMeasureFlow(opts){
   }catch(e){ return failMeasure(token, e); }
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
   stopRaf(); app.measuring=false;
+  try{ stopDriveWatch(_driveWid); }catch(_){} // v2.9.39: 测量结束，停速度监控
   if(res && res.noSignal){ return failNoSignal(token); }
   if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
   var floor31 = res.floor31, meas = res.seg31.sig;
