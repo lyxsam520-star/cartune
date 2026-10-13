@@ -2050,12 +2050,12 @@ var MODELS_DB = {
   };
 
   /**
-   * 40s 合并测量（v2.1）：多相位一次跑完，中间无停顿。
+   * 50s 合并测量（v2.4 进阶版，v2.2 时为 30s）：多相位一次跑完，中间无停顿。
    * 一次起播一次收尾，中间不重建 AudioContext、不启停 source——从根上消灭
    * step1→step2 交接爆音（交接逻辑是爆音的第一嫌疑人，直接删掉交接）。
    *
-   * 10s/30s 分配原理：
-   * - 信号 30s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；30s 时 20Hz ±0.7dB、
+   * 10s/40s 分配原理（v2.4 进阶版；v1 标准版为 5s/25s＝30s）：
+   * - 信号 40s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；40s 时 20Hz ±0.63dB、
    *   50Hz 以上全 <0.5dB；车机 EQ 步进 1dB，精度余量充足；
    * - 底噪 10s 足够：底噪只用于分频段 SNR 门控（阈值 10/15dB）；10s 时 20Hz
    *   波动 ±1.2dB，远小于阈值间距（5dB），不影响"出/不出增益"判断。
@@ -2946,14 +2946,14 @@ window.COPY = {
     ctaStartEn: "Start Test",
     ctaReport: "生成调音报告",
     ctaReportEn: "Generate Tuning Report",
-    stepMerged: "合并监听（40 秒）：底噪 10s＋立体声 30s，一次跑完",
-    stepMergedEn: "Combined listening (40s): 10s floor + 30s stereo, one pass",
-    stepMergedLr: "合并监听（40 秒）：底噪 10s＋左 15s＋右 15s，一次跑完",
-    stepMergedLrEn: "Combined listening (40s): 10s floor + 15s L + 15s R, one pass",
-    stepMergedTip: "一次跑完、中间不停顿：前 10 秒保持安静测底噪，随后粉噪自动淡入，40 秒后淡出收尾。",
-    stepMergedTipEn: "One pass with no pauses: first 10s measures the noise floor in silence, then pink noise fades in automatically and fades out at 40s.",
-    progressMerged: "监听进度：40 秒合并监听",
-    progressMergedEn: "Listening progress: 40s combined",
+    stepMerged: "合并监听（50 秒）：底噪 10s＋立体声 40s，一次跑完",
+    stepMergedEn: "Combined listening (50s): 10s floor + 40s stereo, one pass",
+    stepMergedLr: "合并监听（50 秒）：底噪 10s＋左 20s＋右 20s，一次跑完",
+    stepMergedLrEn: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
+    stepMergedTip: "一次跑完、中间不停顿：前 10 秒保持安静测底噪，随后粉噪自动淡入，50 秒后淡出收尾。",
+    stepMergedTipEn: "One pass with no pauses: first 10s measures the noise floor in silence, then pink noise fades in automatically and fades out at 50s.",
+    progressMerged: "监听进度：50 秒合并监听",
+    progressMergedEn: "Listening progress: 50s combined",
     soundCheckTitle: "试音",
     soundCheckTitleEn: "Sound check",
     soundCheckQ: "刚才音响发出粉噪声了吗？请确认三点：①听得到声音 ②是音响在响（不是手机喇叭）③按手机音量键，声音大小有变化",
@@ -3209,13 +3209,13 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "让每辆车，都有自己的声音。",
     heroTitleEn: "Every car deserves its own sound.",
-    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、40 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
-    heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 40 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
+    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、50 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
+    heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
         t: "1 · 我们怎么测",
         tEn: "1 · How we measure",
-        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 30 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。",
+        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 40 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。\n\n进阶版 50 秒深度测量，低频平均更充分。",
         bEn: "We play standard pink noise in the car — flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice. The 31 bands are analysis resolution, not EQ bands — a narrow problem like a 712 Hz interference dip disappears under coarse averaging, but fine-grained analysis catches it; the final gain plan always matches your head unit's actual EQ band count: 3 bands on your unit means 3 gain values."
       },
       {
@@ -3996,8 +3996,8 @@ function refreshBountyBtn(){
 }
 /* =====================================================================
  * 测量页（核心）
- * 流程（v2.1）：40s 合并监听一次跑完——底噪 10s → 立体声 30s（默认）；
- *   进阶 L/R：底噪 10s＋左 15s＋右 15s＝40s。中间无停顿、无交接。
+ * 流程（v2.4 进阶版，v2.2 时为 30s）：50s 合并监听一次跑完——底噪 10s → 立体声 40s（默认）；
+ *   进阶 L/R：底噪 10s＋左 20s＋右 20s＝50s。中间无停顿、无交接。
  * 实时柱按车机 EQ 段数绘制（非 31 段 hero）；专业模式额外叠加内部 31 段。
  * iOS Safari：Measurer.initAudio 必须由按钮 onclick 直接调用，async 链不断开。
  * ---------------------------------------------------------------------
@@ -4006,28 +4006,30 @@ function refreshBountyBtn(){
  *   精度余量充足；且 30 秒是"不儿戏"的专业分量（用户反馈）。
  * - 底噪 10s：底噪只用于分频段 SNR 门控（阈值 10/15dB）；10s 时 20Hz 波动
  *   ±1.2dB，远小于阈值间距（5dB），不影响"出/不出增益"判断。
- * - 无缝：10s 处粉噪 fade in 切入，40s 处 fade out 收尾；一次起播一次收尾，
+ * - 无缝：10s 处粉噪 fade in 切入，50s 处 fade out 收尾；一次起播一次收尾；
  *   不给音频会话重协商留窗口（2026-10-13 爆音/无声根因修复）。
  * ===================================================================== */
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
-/* v2.1 40s 合并流程：单步 UI，内部多相位一次跑完，中间无停顿。
+/* v2.2 30s 合并流程：单步 UI，内部多相位一次跑完，中间无停顿。
+ * 时长原理（v2.4 进阶版）：底噪 10s（分频段 SNR 门控只需"大概多吵"，10s 在 20Hz 处 ±1.2dB << 5dB 阈值间距）；
+ * 立体声 40s（20Hz ±0.63dB，60Hz 以上 <0.5dB，车机 EQ 步进 1dB 下有冗余；低频平均更充分——进阶版档位差异）。
  * 从根上消灭 step1→step2 交接爆音（2026-10-13 真机问题：交接逻辑是第一嫌疑人）。 */
 var STEP_DEFS_LR = [
-  {key:'merged_lr', dur:40, merged:true, copy:'measure.stepMergedLr', obj:'measure.objFloor'}
+  {key:'merged_lr', dur:50, merged:true, copy:'measure.stepMergedLr', obj:'measure.objFloor'}
 ];
 var STEP_DEFS_STEREO = [
-  {key:'merged', dur:40, merged:true, copy:'measure.stepMerged', obj:'measure.objFloor'}
+  {key:'merged', dur:50, merged:true, copy:'measure.stepMerged', obj:'measure.objFloor'}
 ];
 /* 合并相位表：side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道 */
 var PHASES_STEREO = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
-  {key:'sig',   dur:30, side:null,  obj:'measure.objStereo'}
+  {key:'sig',   dur:40, side:null,  obj:'measure.objStereo'}
 ];
 var PHASES_LR = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
-  {key:'L',     dur:15, side:'L',   obj:'measure.objL'},
-  {key:'R',     dur:15, side:'R',   obj:'measure.objR'}
+  {key:'L',     dur:20, side:'L',   obj:'measure.objL'},
+  {key:'R',     dur:20, side:'R',   obj:'measure.objR'}
 ];
 function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
@@ -4623,7 +4625,7 @@ async function levelCalibFlow(M, token){
     track('levelcalib_retry');
   }
 }
-/* 无信号熔断（v2.1）：40s 全程没录到测试音——诚实报错，不产出垃圾报告。
+/* 无信号熔断：30s 全程没录到测试音——诚实报错，不产出垃圾报告。
  * 触发条件见 measureMerged：信号段相对底噪抬升 <3dB@500Hz–4kHz。 */
 function failNoSignal(token){
   if(token!==app.runToken) return;
@@ -4748,12 +4750,12 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ④ 40s 合并测量（v2.1）：底噪 10s → 立体声 30s，一次跑完无停顿
+  // ④ 30s 合并测量：底噪 5s → 立体声 25s，一次跑完无停顿
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40; app._pauseAccum=0; app._uiPauseStart=0;
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
@@ -4781,13 +4783,13 @@ async function startMeasureFlow(opts){
   setStatus(tt('measure.listenDone'));
   setOverallObj(tt('measure.listenDone'));
   setOverallFill(1);
-  track('measure_done', {flow:'merged40'});
+  track('measure_done', {flow:'merged30'});
   await new Promise(function(r){ setTimeout(r, 1000); });
   if(token!==app.runToken) return;
   if(isRemeasure){
-    // 复测：不覆盖调前数据，不写主测量存档，路由到复测对比（复测同样走 40s 合并流程）
+    // 复测：不覆盖调前数据，不写主测量存档，路由到复测对比（复测同样走 30s 合并流程）
     setStatus('');
-    track('measure_done', {flow:'merged40', remeasure:true});
+    track('measure_done', {flow:'merged30', remeasure:true});
     finishRemeasure(meas);
     return;
   }
@@ -4832,9 +4834,9 @@ async function startLrOptIn(){
   }
   track('lr_optin_iso_pass');
 
-  // 40s 合并 L/R：底噪 10s＋左 15s＋右 15s，一次跑完（相位切换处 fade 过渡，无爆音）
+  // 30s 合并 L/R：底噪 5s＋左 12.5s＋右 12.5s，一次跑完（相位切换处 fade 过渡，无爆音）
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=40; app._pauseAccum=0; app._uiPauseStart=0;
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
@@ -4863,7 +4865,7 @@ async function startLrOptIn(){
   setStatus(tt('measure.listenDone'));
   setOverallObj(tt('measure.listenDone'));
   setOverallFill(1);
-  track('measure_done', {flow:'merged40_lr'});
+  track('measure_done', {flow:'merged30_lr'});
   await new Promise(function(r){ setTimeout(r, 1000); });
   if(token!==app.runToken) return;
   setStatus('');

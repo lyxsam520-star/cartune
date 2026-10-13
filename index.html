@@ -1753,10 +1753,10 @@ var MODELS_DB = {
     });
   };
 
-  /** 开始环境底噪采集：自动跑 30 秒（与测量同口径；粉噪随机信号的 1/3 倍频程波动
+  /** 开始环境底噪采集：自动跑 5 秒（与测量同口径；粉噪随机信号的 1/3 倍频程波动
       ε≈1/√(带宽×时间)，30s 把 20Hz 波动压到 ±0.7dB 内），resolve 得到 floor31（dB 数组） */
   DSP.Measurer.prototype.startFloor = function () {
-    this._floorPromise = this._acquire(30, null);
+    this._floorPromise = this._acquire(5, null); // v1 标准版：底噪 5s
     return this._floorPromise;
   };
   /** 提前终止底噪采集，返回已采集部分的平均 floor31 */
@@ -2423,7 +2423,7 @@ window.COPY = {
     steps: [
       "给车机 EQ 界面拍张照片（记录段数、标签与当前数值）",
       "逐段 +6dB 播放粉噪，手机测出每段的峰值位置（应用内校准向导会一步步带你做）",
-      "标准粉噪完整测量一次（立体声整体，约 30 秒）"
+      "标准粉噪完整测量一次（立体声整体，约 25 秒）"
     ],
     reward: "完成后奖励一次高级调音方案，任务通过质检后自动发放到你的账户。",
     ctaSignup: "报名参加",
@@ -2437,10 +2437,10 @@ window.COPY = {
     btNote: "方便，但精度略低：手机连车机蓝牙播放测试音频。",
     usbTab: "车机 U 盘播放",
     usbNote: "推荐：测试音频拷进 U 盘，用车机直接播放，信噪比更好。",
-    stepFloor: "第 1 步：测环境底噪（30 秒）",
-    stepFloorTip: "车窗关闭、空调暂时关闭，保持安静约 30 秒。",
-    stepL: "第 2 步：测左声道（30 秒）",
-    stepR: "第 3 步：测右声道（30 秒）",
+    stepFloor: "第 1 步：测环境底噪（5 秒）",
+    stepFloorTip: "车窗关闭、空调暂时关闭，保持安静约 5 秒。",
+    stepL: "第 2 步：测左声道（12.5 秒）",
+    stepR: "第 3 步：测右声道（12.5 秒）",
     measuringTip: "正在播放测试音频并测量…请保持安静，不要碰手机。",
     snrWarn: "信号太弱，请调大车机音量后再测",
     clipAlert: "检测到麦克风削顶，已停止，请调小音量重测",
@@ -2463,8 +2463,8 @@ window.COPY = {
     isoYesEn: "Yes, left only",
     isoNo: "两边都响",
     isoNoEn: "Both sides played",
-    stepStereo: "第 2 步：立体声整体测量（30 秒）",
-    stepStereoEn: "Step 2: Stereo combined measurement (30s)",
+    stepStereo: "第 2 步：立体声整体测量（25 秒）",
+    stepStereoEn: "Step 2: Stereo combined measurement (25s)",
     objFloor: "环境底噪",
     objFloorEn: "Ambient noise floor",
     objStereo: "立体声整体",
@@ -2582,13 +2582,13 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "让每辆车，都有自己的声音。",
     heroTitleEn: "Every car deserves its own sound.",
-    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、一分钟，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
-    heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, one minute, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
+    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、30 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
+    heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
         t: "1 · 我们怎么测",
         tEn: "1 · How we measure",
-        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 30 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。",
+        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 25 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。",
         bEn: "We play standard pink noise in the car — flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice. The 31 bands are analysis resolution, not EQ bands — a narrow problem like a 712 Hz interference dip disappears under coarse averaging, but fine-grained analysis catches it; the final gain plan always matches your head unit's actual EQ band count: 3 bands on your unit means 3 gain values."
       },
       {
@@ -3369,27 +3369,27 @@ function refreshBountyBtn(){
 }
 /* =====================================================================
  * 测量页（核心）
- * 流程：①环境底噪 30s → ②立体声整体测量 30s（默认）；进阶可解锁 L/R 各 30s
+ * 流程（v1 标准版 30s）：①环境底噪 5s → ②立体声整体测量 25s（默认）；进阶 L/R：底噪 5s＋左 12.5s＋右 12.5s
  * 实时柱按车机 EQ 段数绘制（非 31 段 hero）；专业模式额外叠加内部 31 段。
  * iOS Safari：Measurer.init 必须由按钮 onclick 直接调用，async 链不断开。
  * ---------------------------------------------------------------------
  * 时长原理（v1.8）：粉噪是随机信号，1/3 倍频程测量的理论波动 ε ≈ 1/√(带宽×时间)，
  * 瓶颈在低频。30s 时：20Hz（带宽 4.6Hz）±0.7dB，50Hz 以上全 <0.5dB——真正的
- * 专业级 1/3 倍频程精度。两步共 60 秒，坐车里 1 分钟做一次调音，体验可接受。
+ * 专业级 1/3 倍频程精度。合并 30 秒一次跑完（历史：v1.8 时为两步各 30s 共 60s，后改为 30s 合并）。
  * 车机 EQ 步进 1dB，测量波动必须压到 1dB 内才有意义；8s 技术上"够用"但用户
  * 不信=没用——信任是测量产品的一部分。
  * ===================================================================== */
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
 var STEP_DEFS_LR = [
-  {key:'floor', dur:30, copy:'measure.stepFloor', obj:'measure.objFloor'},
-  {key:'L',     dur:30, copy:'measure.stepL',     obj:'measure.objL'},
-  {key:'R',     dur:30, copy:'measure.stepR',     obj:'measure.objR'}
+  {key:'floor', dur:5, copy:'measure.stepFloor', obj:'measure.objFloor'},
+  {key:'L',     dur:12.5, copy:'measure.stepL',     obj:'measure.objL'},
+  {key:'R',     dur:12.5, copy:'measure.stepR',     obj:'measure.objR'}
 ];
 /* v1.3+ 默认：立体声整体测量（一次测完，测的就是驾驶位实际听到的声音） */
 var STEP_DEFS_STEREO = [
-  {key:'floor', dur:30, copy:'measure.stepFloor',  obj:'measure.objFloor'},
-  {key:'stereo', dur:30, copy:'measure.stepStereo', obj:'measure.objStereo'}
+  {key:'floor', dur:5, copy:'measure.stepFloor',  obj:'measure.objFloor'},
+  {key:'stereo', dur:25, copy:'measure.stepStereo', obj:'measure.objStereo'}
 ];
 function stepDefs(){ return app.measureMode==='lr' ? STEP_DEFS_LR : STEP_DEFS_STEREO; }
 function initMeasure(){
@@ -3752,9 +3752,9 @@ async function startMeasureFlow(){
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
 
-  // ② 环境底噪 30s
+  // ② 环境底噪 5s（v1 标准版 30s 合并）
   setStepState(0,'active'); setStatus(tt('measure.stepFloor'));
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=30;
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=5;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
   stepStartUI(0);
   startRaf();
@@ -3765,16 +3765,16 @@ async function startMeasureFlow(){
   setStepState(0,'done'); track('floor_done');
   if(!(await stepDonePause(token, 0))) return;
 
-  // ③ 立体声整体测量 30s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
+  // ③ 立体声整体测量 25s（默认流程：dual-mono，一次测完；测的就是驾驶位实际听到的声音）
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(1,'active'); setStatus(tt('measure.stepStereo'));
-  app.curStep=1; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
+  app.curStep=1; app.stepStart=performance.now(); app.stepDur=25; app.clipStreak=0; app.lowStreak=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
   stepStartUI(1);
   startRaf();
   if(app.playMode==='bt'){ try{ M.playPink(null); }catch(_){} }  // dual-mono：左右同发
   var meas = null;
-  try{ meas = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
+  try{ meas = await M.measure(25, onFrame); }catch(e){ return failMeasure(token, e); }
   if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
   if(token!==app.runToken) return; // 削顶自动停止后丢弃
   stopRaf(); app.measuring=false;
@@ -3830,19 +3830,19 @@ async function startLrOptIn(){
     return;
   }
   track('lr_optin_iso_pass');
-  // L/R 各 30s
+  // L/R 各 12.5s（v1 标准版）
   var results = {};
   var defs = stepDefs();
   for(var s=1;s<=2;s++){
     var ch = s===1?'L':'R';
     setStepState(s,'active'); setStatus(tt(defs[s].copy));
-    app.curStep=s; app.stepStart=performance.now(); app.stepDur=30; app.clipStreak=0; app.lowStreak=0;
+    app.curStep=s; app.stepStart=performance.now(); app.stepDur=12.5; app.clipStreak=0; app.lowStreak=0;
     app.frameCount=0; app.avgShown=false; app._shownFrames=-1;
     stepStartUI(s);
     startRaf();
     if(app.playMode==='bt'){ try{ M.playPink(ch); }catch(_){} }
     var m2 = null;
-    try{ m2 = await M.measure(30, onFrame); }catch(e){ return failMeasure(token, e); }
+    try{ m2 = await M.measure(12.5, onFrame); }catch(e){ return failMeasure(token, e); }
     if(app.playMode==='bt'){ try{ M.stopPink(); }catch(_){} }
     if(token!==app.runToken) return;
     stopRaf(); app.measuring=false;
