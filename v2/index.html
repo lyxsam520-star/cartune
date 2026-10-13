@@ -2911,8 +2911,8 @@ window.COPY = {
     clipResumeEn: "Continue",
     clipRestart: "重来",
     clipRestartEn: "Restart",
-    levelCalibTitle: "电平校准",
-    levelCalibTitleEn: "Level check",
+    levelCalibTitle: "实时电平",
+    levelCalibTitleEn: "Real-time Level",
     levelCalibHint: "正在播放粉噪并检测麦克风电平，请勿触碰手机",
     levelCalibHintEn: "Playing pink noise and checking mic level — don't touch the phone",
     levelCalibUsbHint: "请确认车机/U 盘正在播放粉噪，正在检测麦克风电平",
@@ -2935,16 +2935,16 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
-    levelTargetGuide: "先把音响音量调小，再慢慢调大，让指针进入绿色区域",
-    levelTargetGuideEn: "Start with the volume low, then turn it up slowly until the needle enters the green zone",
-    levelTargetWhy: "测试音从小声起播——从小往大调，安全；音量太大失真，太小测不准，绿区最准",
-    levelTargetWhyEn: "Test tone starts quiet — turn up from low, safe. Too loud distorts, too quiet is inaccurate — the green zone is the sweet spot",
+    levelTargetGuide: "调节音箱音量，让指针进入绿色区域",
+    levelTargetGuideEn: "Adjust the speaker volume until the needle enters the green zone",
+    levelTargetWhy: "指针在绿区时，音量正合适",
+    levelTargetWhyEn: "When the needle is in the green zone, the volume is just right",
     levelZoneLowRed: "电平太低，请调大音量",
     levelZoneLowRedEn: "Level too low — turn up the volume",
     levelZoneLowYellow: "偏低了，再调大一点，接近绿区了",
     levelZoneLowYellowEn: "A bit low — turn it up a little more, almost in the green",
-    levelInGreen: "在绿区了，可以开始",
-    levelInGreenEn: "In the green — ready to go",
+    levelInGreen: "已就绪，可以开始测试",
+    levelInGreenEn: "Ready — start the test",
     levelHoldLeft: "还差 {s} 秒",
     levelHoldLeftEn: "{s}s to go",
     levelStable: "电平合适，可以开始",
@@ -4903,7 +4903,7 @@ async function autoGainCalib(M, token){
  * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
  * 返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function autoGainFlow(M, token){
-  // 1. 自动校准（3s @ 0.1 实测 → M._autoGain）
+  // 1. 自动校准（ascending probe → M._autoGain）：粗调，找安全增益
   var cal = await autoGainCalib(M, token);
   if(token!==app.runToken) return false;
   if(!cal.ok){
@@ -4917,117 +4917,14 @@ async function autoGainFlow(M, token){
     }
     return false;
   }
-  // 2. 显示校准结果 + 主观二次确认（循环）
-  for(;;){
-    var ans = await askAutoGainConfirm(cal);
-    if(token!==app.runToken) return false;
-    if(ans==='ok'){ track('autogain_ok', {gainDb:Number(cal.gainDb.toFixed(1))}); return true; }
-    if(ans==='back'){ track('soundcheck_back'); return false; }
-    if(ans==='fail'){
-      track('soundcheck_fail');
-      var act2 = await askSoundTrouble();
-      if(token!==app.runToken) return false;
-      if(act2==='back'){ track('soundcheck_back'); return false; }
-      var cal2 = await autoGainCalib(M, token);
-      if(token!==app.runToken) return false;
-      if(!cal2.ok) return false;
-      cal = cal2;
-      continue;
-    }
-    // 'small' | 'big' → 数字增益微调 ±6dB，不碰用户音箱，重播验证
-    if(ans==='small'){
-      M._autoGain = Math.min(1.0, M._autoGain * 2);
-      try{ track('autogain_trim', {dir:'up', autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
-      setStatus(tt('measure.autoGainTrimUp')+'…');
-    } else if(ans==='big'){
-      M._autoGain = Math.max(0.001, M._autoGain / 2);
-      try{ track('autogain_trim', {dir:'down', autoGain:Number(M._autoGain.toFixed(4))}); }catch(_){}
-      setStatus(tt('measure.autoGainTrimDown')+'…');
-    }
-    // 用新增益重播 3s 验证，更新实测峰值（走 _defaultGain 即 M._autoGain）
-    var peakHold = 0;
-    try{
-      if(M.analyser){
-        var buf = new Float32Array(M.analyser.fftSize);
-        var sampler = setInterval(function(){
-          try{
-            M.analyser.getFloatTimeDomainData(buf);
-            for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peakHold) peakHold=a; }
-          }catch(_){}
-        }, 50);
-        try{ M.playPink(null, 0.15); }catch(_){} // 不传 maxGain → 用 M._autoGain
-        await new Promise(function(r){ setTimeout(r, 3000); });
-        try{ M.stopPink(0.2); }catch(_){}
-        clearInterval(sampler);
-      }
-    }catch(_){}
-    if(token!==app.runToken) return false;
-    cal.measDb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
-    cal.gainDb = 20*Math.log10(M._autoGain/0.1);
-    cal.autoGain = M._autoGain;
-    // 回到循环，再次显示 + 确认
-  }
-}
-/* 自动增益确认弹窗：显示校准结果＋"你听着呢？"三问。Promise<'ok'|'small'|'big'|'fail'|'back'> */
-function askAutoGainConfirm(cal){
-  return new Promise(function(resolve){
-    var pdb = cal.measDb;
-    var showPeak = (typeof pdb==='number' && pdb > -100);
-    var gainDbStr = (cal.gainDb >= 0 ? '+' : '') + cal.gainDb.toFixed(1);
-    var interpKey, interpColor;
-    if(showPeak){
-      if(pdb < -30){ interpKey='measure.soundCheckPeakLow'; interpColor='#FFD60A'; }
-      else if(pdb <= -12){ interpKey='measure.soundCheckPeakOk'; interpColor='#34D399'; }
-      else { interpKey='measure.soundCheckPeakHigh'; interpColor='#FF453A'; }
-    }
-    var pct = showPeak ? Math.max(0, Math.min(100, (pdb+50)/50*100)) : 0;
-    var ov = document.createElement('div');
-    ov.className = 'iso-overlay';
-    ov.innerHTML =
-      '<div class="iso-card">'+
-        '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
-        (cal.clipped ? '<div class="small mt8" style="color:#FF9F0A;">'+escapeHtml(tt('measure.autoGainClipped'))+'</div>' : '')+
-        (cal.emergency ? '<div class="small mt8" style="color:#FF453A;">'+escapeHtml(tt('measure.autoGainClipped'))+'</div>' : '')+
-        '<div class="small mt8" style="color:#34D399;">'+escapeHtml(tf('measure.autoGainDone')(gainDbStr))+'</div>'+
-        (showPeak ?
-          '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckPeakLabel'))+'<b>'+pdb.toFixed(1)+' dBFS</b></div>'+
-          '<div style="position:relative;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 2px;background:#1c1c1e;">'+
-            '<div style="position:absolute;left:60%;width:16%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
-            '<div style="position:absolute;top:-1px;bottom:-1px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:'+pct.toFixed(1)+'%;"></div>'+
-          '</div>'+
-          '<div class="small" style="color:#8E8E93;font-size:11px;">-50&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#34D399;">-20～-12</span>&nbsp;&nbsp;&nbsp;&nbsp;0</div>'+
-          '<div class="small mt8" style="color:'+interpColor+';">'+escapeHtml(tt(interpKey))+'</div>'
-        : '')+
-        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ3'))+'</div>'+
-        '<button class="btn btn-primary" id="ag-perfect">'+escapeHtml(tt('measure.soundCheckPerfect'))+'</button>'+
-        '<button class="btn btn-ghost" id="ag-small">'+escapeHtml(tt('measure.soundCheckSmall'))+'</button>'+
-        '<button class="btn btn-ghost" id="ag-big">'+escapeHtml(tt('measure.soundCheckBig'))+'</button>'+
-        '<div class="small mt8"><a href="javascript:void(0)" id="ag-nosound" style="color:#8E8E93;">'+escapeHtml(tt('measure.soundCheckNoSound'))+'</a></div>'+
-        '<div class="small mt8"><a href="javascript:void(0)" id="ag-back" style="color:#8E8E93;">'+escapeHtml(tt('measure.soundBack'))+'</a></div>'+
-      '</div>';
-    document.body.appendChild(ov);
-    var done = false;
-    function finish(v){ if(done) return; done = true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
-    function wire(id, val){
-      var el = document.getElementById(id), fired = 0;
-      function go(e){ var n=Date.now(); if(n - fired < 600) return; fired = n; finish(val); }
-      el.addEventListener('click', go);
-      var sx = 0, sy = 0;
-      el.addEventListener('touchstart', function(e){ var tc = e.touches[0]; sx = tc.clientX; sy = tc.clientY; }, {passive:true});
-      el.addEventListener('touchend', function(e){
-        var tc = e.changedTouches[0];
-        if(Math.abs(tc.clientX - sx) < 12 && Math.abs(tc.clientY - sy) < 12){
-          if(e.cancelable) e.preventDefault();
-          go(e);
-        }
-      });
-    }
-    wire('ag-perfect', 'ok');
-    wire('ag-small', 'small');
-    wire('ag-big', 'big');
-    wire('ag-nosound', 'fail');
-    wire('ag-back', 'back');
-  });
+  // 2. 实时电平表微调（v2.9.4）：用户手调音箱音量，指针进绿区即"音量适合，可以开始"。
+  //    probe=粗调（安全增益），meter=微调。实时针即答案，去掉主观"你听着呢？"问。
+  //    meter 播放增益 = M._autoGain（上限 0.1），绝不超；红区只警告不掐死；点返回 stopPink。
+  track('autogain_calib_done', {gainDb:Number(cal.gainDb.toFixed(1))});
+  var ok = await levelCalibFlow(M, token);
+  if(token!==app.runToken) return false;
+  if(ok){ track('levelcalib_meter_ok'); return true; }
+  track('levelcalib_meter_back'); return false;
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
@@ -5248,7 +5145,11 @@ function runLevelCalibOnce(M, token){
       }catch(e){}
       timer=setTimeout(loop,60);
     }
-    try{ if(btPlay){ M.playPink(null, 2.0, 0.1); console.log('[levelCalib] pink started (bt) @-20dB, 2s fade'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
+    // v2.9.4: 用 ascending probe 校准出的安全增益，上限 0.1（-20dB）绝不超。
+    // probe=粗调找安全增益，meter=微调（用户手调音箱到绿区）。满幅播放永不回来。
+    var safeGain = 0.1;
+    try{ if(typeof M._autoGain==='number' && M._autoGain>0) safeGain = Math.min(0.1, M._autoGain); }catch(_){}
+    try{ if(btPlay){ M.playPink(null, 2.0, safeGain); console.log('[levelCalib] pink started (bt) gain='+safeGain.toFixed(4)+', 2s fade'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
     loop();
   });
 }
@@ -6502,6 +6403,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.3 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.4 · 内测版</div>
 </body>
 </html>
