@@ -3537,7 +3537,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.28 · 内测版';
+  ver.textContent = 'v2.9.29 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5093,7 +5093,7 @@ async function autoGainFlow(M, token){
   // 点 [开始正式测试] 锁定当前增益。mic 无数据时显示提示，仍可凭听感调。
   return new Promise(function(resolve){
     var ctx = M.audioCtx;
-    var curGain = 0.06; // 初始 -24dB
+    var curGain = 0.0158; // 初始 10%（-36dB），用户要求默认 10%
     var buf = null, sampler = null, src = null, g = null;
     var ov = document.createElement('div');
     ov.className = 'iso-overlay';
@@ -5109,8 +5109,8 @@ async function autoGainFlow(M, token){
         '<div id="la-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;"></div>'+
       '</div>'+
       '<div class="small" style="color:#8E8E93;text-align:center;margin-bottom:12px;" id="la-db">-- dBFS</div>'+
-      '<div style="margin:8px 0 4px;color:#AEAEB2;font-size:14px;">'+escapeHtml(tt('measure.levelSliderLabel'))+' <span id="la-pct">25</span>%</div>'+
-      '<input type="range" id="la-slider" min="0" max="100" value="25" style="width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:#3A3A3C;outline:none;">'+
+      '<div style="margin:8px 0 4px;color:#AEAEB2;font-size:14px;">'+escapeHtml(tt('measure.levelSliderLabel'))+' <span id="la-pct">10</span>%</div>'+
+      '<input type="range" id="la-slider" min="0" max="100" value="10" style="width:100%;-webkit-appearance:none;height:6px;border-radius:3px;background:#3A3A3C;outline:none;">'+
       '<div class="small mt8" style="color:#8E8E93;" id="la-micwarn"></div>'+
       '<div class="mt8"><button class="btn btn-primary" id="la-go" style="width:100%;">'+escapeHtml(tt('measure.ctaStart'))+'</button></div>'+
     '</div>';
