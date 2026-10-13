@@ -4812,9 +4812,10 @@ function askSoundTrouble(){
 async function autoGainCalib(M, token){
   setStatus(tt('measure.autoGainProbing')); // "正在小声探测合适音量，请别动音箱音量"
   var ctx = M.audioCtx;
-  // v2.9.8: -60dB → 0dB（用户实测：HFP 下手机/音箱音量键全失效，手动调音量走不通，必须全自动）。
-  // 8 秒慢爬＋急停线（>-3dBFS 立停），安全由探针自身保证，不靠用户。
-  var START_G = 0.001, END_G = 1.0, RAMP_SEC = 8.0; // -60dB → 0dB
+  // v2.9.14: END_G 回落到 0.1（-20dB）。v2.9.8 曾放到 1.0（0dB），但探针 8 秒爬完未进绿区时会停在最大，
+  // 正式测试直接炸。探针找不到绿区 = 物理链路问题（音箱太小声/太远），应提示用户调物理音量，而非数字爆表。
+  // 用户可在两次测试之间（A2DP 模式）调音箱物理音量，HFP 探测时按键才失效。
+  var START_G = 0.001, END_G = 0.1, RAMP_SEC = 8.0; // -60dB → -20dB
   var buf = null, sampler = null, src = null, g = null;
   var tStart = Date.now();
 
@@ -4851,7 +4852,7 @@ async function autoGainCalib(M, token){
     catch(e){ g.connect(ctx.destination); }
     src.start(t0 + 0.02);
     M._pinkSrc = src; M._pinkGain = g; // 交给 stopPink 管理
-    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→1.0(0dB)，8s');
+    console.log('[autoGain] 渐强探测起播：0.001(-60dB)→0.1(-20dB)，8s');
   }catch(e){
     console.error('[autoGain] 起播失败', e);
     return {ok:false, reason:'playfail'};
@@ -6515,6 +6516,6 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.13 · 内测版</div>
+<div style="text-align:center;padding:12px;color:#636366;font-size:11px;">v2.9.14 · 内测版</div>
 </body>
 </html>
