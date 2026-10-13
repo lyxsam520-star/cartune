@@ -164,6 +164,11 @@ body{
 .checkrow input[type=checkbox]{width:22px;height:22px;margin-top:2px;accent-color:var(--amber);flex:0 0 auto;}
 /* 增益卡 */
 .gaincard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin:10px 0;display:flex;align-items:center;gap:12px;}
+/* v2.9.20: App 内音量滑杆（iOS 友好，绕开 HFP 系统音量键失效） */
+#lc-vol::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;}
+#lc-vol::-moz-range-thumb{width:28px;height:28px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer;}
+#lc-vol::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:#2c2c2e;}
+#lc-vol::-moz-range-track{height:6px;border-radius:3px;background:#2c2c2e;}
 .gaincard .gl{flex:1;}
 .gaincard .gt{font-size:15px;font-weight:700;}
 .gaincard .gc{font-size:12px;color:var(--sub);margin-top:2px;}
@@ -1998,6 +2003,8 @@ var MODELS_DB = {
    * 无则回退 -20dB（0.1）安全电平；USB/其他模式 1.0。 */
   DSP.Measurer.prototype._defaultGain = function(){
     if(this._btPlay){
+      // v2.9.20: 优先手动滑杆锁定的增益（用户在电平表拖出来的），其次自动探针值，最后回退 0.1
+      if(typeof this._manualGain === 'number' && this._manualGain > 0 && this._manualGain <= 1) return this._manualGain;
       if(typeof this._autoGain === 'number' && this._autoGain > 0 && this._autoGain <= 1) return this._autoGain;
       return 0.1;
     }
@@ -2944,6 +2951,12 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
+    levelSliderLabel: "音量",
+    levelSliderLabelEn: "Volume",
+    levelSliderHint: "拖动滑杆调音量，让指针进入绿色区域",
+    levelSliderHintEn: "Drag the slider to adjust volume until the needle enters the green zone",
+    levelTooLoudAuto: "音量过大，已自动调低",
+    levelTooLoudAutoEn: "Too loud, auto-reduced",
     levelTargetGuide: "调节音箱音量，让指针进入绿色区域",
     levelTargetGuideEn: "Adjust the speaker volume to bring the needle into the green zone",
     levelTargetWhy: "指针在绿区时，音量正合适",
@@ -3500,7 +3513,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.19 · 内测版';
+  ver.textContent = 'v2.9.20 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4924,6 +4937,14 @@ function runLevelCalibOnce(M, token){
         '</div>'+
         '<div class="small" id="lc-db" style="color:#8E8E93;">-- dBFS</div>'+
         '<div class="small mt8" id="lc-status" style="min-height:22px;"></div>'+
+        '<div class="mt8" style="margin-top:12px;">'+
+          '<div class="small" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+            '<span>'+escapeHtml(tt('measure.levelSliderLabel'))+'</span>'+
+            '<span id="lc-volpct" class="num">67%</span>'+
+          '</div>'+
+          '<input type="range" id="lc-vol" min="0" max="100" value="67" step="1" style="width:100%;-webkit-appearance:none;appearance:none;height:6px;border-radius:3px;background:#2c2c2e;outline:none;cursor:pointer;">'+
+          '<div class="small" style="color:#8E8E93;margin-top:4px;">'+escapeHtml(tt('measure.levelSliderHint'))+'</div>'+
+        '</div>'+
         '<div class="mt8"><button class="btn btn-primary" id="lc-go" disabled style="opacity:.4;">'+escapeHtml(tt('measure.levelGo'))+'</button></div>'+
         '<button class="btn btn-ghost" id="lc-back">'+escapeHtml(tt('measure.levelBack'))+'</button>'+
       '</div>';
@@ -4935,7 +4956,27 @@ function runLevelCalibOnce(M, token){
     var needle=document.getElementById('lc-needle'),
         dbEl=document.getElementById('lc-db'),
         stEl=document.getElementById('lc-status'),
-        goBtn=document.getElementById('lc-go');
+        goBtn=document.getElementById('lc-go'),
+        volSlider=document.getElementById('lc-vol'),
+        volPct=document.getElementById('lc-volpct');
+    // v2.9.20: App 内音量滑杆 → 数字增益（指数映射，-60dB～0dB），绕开 iOS HFP 系统音量键失效。
+    // 初始 67 ≈ -20dB（0.1），接近之前的固定默认值。
+    function sliderToGain(v){ return 0.001 * Math.pow(1000, Math.max(0,Math.min(100,v))/100); }
+    var manualGain = sliderToGain(67);
+    function applySliderGain(){
+      if(!volSlider) return;
+      var v = Number(volSlider.value)||0;
+      manualGain = sliderToGain(v);
+      if(volPct) volPct.textContent = v+'%';
+      try{
+        var gn = M._pinkGain;
+        if(gn && M.audioCtx){ gn.gain.setValueAtTime(manualGain, M.audioCtx.currentTime); }
+      }catch(_){}
+    }
+    if(volSlider){
+      volSlider.addEventListener('input', applySliderGain);
+      // iOS Safari 上 input 事件在拖动时连续触发，无需 change 兜底
+    }
     function zoneOf(db){
       // v2.9.19: 绿区 -12～-2dBFS（10dB 宽，用户要求宽容度大、容易进下一步）。
       // 峰值 -12～-2 → RMS -24～-14dBFS；HFP 底噪 -37 时 SNR 13～23dB；离 0dBFS 有 2dB 削顶余量。
@@ -4959,7 +5000,8 @@ function runLevelCalibOnce(M, token){
     function finish(v){
       if(done) return; done=true;
       if(timer){ clearTimeout(timer); timer=null; }
-      if(v==='ok'){ try{ track('levelcalib_ok_db',{db:Number(smoothDb.toFixed(1))}); }catch(_){} }
+      // v2.9.20: 用户点[开始]时，把滑杆锁定的增益存到 M._manualGain，正式测试 _defaultGain() 优先用它
+      if(v==='ok'){ try{ M._manualGain = manualGain; track('levelcalib_ok_db',{db:Number(smoothDb.toFixed(1)), gain:Number(manualGain.toFixed(4))}); }catch(_){} }
       try{ M.stopPink(0.2); }catch(_){}
       try{ document.body.removeChild(ov); }catch(_){}
       resolve(v);
@@ -4993,6 +5035,14 @@ function runLevelCalibOnce(M, token){
           if(needle) needle.style.left=pct.toFixed(1)+'%';
           if(dbEl) dbEl.textContent=pdb.toFixed(1)+' dBFS';
           smoothDb+=0.35*(pdb-smoothDb);
+          // v2.9.20: 安全——滑杆拉满（0dB）且 mic 峰值 >-3dBFS 时，自动拉回 70（-18dB）防炸
+          if(peak>0.708 && volSlider && Number(volSlider.value)>=95){
+            try{
+              volSlider.value=70; applySliderGain();
+              if(stEl) stEl.innerHTML='<span style="color:#FFD60A;">'+escapeHtml(tt('measure.levelTooLoudAuto'))+'</span>';
+              track('levelcalib_autoreduce',{peakDb:Number(pdb.toFixed(1))});
+            }catch(_){}
+          }
           if(peak>=0.99){
             if(clipArmed){ try{ track('levelcalib_clip'); }catch(_){} clipArmed=false; }
             setGo(false);
@@ -5018,8 +5068,9 @@ function runLevelCalibOnce(M, token){
       }catch(e){}
       timer=setTimeout(loop,60);
     }
-    // v2.9.19: 固定 -20dB（0.1）播粉噪，用户手动调音箱音量进绿区。正式测试同增益，音量一致。
-    try{ if(btPlay){ M.playPink(null, 2.0, 0.1); console.log('[levelCalib] pink started (bt) gain=0.1, 2s fade'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
+    // v2.9.20: 固定 -20dB（0.1）播粉噪，用户手动调音箱音量进绿区。正式测试同增益，音量一致。
+    // v2.9.20: 改用滑杆初始增益（67≈-20dB），用户拖滑杆实时调数字增益。
+    try{ if(btPlay){ M.playPink(null, 0.5, manualGain); console.log('[levelCalib] pink started (bt) gain='+manualGain.toFixed(4)+', 0.5s fade'); applySliderGain(); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
     loop();
   });
 }
