@@ -3518,7 +3518,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.21 · 内测版';
+  ver.textContent = 'v2.9.22 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5060,11 +5060,11 @@ async function autoGainCalib(M, token){
  * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
  * 返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function autoGainFlow(M, token){
-  // v2.9.21: 砍掉探针——用户定调"保证能通过测试的电平"，固定 -10dB（0.316）。
-  // 原理：HFP 底噪 -37dBFS，-10dB 数字增益＋正常听音音量 → mic 峰值 -10～-5dBFS → SNR 15-20dB，必过。
-  // 削顶风险由正式测试的 clip 熔断器兜底（>-3dBFS 停播）。
-  M._autoGain = 0.316;
-  try{ track('autogain_fixed', {gainDb:-10}); }catch(_){}
+  // v2.9.22: 固定 -6dB（0.5）。用户定调：不能调音量的电平测试没意义，直接给保证能过的电平。
+  // HFP 底噪 -37dBFS，-6dB＋正常听音音量 → mic 峰值 -6～0dBFS → SNR 20dB+，必过。
+  // 削顶由正式测试熔断器兜底（>-3dBFS 停播）。
+  M._autoGain = 0.5;
+  try{ track('autogain_fixed', {gainDb:-6}); }catch(_){}
   return true;
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
