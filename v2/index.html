@@ -3056,6 +3056,10 @@ window.COPY = {
     autoGainProbingEn: "Probing for the right volume, you can fine-tune with phone Bluetooth volume keys…",
     autoGainMeterHint: "正在自动探测，可用手机蓝牙音量键微调，针进绿区即锁定",
     autoGainMeterHintEn: "Auto-probing, fine-tune with phone BT volume keys, locks when needle hits green",
+    levelCheckTitle: "电平检测",
+    levelCheckTitleEn: "Level Check",
+    levelCheckHint: "正在检测播放音量，3 秒后自动继续",
+    levelCheckHintEn: "Checking playback level, auto-continues in 3s",
     hfpMicDead: "麦克风无信号（蓝牙通话模式异常）",
     hfpMicDeadEn: "No mic signal (Bluetooth call mode issue)",
     hfpTitle: "蓝牙模式受限",
@@ -3518,7 +3522,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.22 · 内测版';
+  ver.textContent = 'v2.9.23 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5060,12 +5064,85 @@ async function autoGainCalib(M, token){
  * 太小/太大 → 数字增益 ±6dB（不动用户音箱），重播 3s 验证；正好 → 通过。
  * 返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function autoGainFlow(M, token){
-  // v2.9.22: 固定 -6dB（0.5）。用户定调：不能调音量的电平测试没意义，直接给保证能过的电平。
-  // HFP 底噪 -37dBFS，-6dB＋正常听音音量 → mic 峰值 -6～0dBFS → SNR 20dB+，必过。
-  // 削顶由正式测试熔断器兜底（>-3dBFS 停播）。
-  M._autoGain = 0.5;
-  try{ track('autogain_fixed', {gainDb:-6}); }catch(_){}
-  return true;
+  // v2.9.23: 3 秒自动电平检测——显示实时表（用户要看），增益按实测自适应（无需手动调）。
+  // 起播 -12dB（0.25）：-6dB 太炸，-20dB 太小，-12dB 是安全中点。
+  // 3s 后按 mic 峰值定终增益：<-20dBFS → 提到 -6dB；>-5dBFS → 降到 -18dB；否则保持 -12dB。
+  return new Promise(function(resolve){
+    var ctx = M.audioCtx;
+    var testGain = 0.25; // -12dB
+    var peakHold = 0, buf = null, sampler = null, src = null, g = null;
+    // 建 overlay（简化版 meter）
+    var ov = document.createElement('div');
+    ov.className = 'iso-overlay';
+    ov.innerHTML = '<div class="iso-card">'+
+      '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.levelCheckTitle'))+'</div>'+
+      '<div class="small mt8">'+escapeHtml(tt('measure.levelCheckHint'))+'</div>'+
+      '<div style="position:relative;height:20px;border-radius:10px;overflow:hidden;margin:14px 0 4px;background:#1c1c1e;">'+
+        '<div style="position:absolute;left:0%;width:30%;top:0;bottom:0;background:rgba(255,69,58,.40);"></div>'+
+        '<div style="position:absolute;left:30%;width:20%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+        '<div style="position:absolute;left:50%;width:25%;top:0;bottom:0;background:rgba(52,211,153,.55);"></div>'+
+        '<div style="position:absolute;left:75%;width:25%;top:0;bottom:0;background:rgba(255,214,10,.40);"></div>'+
+        '<div id="lc-needle" style="position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:#fff;border-radius:2px;left:0%;"></div>'+
+      '</div>'+
+      '<div class="small" style="color:#8E8E93;text-align:center;" id="lc-db">-- dBFS</div>'+
+    '</div>';
+    document.body.appendChild(ov);
+    var needle = ov.querySelector('#lc-needle'), dbEl = ov.querySelector('#lc-db');
+    function closeOv(){ try{ document.body.removeChild(ov); }catch(_){} }
+    function finish(ok, gain){
+      if(sampler) clearInterval(sampler);
+      try{ if(g){ g.gain.cancelScheduledValues(ctx.currentTime); g.gain.setValueAtTime(0, ctx.currentTime); } }catch(_){}
+      try{ if(src){ src.stop(ctx.currentTime + 0.1); } }catch(_){}
+      closeOv();
+      if(ok){ M._autoGain = gain; try{ track('autogain_check', {gainDb:Number((20*Math.log10(gain)).toFixed(1))}); }catch(_){} }
+      resolve(ok);
+    }
+    try{
+      if(M.analyser) buf = new Float32Array(M.analyser.fftSize);
+      // 播粉噪 -12dB
+      var pb = DSP.makeStereoPink(ctx, 5, null);
+      src = ctx.createBufferSource(); src.buffer = pb; src.loop = true;
+      g = ctx.createGain(); g.gain.value = 0;
+      src.connect(g); g.connect(ctx.destination);
+      var t = ctx.currentTime;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(testGain, t + 0.3);
+      src.start(t);
+      M._pinkSrc = src; M._pinkGain = g;
+    }catch(e){ finish(false); return; }
+    var tStart = Date.now();
+    sampler = setInterval(function(){
+      if(token !== app.runToken){ finish(false); return; }
+      var peak = 0;
+      try{
+        if(M.analyser && buf){
+          M.analyser.getFloatTimeDomainData(buf);
+          for(var k=0;k<buf.length;k++){ var a=buf[k]<0?-buf[k]:buf[k]; if(a>peak) peak=a; }
+        }
+      }catch(_){}
+      if(peak > peakHold) peakHold = peak;
+      var pdb = peak > 0 ? 20*Math.log10(peak) : -120;
+      // 更新 UI
+      try{
+        var pct = Math.max(0, Math.min(100, (pdb + 32) / 40 * 100));
+        needle.style.left = pct + '%';
+        dbEl.textContent = (pdb <= -119 ? '--' : pdb.toFixed(1)) + ' dBFS';
+      }catch(_){}
+      var el = (Date.now() - tStart) / 1000;
+      if(el >= 3){
+        var peakDb = peakHold > 0 ? 20*Math.log10(peakHold) : -120;
+        var finalGain = testGain;
+        if(peakDb < -20 && peakDb > -119){
+          finalGain = 0.5; // -6dB，太小声，提
+        }else if(peakDb > -5){
+          finalGain = 0.125; // -18dB，太大声，降
+        }
+        // mic 无数据（HFP）→ 用 -12dB 默认，不卡
+        if(peakDb <= -119) finalGain = 0.25;
+        finish(true, finalGain);
+      }
+    }, 50);
+  });
 }
 /* 试音流程（v2.7）：3s 粉噪（-20dB 安全电平，fade in/out）+ peak hold → 客观读数＋主观三问 → 指引调整 → 通过。
  * @param {boolean} connectivityOnly true=只问"听得到吗"（麦克风激活前，连通性检查）；
