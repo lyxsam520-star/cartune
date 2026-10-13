@@ -3536,7 +3536,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.26 · 内测版';
+  ver.textContent = 'v2.9.27 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5178,13 +5178,11 @@ async function autoGainFlow(M, token){
           warnEl.textContent = tt('measure.levelMicDead');
         }
       }
-      // 削顶保护：>-3dBFS 自动降
-      if(pdb > -3){
-        var nv = Math.max(0, parseInt(slider.value,10) - 20);
-        slider.value = nv; pctEl.textContent = nv;
-        curGain = sliderToGain(nv);
-        try{ g.gain.setValueAtTime(curGain, ctx.currentTime); }catch(_){}
-        warnEl.textContent = tt('measure.levelTooLoudAuto');
+      // v2.9.27: 削顶只警告不动滑杆——用户手动调，爹味保护惹人烦。阈值放宽到 -1dBFS（真削顶）。
+      if(pdb > -1){
+        warnEl.textContent = tt('measure.levelTooLoud');
+      } else if(pdb <= -1 && warnEl.textContent === tt('measure.levelTooLoud')){
+        warnEl.textContent = '';
       }
     }, 50);
   });
