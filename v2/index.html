@@ -4005,7 +4005,10 @@ function initCar(){
       var yi = document.getElementById('car-year-manual');
       if (!y){ ye.classList.add('show'); yi.classList.add('err'); return; }
       ye.classList.remove('show'); yi.classList.remove('err');
-      if (S().car) S().car.year = y;
+      // v2.6 fix: 手动模式 S().car 为 null，必须先初始化，否则 year 丢了存不上
+      if (!S().car) S().car = { manual: true };
+      S().car.year = y;
+      S().car.manual = true;
     } else {
       /* 先尝试防御性自愈：搜索框内容可能是车系名/品牌名（iOS tap 丢失等） */
       if (!(brandSel && seriesSel && yearSel)) healSearch();
