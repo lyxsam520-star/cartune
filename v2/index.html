@@ -230,6 +230,14 @@ ul.clean li{margin:6px 0;}
       </div>
       <div style="color:var(--sub);font-size:20px;line-height:1;">&rsaquo;</div>
     </div>
+    <!-- v2.9.42: 隐私设置（v1.2 协议 5.2：聚合数据授权开关） -->
+    <div class="card" style="display:flex;align-items:center;gap:12px;margin-top:10px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:15px;font-weight:700;">参与车型数据优化</div>
+        <div class="small">将去标识化后的测量数据用于同年款车型方案优化。关闭不影响测量与方案功能。</div>
+      </div>
+      <label class="switch"><input type="checkbox" id="privacy-data-toggle" checked><span class="knob"></span></label>
+    </div>
     </div>
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
@@ -3560,7 +3568,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.41 · 内测版';
+  ver.textContent = 'v2.9.42 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -3614,6 +3622,16 @@ function initHome(){
     document.getElementById('pro31-wrap').classList.toggle('hidden', !S().pro);
     track('pro_toggle', {on:S().pro});
   });
+  // v2.9.42: 隐私数据开关（v1.2 协议 5.2）
+  try{
+    var _pdt = document.getElementById('privacy-data-toggle');
+    var _pdv = localStorage.getItem('ct_privacy_data');
+    if(_pdv === '0') _pdt.checked = false;
+    _pdt.addEventListener('change', function(e){
+      try{ localStorage.setItem('ct_privacy_data', e.target.checked ? '1' : '0'); }catch(_){}
+      trackSecurity('privacy_data_toggle', {on: !!e.target.checked});
+    });
+  }catch(_){}
   document.getElementById('home-tech-link').onclick = function(){ show('tech'); };
   CTA.home = [{ text: tt('home.ctaPrimary'), onClick: function(){ track('home_cta'); show('checklist'); } }];
 }
@@ -3627,6 +3645,29 @@ function initChecklist(){
   setText('checklist-pink','checklist.pinkNote');
   setText('checklist-bt','checklist.btTip');
   setText('checklist-safe','checklist.safeNote');
+  // v2.9.42: 首次测量前安全须知弹窗（听力+驾驶+喇叭三合一，v1.2 协议要求显著提示）
+  try{
+    if(!localStorage.getItem('ct_safety_ack')){
+      var ov = document.createElement('div');
+      ov.className = 'iso-overlay';
+      ov.innerHTML =
+        '<div class="iso-card">' +
+        '<div class="h" style="font-size:17px;">⚠️ 安全须知</div>' +
+        '<div class="small mt8" style="text-align:left;line-height:1.7;">' +
+        '1. <b>听力保护</b>：请以正常听音乐的音量测量。如感耳鸣、耳闷、头晕，立即降低音量或停止。<br>' +
+        '2. <b>严禁行车中使用</b>：测量和调 EQ 时请确保车辆已安全停放，行车中将被自动拦截。<br>' +
+        '3. <b>喇叭保护</b>：请勿故意调高音量；如出现削顶警告请降低音量。故意高音量导致的损坏由您自行承担。' +
+        '</div>' +
+        '<button class="btn btn-primary" id="safety-ok" style="margin-top:12px;">我已阅读并知悉</button>' +
+        '</div>';
+      document.body.appendChild(ov);
+      ov.querySelector('#safety-ok').onclick = function(){
+        try{ localStorage.setItem('ct_safety_ack', '1'); }catch(_){}
+        try{ document.body.removeChild(ov); }catch(_){}
+        trackSecurity('safety_ack', {});
+      };
+    }
+  }catch(_){}
   setText('bk-checklist','common.back');
   var items = t('checklist.items');
   var box = document.getElementById('checklist-items');
@@ -6671,6 +6712,26 @@ function measArrOf(m){ return (m && m.band31) || m || []; }
 /* 复测入口：先提示按方案调好车机 EQ（用户点「开始」后才真正测量） */
 function startRemeasurePrompt(){
   if(!S().measL){ show('measure'); return; } // 无调前基线：回到测量页
+  // v2.9.42: 免费重测限 2 次（v1.2 协议 4.2），超限转客服
+  var _rc = 0;
+  try{ _rc = parseInt(localStorage.getItem('ct_remeasure_count')||'0', 10)||0; }catch(_){}
+  if(_rc >= 2){
+    try{
+      var ov = document.createElement('div');
+      ov.className = 'iso-overlay';
+      ov.innerHTML =
+        '<div class="iso-card">' +
+        '<div class="h" style="font-size:17px;">免费重测次数已用完</div>' +
+        '<div class="small mt8">您已使用 2 次免费重测。如仍有问题，请联系客服人工处理。</div>' +
+        '<button class="btn btn-primary" id="rc-ok">知道了</button>' +
+        '</div>';
+      document.body.appendChild(ov);
+      ov.querySelector('#rc-ok').onclick = function(){ try{ document.body.removeChild(ov); }catch(_){} };
+    }catch(_){}
+    trackSecurity('remeasure_limit_hit', {count:_rc});
+    return;
+  }
+  try{ localStorage.setItem('ct_remeasure_count', String(_rc+1)); }catch(_){}
   setText('remeasure-title','remeasure.title');
   setText('remeasure-prompt-title','remeasure.promptTitle');
   setText('remeasure-prompt-body','remeasure.promptBody');
