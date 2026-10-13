@@ -1980,7 +1980,10 @@ var MODELS_DB = {
    * @param {string|null} side
    * @param {number} fadeInSec 起播淡入秒数（默认 0.1；传 0 则无淡入）
    */
-  DSP.Measurer.prototype.playPink = function (side, fadeInSec) {
+  DSP.Measurer.prototype.playPink = function (side, fadeInSec, maxGain) {
+    /* v2.6 安全起播（2026-10-13 真机：电平校准满幅起播炸音箱）。
+     * 新增 maxGain：校准阶段从小音量起（0.1=-20dB），用户从小往大调，永不先炸。
+     * 原理：淡入防"乍响"，maxGain 防"持续巨响"——限幅器管数字削顶，管不了喇叭音量。 */
     /* v2.2 调度诊断（2026-10-13 真机：正式测试 10s 处起播无声，试音正常）。
      * 记录 ctx.state；suspended 则 resume（iOS 在 mic 激活/静音期可能挂起 context，
      * 此时 currentTime 冻结，src.start 调度永不触发＝无声）。 */
@@ -1998,14 +2001,17 @@ var MODELS_DB = {
     var g = this.audioCtx.createGain();
     var t = this.audioCtx.currentTime;
     var fi = (typeof fadeInSec === 'number' && fadeInSec >= 0) ? fadeInSec : 0.1;
+    // v2.6: 蓝牙模式默认安全电平 -20dB（0.1）。校准与正式测试必须同电平，
+    // 否则校准定的音量在正式测试时会响 20dB 直接削顶。USB 模式不经过此函数。
+    var mg = (typeof maxGain === 'number' && maxGain > 0 && maxGain <= 1) ? maxGain : (this._btPlay ? 0.1 : 1.0);
     // v2.3: 指数 ramp 在 iOS 会抛异常，catch 回退 setValueAtTime(1.0) = 瞬间满音量爆音。
     // 改线性 ramp（可从 0 起，几乎不抛）；异常时宁可无声（由无信号熔断接管），绝不许爆音。
     g.gain.setValueAtTime(0, t);
     if (fi > 0) {
-      try { g.gain.linearRampToValueAtTime(1.0, t + fi); }
+      try { g.gain.linearRampToValueAtTime(mg, t + fi); }
       catch (e) { console.error('[playPink] linearRamp 失败，保持静音', e); /* 保持 0，由熔断处理 */ }
     }
-    else { g.gain.setValueAtTime(1.0, t); }
+    else { g.gain.setValueAtTime(mg, t); }
     // 起播断言：gain 必须从 0 起（2026-10-13 爆音事故复盘）
     try { console.log('[playPink] 起播断言 gain@start=' + g.gain.value + ' (期望 0)'); } catch(_){}
     src.connect(g);
@@ -2905,10 +2911,10 @@ window.COPY = {
     levelRecalibEn: "Recalibrate",
     levelBack: "返回",
     levelBackEn: "Back",
-    levelTargetGuide: "调节音响音量，让指针进入绿色区域",
-    levelTargetGuideEn: "Adjust the speaker volume until the needle enters the green zone",
-    levelTargetWhy: "音量太大失真，太小测不准——绿区最准",
-    levelTargetWhyEn: "Too loud distorts, too quiet is inaccurate — the green zone is the sweet spot",
+    levelTargetGuide: "先把音响音量调小，再慢慢调大，让指针进入绿色区域",
+    levelTargetGuideEn: "Start with the volume low, then turn it up slowly until the needle enters the green zone",
+    levelTargetWhy: "测试音从小声起播——从小往大调，安全；音量太大失真，太小测不准，绿区最准",
+    levelTargetWhyEn: "Test tone starts quiet — turn up from low, safe. Too loud distorts, too quiet is inaccurate — the green zone is the sweet spot",
     levelZoneLowRed: "电平太低，请调大音量",
     levelZoneLowRedEn: "Level too low — turn up the volume",
     levelZoneLowYellow: "偏低了，再调大一点，接近绿区了",
@@ -2997,6 +3003,24 @@ window.COPY = {
     progressMergedEn: "Listening progress: 50s combined",
     soundCheckTitle: "试音",
     soundCheckTitleEn: "Sound check",
+    soundCheckQ2: "刚才的测试音，音量怎么样？",
+    soundCheckQ2En: "How was the test tone volume?",
+    soundCheckPerfect: "正好，开始测试",
+    soundCheckPerfectEn: "Perfect, start the test",
+    soundCheckSmall: "太小了",
+    soundCheckSmallEn: "Too quiet",
+    soundCheckBig: "太大了",
+    soundCheckBigEn: "Too loud",
+    soundCheckNoSound: "没听到声音？",
+    soundCheckNoSoundEn: "Didn't hear anything?",
+    soundAdjustSmallTitle: "请调大音响音量",
+    soundAdjustSmallTitleEn: "Please turn up the speaker",
+    soundAdjustSmallBody: "把音响音量调大一些，调到平时听歌的正常音量，然后点「再试一次」",
+    soundAdjustSmallBodyEn: "Turn up the speaker to your normal listening volume, then tap \"Try again\"",
+    soundAdjustBigTitle: "请调小音响音量",
+    soundAdjustBigTitleEn: "Please turn down the speaker",
+    soundAdjustBigBody: "把音响音量调小一些，调到平时听歌的正常音量，然后点「再试一次」",
+    soundAdjustBigBodyEn: "Turn down the speaker to your normal listening volume, then tap \"Try again\"",
     soundCheckQ: "刚才音响发出粉噪声了吗？请确认三点：①听得到声音 ②是音响在响（不是手机喇叭）③按手机音量键，声音大小有变化",
     soundCheckQEn: "Did the speaker play pink noise? Confirm: 1) you hear it, 2) it's the speaker (not the phone), 3) phone volume keys change the volume",
     soundCheckOk: "听到了，音量正常",
@@ -4554,9 +4578,11 @@ function askSoundCheck(){
     ov.innerHTML =
       '<div class="iso-card">'+
         '<div class="h" style="font-size:17px;">'+escapeHtml(tt('measure.soundCheckTitle'))+'</div>'+
-        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ'))+'</div>'+
-        '<button class="btn btn-primary" id="sc-ok">'+escapeHtml(tt('measure.soundCheckOk'))+'</button>'+
-        '<button class="btn btn-ghost" id="sc-fail">'+escapeHtml(tt('measure.soundCheckFail'))+'</button>'+
+        '<div class="small mt8">'+escapeHtml(tt('measure.soundCheckQ2'))+'</div>'+
+        '<button class="btn btn-primary" id="sc-perfect">'+escapeHtml(tt('measure.soundCheckPerfect'))+'</button>'+
+        '<button class="btn btn-ghost" id="sc-small">'+escapeHtml(tt('measure.soundCheckSmall'))+'</button>'+
+        '<button class="btn btn-ghost" id="sc-big">'+escapeHtml(tt('measure.soundCheckBig'))+'</button>'+
+        '<div class="small mt8"><a href="javascript:void(0)" id="sc-nosound" style="color:#8E8E93;">'+escapeHtml(tt('measure.soundCheckNoSound'))+'</a></div>'+
       '</div>';
     document.body.appendChild(ov);
     var done = false;
@@ -4575,8 +4601,10 @@ function askSoundCheck(){
         }
       });
     }
-    wire('sc-ok', 'ok');
-    wire('sc-fail', 'fail');
+    wire('sc-perfect', 'ok');
+    wire('sc-small', 'small');
+    wire('sc-big', 'big');
+    wire('sc-nosound', 'fail');
   });
 }
 /* 试音排查指引弹窗：Promise<'retry'|'back'> */
@@ -4612,8 +4640,9 @@ function askSoundTrouble(){
     wire('st-back', 'back');
   });
 }
-/* 试音流程（v2.1）：3s 粉噪（fade in/out）→ 三问确认 → fail 则排查指引＋可重试。
- * 返回 true=通过；false=用户返回/放弃/token 失效。 */
+/* 试音流程（v2.6）：3s 粉噪（-20dB 安全电平，fade in/out）→ 音量三问 → 指引调整 → 通过。
+ * v2.6 重构：电平 meter 下线（连续播放有炸音箱风险），音量指引并入试音三问。
+ * 3 秒短 burst + 人话问题 = 专业易用。返回 true=通过；false=用户返回/放弃/token 失效。 */
 async function soundCheckFlow(M, token){
   async function play3s(){
     setStatus(tt('measure.soundCheckTitle')+'…');
@@ -4621,16 +4650,56 @@ async function soundCheckFlow(M, token){
     await new Promise(function(r){ setTimeout(r, 3000); });
     try{ M.stopPink(0.2); }catch(_){}
   }
+  async function askAdjust(kind){
+    // kind: 'small' | 'big' → 显示调整指引，返回 'retry' | 'back'
+    return new Promise(function(resolve){
+      var ov = document.createElement('div');
+      ov.className = 'iso-overlay';
+      var isSmall = kind==='small';
+      ov.innerHTML =
+        '<div class="iso-card">'+
+          '<div class="h" style="font-size:17px;">'+escapeHtml(tt(isSmall?'measure.soundAdjustSmallTitle':'measure.soundAdjustBigTitle'))+'</div>'+
+          '<div class="small mt8">'+escapeHtml(tt(isSmall?'measure.soundAdjustSmallBody':'measure.soundAdjustBigBody'))+'</div>'+
+          '<button class="btn btn-primary" id="sa-retry">'+escapeHtml(tt('measure.soundRetry'))+'</button>'+
+          '<button class="btn btn-ghost" id="sa-back">'+escapeHtml(tt('measure.soundBack'))+'</button>'+
+        '</div>';
+      document.body.appendChild(ov);
+      var done=false;
+      function finish(v){ if(done) return; done=true; try{ document.body.removeChild(ov); }catch(_){} resolve(v); }
+      function wire(id,val){
+        var el=document.getElementById(id), fired=0;
+        function go(e){ var n=Date.now(); if(n-fired<600) return; fired=n; finish(val); }
+        el.addEventListener('click',go);
+        var sx=0,sy=0;
+        el.addEventListener('touchstart',function(e){ var tc=e.touches[0]; sx=tc.clientX; sy=tc.clientY; },{passive:true});
+        el.addEventListener('touchend',function(e){
+          var tc=e.changedTouches[0];
+          if(Math.abs(tc.clientX-sx)<12&&Math.abs(tc.clientY-sy)<12){ if(e.cancelable) e.preventDefault(); go(e); }
+        });
+      }
+      wire('sa-retry','retry'); wire('sa-back','back');
+    });
+  }
   await play3s();
   if(token!==app.runToken) return false;
   for(;;){
     var ans = await askSoundCheck();
     if(token!==app.runToken) return false;
     if(ans==='ok'){ track('soundcheck_ok'); return true; }
-    track('soundcheck_fail');
-    var act = await askSoundTrouble();
+    if(ans==='fail'){
+      track('soundcheck_fail');
+      var act = await askSoundTrouble();
+      if(token!==app.runToken) return false;
+      if(act==='back'){ track('soundcheck_back'); return false; }
+      await play3s();
+      if(token!==app.runToken) return false;
+      continue;
+    }
+    // 'small' | 'big' → 音量调整指引
+    track('soundcheck_adjust_'+ans);
+    var adj = await askAdjust(ans);
     if(token!==app.runToken) return false;
-    if(act==='back'){ track('soundcheck_back'); return false; }
+    if(adj==='back'){ track('soundcheck_back'); return false; }
     await play3s();
     if(token!==app.runToken) return false;
   }
@@ -4765,7 +4834,7 @@ function runLevelCalibOnce(M, token){
       }catch(e){}
       timer=setTimeout(loop,60);
     }
-    try{ if(btPlay){ M.playPink(null,0.3); console.log('[levelCalib] pink started (bt)'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
+    try{ if(btPlay){ M.playPink(null, 2.0, 0.1); console.log('[levelCalib] pink started (bt) @-20dB, 2s fade'); } else { console.log('[levelCalib] usb mode: sampling ambient+user playback'); } }catch(e){ console.error('[levelCalib] playPink FAILED',e); }
     loop();
   });
 }
@@ -4893,15 +4962,16 @@ async function startMeasureFlow(opts){
   }
   if(token!==app.runToken) return;
 
-  // ③b 电平校准（v2.2）：边播粉噪边采 mic 电平，音量问题拦截在正式测试前
-  var _lcOK = await levelCalibFlow(M, token);
-  if(token!==app.runToken) return;
-  if(!_lcOK){
-    setStatus('');
-    CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
-    renderCTA(CTA.measure);
-    return;
-  }
+  // ③b 电平校准（v2.6 已下线）：meter 连续播放有炸音箱风险，音量指引已并入试音三问（soundCheckFlow）。
+  // runLevelCalibOnce / levelCalibFlow 保留代码但不再调用。如需恢复，取消下行注释。
+  // var _lcOK = await levelCalibFlow(M, token);
+  // if(token!==app.runToken) return;
+  // if(!_lcOK){
+  //   setStatus('');
+  //   CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+  //   renderCTA(CTA.measure);
+  //   return;
+  // }
   if(token!==app.runToken) return;
 
   // ④ 30s 合并测量：底噪 5s → 立体声 25s，一次跑完无停顿
