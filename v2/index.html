@@ -1746,6 +1746,69 @@ var MODELS_DB = {
   };
 
   /**
+   * SMPTE ST 2095-1 标准粉红噪声（2026-10-14 用户指令：项目内置测试信号）。
+   * 文件：audio/smpte2095-pink-48k-stereo-60s.wav（SMPTE 官方生成器 v1.4 直出，
+   * 48kHz/24bit/立体声双单声道/65s，RMS -18.48dBFS）。
+   * 策略：同源 fetch → decodeAudioData → 内存缓存；失败则回退内置 Paul Kellet 生成。
+   * 预加载时机：initAudio 成功后触发（不阻塞测量流程）。
+   */
+  DSP._smpteBuf = null;
+  DSP._smpteLoading = null;
+  DSP.SMPTE_URL = 'audio/smpte2095-pink-48k-stereo-60s.wav';
+  DSP.loadSmptePink = function (ctx) {
+    if (DSP._smpteBuf) return Promise.resolve(DSP._smpteBuf);
+    if (DSP._smpteLoading) return DSP._smpteLoading;
+    DSP._smpteLoading = fetch(DSP.SMPTE_URL).then(function (resp) {
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      return resp.arrayBuffer();
+    }).then(function (ab) {
+      return new Promise(function (resolve, reject) {
+        try {
+          var p = ctx.decodeAudioData(ab, resolve, reject);
+          if (p && p.then) p.then(resolve, reject);
+        } catch (e) { reject(e); }
+      });
+    }).then(function (buf) {
+      DSP._smpteBuf = buf;
+      DSP._smpteLoading = null;
+      try { console.log('[SMPTE] 标准粉噪加载成功，时长 ' + buf.duration.toFixed(1) + 's'); } catch (_) {}
+      return buf;
+    }).catch(function (e) {
+      DSP._smpteLoading = null;
+      try { console.warn('[SMPTE] 加载失败，回退内置生成：' + (e && e.message)); } catch (_) {}
+      return null;
+    });
+    return DSP._smpteLoading;
+  };
+  /**
+   * 取播放用 AudioBuffer：优先 SMPTE 缓存，否则内置生成。
+   * side='L'/'R' 时从 SMPTE 立体声派生单声道（另一声道置零）。
+   */
+  DSP.getPinkBuffer = function (ctx, seconds, side) {
+    var smpte = DSP._smpteBuf;
+    if (smpte && smpte.numberOfChannels >= 2) {
+      try {
+        var len = smpte.length;
+        var buf = ctx.createBuffer(2, len, smpte.sampleRate);
+        var s0 = smpte.getChannelData(0), s1 = smpte.getChannelData(1);
+        var d0 = buf.getChannelData(0), d1 = buf.getChannelData(1);
+        var i;
+        if (side === 'R') {
+          for (i = 0; i < len; i++) { d0[i] = 0; d1[i] = s1[i]; }
+        } else if (side === 'L') {
+          for (i = 0; i < len; i++) { d0[i] = s0[i]; d1[i] = 0; }
+        } else {
+          for (i = 0; i < len; i++) { d0[i] = s0[i]; d1[i] = s1[i]; }
+        }
+        return buf;
+      } catch (e) {
+        try { console.warn('[SMPTE] 派生失败，回退生成', e); } catch (_) {}
+      }
+    }
+    return DSP.makeStereoPink(ctx, seconds, side);
+  };
+
+  /**
    * 生成立体声粉噪 AudioBuffer，用于 L/R 独立测量
    * @param {AudioContext} ctx
    * @param {number} seconds 时长（秒）
@@ -1862,6 +1925,8 @@ var MODELS_DB = {
       // iOS 要求在手势后 resume，否则处于 suspended 拿不到数据
       if (self.audioCtx.state === 'suspended') return self.audioCtx.resume();
     }).then(function () {
+      // v2.9.65: 后台预加载 SMPTE 标准粉噪，不阻塞流程
+      try { DSP.loadSmptePink(self.audioCtx); } catch (_) {}
       return self;
     });
   };
@@ -2044,7 +2109,8 @@ var MODELS_DB = {
       if(this.audioCtx && _cs==='suspended'){ console.warn('[playPink] ctx suspended -> resume()'); try{ this.audioCtx.resume(); }catch(_){} }
     }catch(_){}
     this.stopPink(0.12);
-    var buf = DSP.makeStereoPink(this.audioCtx, 35, side);
+    // v2.9.65: 优先 SMPTE ST 2095-1 标准粉噪（已缓存），否则回退内置生成
+    var buf = DSP.getPinkBuffer(this.audioCtx, 35, side);
     var src = this.audioCtx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
@@ -3413,8 +3479,8 @@ window.COPY = {
       {
         t: "1 · 我们怎么测",
         tEn: "1 · How we measure",
-        b: "车内播放标准粉红噪声——在 1/3 倍频程下全频段能量平坦的测试信号，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 40 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。\n\n进阶版 50 秒深度测量，低频平均更充分。",
-        bEn: "We play standard pink noise in the car — flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice. The 31 bands are analysis resolution, not EQ bands — a narrow problem like a 712 Hz interference dip disappears under coarse averaging, but fine-grained analysis catches it; the final gain plan always matches your head unit's actual EQ band count: 3 bands on your unit means 3 gain values."
+        b: "车内播放 SMPTE ST 2095-1 标准粉红噪声——与专业影院声学校准同源的测试信号，在 1/3 倍频程下全频段能量平坦，是 RTA（实时频谱分析）的常用信号。手机麦克风放在驾驶位头枕处实测：先录一段环境底噪算信噪比，再录 40 秒立体声总量；FFT 变换后按 1/3 倍频程聚合成 31 段频响曲线。先底噪、后信号、分步测量，是声学测量的标准做法。31 段是分析精度、不是 EQ 段数——比如 712Hz 的干涉谷，粗频段一平均就“看不见”了，细分析才能抓住；但最后输出的增益方案一定按你车机的实际 EQ 段数给：车机 3 段，就只给 3 个数。\n\n进阶版 50 秒深度测量，低频平均更充分。",
+        bEn: "We play SMPTE ST 2095-1 standard pink noise in the car — the same reference signal used in professional cinema acoustic calibration, flat energy per 1/3-octave band, the standard signal for RTA (real-time analysis). Your phone's mic records at the driver's headrest: an ambient floor sample first (for SNR), then 30 seconds of stereo pink noise; FFT is aggregated into a 31-band 1/3-octave response curve. Floor first, signal second, step by step — standard acoustic practice. The 31 bands are analysis resolution, not EQ bands — a narrow problem like a 712 Hz interference dip disappears under coarse averaging, but fine-grained analysis catches it; the final gain plan always matches your head unit's actual EQ band count: 3 bands on your unit means 3 gain values."
       },
       {
         t: "2 · 目标曲线",
@@ -3601,7 +3667,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.64 · 内测版';
+  ver.textContent = 'v2.9.65 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
