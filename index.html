@@ -1676,6 +1676,16 @@ var MODELS_DB = {
     this.analyser.fftSize = this.fftSize;
     this.analyser.smoothingTimeConstant = 0; // 不做时域平滑，平均在功率域做
     this.source.connect(this.analyser);
+    // v1 输入链修复（与 v2.9.58 同因）：iOS Safari 下 analyser 必须经零增益接到
+    // destination，音频图才会被"拉动"，mic 数据才会流入 FFT；否则频域读出 -89dB 静默值
+    try{
+      if(!this._zeroGain){
+        this._zeroGain = this.audioCtx.createGain();
+        this._zeroGain.gain.value = 0;
+        this._zeroGain.connect(this.audioCtx.destination);
+      }
+      this.analyser.connect(this._zeroGain);
+    }catch(_){}
   };
 
   // 帧成本自适应：连续 30 帧 getFloatFrequencyData+聚合 >16ms 则降一档

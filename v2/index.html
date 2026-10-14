@@ -1953,18 +1953,6 @@ var MODELS_DB = {
         if (self._stop) { finish(); return; }
         var f0 = now();
         self.analyser.getFloatFrequencyData(freq);
-        // v2.9.59: 诊断——看原始 FFT 数据（用户要求弹窗）
-        try{
-          if(!window._fftDbg && freq.length > 10){
-            window._fftDbg = true;
-            var _raw = [];
-            for(var _i=0; _i<5; _i++) _raw.push(freq[_i].toFixed(1));
-            var _peak = 0;
-            self.analyser.getFloatTimeDomainData(time);
-            for(var _k=0; _k<time.length; _k++){ var _a=Math.abs(time[_k]); if(_a>_peak) _peak=_a; }
-            alert('FFT raw[0-4]:['+_raw.join(',')+']\nbinCount:'+freq.length+' timePeak:'+_peak.toFixed(3));
-          }
-        }catch(_){}
         var cur31 = aggregate31(freq, self.sampleRate, self.fftSize);
         var cost = now() - f0;
         slowStreak = self._maybeDowngrade(cost, slowStreak);
@@ -2005,7 +1993,6 @@ var MODELS_DB = {
         resolve(out);
       }
       tick();
-    });
     });
   };
 
@@ -2175,15 +2162,6 @@ var MODELS_DB = {
   DSP.Measurer.prototype.measureMerged = function (opts) {
     var self = this;
     opts = opts || {};
-    // v2.9.61: 入口诊断加 frequencyBinCount
-    try{
-      if(!window._mmDbg){
-        window._mmDbg = true;
-        var _fbc = 0;
-        try{ _fbc = self.analyser ? self.analyser.frequencyBinCount : -1; }catch(_){}
-        alert('measureMerged 入口\nanalyser:'+(self.analyser?'Y':'N')+' audioCtx:'+(self.audioCtx?self.audioCtx.state:'N')+'\nfreqBinCount:'+_fbc);
-      }
-    }catch(_){}
     var phases = opts.phases || [
       { key: 'floor', dur: 10, side: 'off' },
       { key: 'sig', dur: 30, side: null }
@@ -3623,7 +3601,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.63 · 内测版';
+  ver.textContent = 'v2.9.64 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
