@@ -381,6 +381,19 @@ ul.clean li{margin:6px 0;}
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
+    <!-- v2.9.66: 31 段实测读数表（iPad Pro RTA 校准用） -->
+    <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
+    <div style="overflow-x:auto;">
+      <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
+        <thead><tr>
+          <th id="band-th-freq" style="text-align:left;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--sub);"></th>
+          <th id="band-th-meas" style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--sub);"></th>
+          <th id="band-th-target" style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--sub);"></th>
+          <th id="band-th-dev" style="text-align:right;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--sub);"></th>
+        </tr></thead>
+        <tbody id="band-table-body"></tbody>
+      </table>
+    </div>
     <!-- v2-PATCH-01 (V2P01-HTML)：曲线切换＋风格预设 -->
     <div class="tabs" id="curve-tabs" style="margin:12px 0 4px;">
       <div class="tab sel" data-curve="parked"><div class="t" id="tab-parked-t"></div><div class="n" id="tab-parked-n"></div></div>
@@ -3246,7 +3259,12 @@ window.COPY = {
     legendSim: "按方案调整后（模拟）",
     trustNote: "曲线来自你刚才的实测；目标曲线的来历见「技术原理」页。",
     ctaUnlock: "查看完整方案",
-    priceLine: ""
+    priceLine: "",
+    bandTableTitle: "31 段实测读数",
+    bandColFreq: "频段",
+    bandColMeas: "实测 dB",
+    bandColTarget: "目标 dB",
+    bandColDev: "偏差"
   },
   /* v2-C: diag/peq COPY */
   /* 深度诊断 + DSP PEQ 参数输出文案，中英双版 */
@@ -3667,7 +3685,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.65 · 内测版';
+  ver.textContent = 'v2.9.66 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6020,6 +6038,7 @@ function applyCurveSelection(){
   }catch(e){}
   renderReport();
   drawReportChart();
+  renderBandTable();
 }
 
 function renderReport(){
@@ -6044,7 +6063,7 @@ function renderReport(){
     '<span><i style="background:#FF9F1C"></i>'+escapeHtml(tt('report.legendTarget'))+'</span>'+
     '<span><i style="background:#34D399"></i>'+escapeHtml(tt('report.legendSim'))+'</span>';
   initCurveStyleUI(); refreshCurveStyleUI(); // v2-PATCH-01 (V2P01-UI-HOOK)：曲线切换＋风格预设
-  ON_SHOW.report = function(){ drawReportChart(); }; // 可见后重绘，保证 canvas 尺寸正确
+  ON_SHOW.report = function(){ drawReportChart(); renderBandTable(); }; // 可见后重绘，保证 canvas 尺寸正确
   track('report_view', {issues:n});
   renderDiag(); // v2-C：深度诊断
   // v2.9.32: 隐藏 DSP PEQ 参数（用户：暂时不是目标客户，手机用户为主，后续再加）
@@ -6297,6 +6316,39 @@ function drawReportChart(){
       if(_carr) line(_carr, STYLE_LINE_COLORS[_ck] || '#94a3b8', 1);
     }
   }catch(_){}
+}
+
+/* v2.9.66: 31 段实测读数表（iPad Pro RTA 校准用） */
+function renderBandTable(){
+  try{
+    setText('band-table-title','report.bandTableTitle');
+    setText('band-th-freq','report.bandColFreq');
+    setText('band-th-meas','report.bandColMeas');
+    setText('band-th-target','report.bandColTarget');
+    setText('band-th-dev','report.bandColDev');
+    var iso = DSP.ISO31 || [];
+    var meas = avg31();
+    var tb = document.getElementById('band-table-body');
+    if(!tb || !iso.length) return;
+    var html = '';
+    for(var i=0;i<iso.length && i<meas.length;i++){
+      var f = iso[i];
+      var m = (typeof meas[i]==='number') ? meas[i] : NaN;
+      var tg = 0;
+      try{ tg = DSP.targetDbAt(f); }catch(_){}
+      var dev = (isNaN(m)) ? NaN : (m - tg);
+      var flabel = (f>=1000) ? (f/1000)+'k' : String(f);
+      function fmt(v){ return isNaN(v) ? '--' : v.toFixed(1); }
+      var devColor = isNaN(dev) ? '' : (Math.abs(dev)<=3 ? 'color:#34D399;' : (Math.abs(dev)<=6 ? 'color:#FF9F1C;' : 'color:#F87171;'));
+      html += '<tr>'
+        + '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);">'+flabel+'Hz</td>'
+        + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);">'+fmt(m)+'</td>'
+        + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--sub);">'+fmt(tg)+'</td>'
+        + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);'+devColor+'">'+(isNaN(dev)?'--':(dev>=0?'+':'')+dev.toFixed(1))+'</td>'
+        + '</tr>';
+    }
+    tb.innerHTML = html;
+  }catch(e){}
 }
 
 /* [v2-workerD-sharecard] v1: 分享报告卡 */
