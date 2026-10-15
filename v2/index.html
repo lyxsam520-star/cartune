@@ -1946,8 +1946,8 @@ var MODELS_DB = {
       self.audioCtx = new AC();
     }
     self.sampleRate = self.audioCtx.sampleRate;
-    // v2.9.83: 一步一弹窗——确认 Safari 实际给的采样率（16k/20kHz 无数据疑为带宽限制；验证后删除）
-    try { alert('【诊断 v2.9.83】AudioContext 实际采样率：' + self.sampleRate + 'Hz（请求 48000Hz）。若不是 48000，高频段可能超出奈奎斯特。'); } catch (_) {}
+    // v2.9.84: 采样率诊断弹窗已验证（2026-10-16 真机确认 48000Hz）按"已验证的弹窗去掉"政策删除。
+    // 16k/20kHz 无数据系 mic track 带宽限制（iOS 忽略 sampleRate 约束），非 AudioContext 问题。
     // v2.9.81: 异常弹窗——resume() 是异步的，必须等落定后再查 state；同步紧跟 resume 查必为 suspended，会误报
     (function () {
       var ctx = self.audioCtx, done = false;
@@ -3803,7 +3803,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.83 · 内测版';
+  ver.textContent = 'v2.9.84 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6549,8 +6549,12 @@ function renderBandTable(){
       function fmt(v){ return isNaN(v) ? '--' : v.toFixed(1); }
       // v2.9.82 M-1: 20/25Hz 段低于 8192 点 FFT 分辨下限（bin 5.86Hz > 段带宽），不参与合格判定
       var unresolvable = (i < 2);
-      var devColor = unresolvable ? '' : (isNaN(dev) ? '' : (Math.abs(dev)<=3 ? 'color:#34D399;' : (Math.abs(dev)<=6 ? 'color:#FF9F1C;' : 'color:#F87171;')));
+      // v2.9.84: 16k/20kHz 在 iPad Safari 上不可测（mic track 带宽限制；AudioContext 已确认 48000Hz 非其因；
+      // 实测 -104dB/-120dummy 无有效数据），不参与合格判定
+      var unmeasurable = (i >= 29);
+      var devColor = (unresolvable || unmeasurable) ? '' : (isNaN(dev) ? '' : (Math.abs(dev)<=3 ? 'color:#34D399;' : (Math.abs(dev)<=6 ? 'color:#FF9F1C;' : 'color:#F87171;')));
       var devCell = unresolvable ? '<span style="color:var(--sub);" title="8192点FFT@48kHz 下物理不可分辨，不参与判定">不可分辨</span>'
+        : unmeasurable ? '<span style="color:var(--sub);" title="iPad Safari mic 链路带宽限制，无有效数据，不参与判定">不可测</span>'
         : (isNaN(dev)?'--':(dev>=0?'+':'')+dev.toFixed(1));
       html += '<tr>'
         + '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);">'+flabel+'Hz</td>'
