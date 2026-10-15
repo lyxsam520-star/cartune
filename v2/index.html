@@ -399,18 +399,6 @@ ul.clean li{margin:6px 0;}
         <tbody id="band-table-body"></tbody>
       </table>
     </div>
-    <!-- v2-PATCH-01 (V2P01-HTML)：曲线切换＋风格预设 -->
-    <div class="tabs" id="curve-tabs" style="margin:12px 0 4px;">
-      <div class="tab sel" data-curve="parked"><div class="t" id="tab-parked-t"></div><div class="n" id="tab-parked-n"></div></div>
-      <div class="tab" data-curve="driving"><div class="t" id="tab-driving-t"></div><div class="n" id="tab-driving-n"></div></div>
-    </div>
-    <div class="small" id="curve-note" style="color:var(--sub);margin:0 0 8px;"></div>
-    <div id="style-block">
-      <div class="small" id="style-label" style="color:var(--sub);margin:8px 0 2px;"></div>
-      <div class="small" id="style-desc" style="color:var(--sub);font-size:12px;margin-bottom:2px;"></div>
-      <div class="chips" id="style-chips"></div>
-      <div class="small" id="style-note" style="color:var(--sub);margin-top:6px;"></div>
-    </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
     <!-- v2-C: diag+peq report blocks -->
     <!-- 深度诊断 + DSP PEQ 参数输出，PEQ 默认折叠 -->
@@ -474,6 +462,18 @@ ul.clean li{margin:6px 0;}
     <div id="plan-normal">
       <div class="h" id="plan-title"></div>
       <div class="small" id="plan-sub"></div>
+      <!-- v2.9.91: 曲线切换＋风格预设从报告页移至方案页（用户要求：对应EQ调整） -->
+      <div class="tabs" id="curve-tabs" style="margin:12px 0 4px;">
+        <div class="tab sel" data-curve="parked"><div class="t" id="tab-parked-t"></div><div class="n" id="tab-parked-n"></div></div>
+        <div class="tab" data-curve="driving"><div class="t" id="tab-driving-t"></div><div class="n" id="tab-driving-n"></div></div>
+      </div>
+      <div class="small" id="curve-note" style="color:var(--sub);margin:0 0 8px;"></div>
+      <div id="style-block">
+        <div class="small" id="style-label" style="color:var(--sub);margin:8px 0 2px;"></div>
+        <div class="small" id="style-desc" style="color:var(--sub);font-size:12px;margin-bottom:2px;"></div>
+        <div class="chips" id="style-chips"></div>
+        <div class="small" id="style-note" style="color:var(--sub);margin-top:6px;"></div>
+      </div>
       <div class="small mt8" id="plan-perband"></div>
       <div id="plan-bands"></div>
       <div class="card" style="border-color:rgba(255,77,77,.5);">
@@ -3823,7 +3823,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.90 · 内测版';
+  ver.textContent = 'v2.9.91 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6275,6 +6275,7 @@ function applyCurveSelection(){
     else if(sel.length>0){ DSP.setTargetStyle(sel[sel.length-1]); }
     else { DSP.setTargetCurve('parked'); }
   }catch(e){}
+  renderPlan(); // v2.9.91: 控件已移至方案页，切换后重算方案
   renderReport();
   drawReportChart();
   renderBandTable();
@@ -6301,7 +6302,7 @@ function renderReport(){
     '<span><i style="background:#22D3EE"></i>'+escapeHtml(tt('report.legendMeas'))+'</span>'+
     '<span><i style="background:#FF9F1C"></i>'+escapeHtml(tt('report.legendTarget'))+'</span>'+
     '<span><i style="background:#34D399"></i>'+escapeHtml(tt('report.legendSim'))+'</span>';
-  initCurveStyleUI(); refreshCurveStyleUI(); // v2-PATCH-01 (V2P01-UI-HOOK)：曲线切换＋风格预设
+  // v2.9.91: 曲线/风格 UI 已移至方案页，初始化改在 renderPlan() 里
   ON_SHOW.report = function(){ drawReportChart(); renderBandTable(); }; // 可见后重绘，保证 canvas 尺寸正确
   track('report_view', {issues:n});
   renderDiag(); // v2-C：深度诊断
@@ -6861,6 +6862,7 @@ function renderPlan(){
   }
   setText('plan-title','plan.title');
   setText('plan-sub','plan.sub');
+  initCurveStyleUI(); refreshCurveStyleUI(); // v2.9.91: 曲线切换＋风格预设（从报告页移至方案页）
   (function(){
     var el = document.getElementById('plan-perband');
     if(el && spec) el.textContent = tt('plan.perBandNote').split('{n}').join(spec.bands);
