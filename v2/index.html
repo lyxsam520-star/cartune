@@ -738,7 +738,10 @@ ul.clean li{margin:6px 0;}
     7: { labels: ['重低音', '低音', '中低音', '中音', '中高音', '高音', '超高音'],
          centers: [63, 160, 400, 1000, 2500, 6300, 16000], rangeDb: 9, stepDb: 1 },
     8: { labels: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
-         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1 }
+         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1 },
+    // v2.9.95: 网易云音乐 10 段均衡器（31/63/125/250/500/1k/2k/4k/8k/16k，±12dB）
+    10: { labels: ['31', '63', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'],
+         centers: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000], rangeDb: 12, stepDb: 1 }
   };
 
   /**
@@ -3828,7 +3831,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.94 · 内测版';
+  ver.textContent = 'v2.9.95 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6183,9 +6186,10 @@ function avg31(){
 /* 规则引擎层（v1）：数值方案由 DSP.ruleEngine 产生；LLM 文案层为 v2 预留 */
 function buildPlan(){
   // v2.9.34: eqSpec 为空时默认 7 段（用户没选车型时也出方案，不再空白）
+  // v2.9.95: 调试模式改用 10 段网易云预设
   var spec = S().eqSpec;
   if(!spec || !spec.bands){
-    spec = { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
+    spec = window.__DBG_DIRECT_MEASURE__ ? DSP.eqPresetFor(10) : { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
   }
   var result = DSP.ruleEngine(S().measL, S().measR, spec, { channelIsolated: S().channelIsolated, floor31: S().floor31 });
   // v2.9.51: ruleEngine 返回 bandsCombined，renderPlan 取 plan.bands——字段名对齐
@@ -6859,8 +6863,9 @@ function renderPlan(){
   document.getElementById('plan-error').classList.add('hidden');
   var spec = S().eqSpec;
   // v2.9.81: 调试模式无车型时用 7 段默认出详细方案；只有真·ET9（bands===0）才拦
+  // v2.9.95: 调试模式改用 10 段（网易云均衡器频点），Vincent 家用哈曼卡顿测试
   if(!spec && window.__DBG_DIRECT_MEASURE__){
-    spec = { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
+    spec = DSP.eqPresetFor(10);
   }
   var isET9 = !spec || spec.bands===0;
   document.getElementById('plan-normal').classList.toggle('hidden', isET9);
