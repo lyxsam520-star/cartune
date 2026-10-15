@@ -657,8 +657,17 @@ ul.clean li{margin:6px 0;}
   DSP.setTargetCurve = function (which) {
     which = (which === 'driving') ? 'driving' : 'parked';
     DSP.targetBase = which;
-    DSP.targetStyle = null;
-    TARGET_PAIRS = (which === 'driving') ? TC_DRIVING : TC_PARKED;
+    // v2.9.96: 切曲线时保留风格（风格可叠加在任一基准上）
+    var st = DSP.targetStyle;
+    if(st){
+      var basePairs = (which === 'driving') ? TC_DRIVING : TC_PARKED;
+      var c = composeStyle(st, basePairs);
+      DSP.targetStyle = c.key;
+      TARGET_PAIRS = c.pairs;
+    } else {
+      DSP.targetStyle = null;
+      TARGET_PAIRS = (which === 'driving') ? TC_DRIVING : TC_PARKED;
+    }
     DSP.TARGET = TARGET_PAIRS;
   };
   // 曲线对数插值（与 targetDbAt 同算法；用于把"曲线频点"上的偏移采样到 ISO31 作图）
@@ -673,20 +682,22 @@ ul.clean li{margin:6px 0;}
     var t = (Math.log(f) - Math.log(f0)) / (Math.log(f1) - Math.log(f0));
     return d0 + t * (d1 - d0);
   }
-  // 风格合成：Parked v1 ＋ 风格偏移（逐频点相加），返回 pairs
-  function composeStyle(styleKey) {
+  // 风格合成：基准曲线（驻车/行车）＋ 风格偏移（逐频点相加），返回 pairs
+  // v2.9.96: 支持在行车曲线上叠加风格
+  function composeStyle(styleKey, basePairs) {
     var off = (styleKey && STYLE_OFFSETS[styleKey]) ? STYLE_OFFSETS[styleKey] : null;
+    var base = basePairs || TC_PARKED;
     var out = [], i, v;
-    for (i = 0; i < TC_PARKED.length; i++) {
-      v = TC_PARKED[i][1] + (off ? off[i] : 0);
-      out.push([TC_PARKED[i][0], Math.round(v * 10) / 10]);
+    for (i = 0; i < base.length; i++) {
+      v = base[i][1] + (off ? off[i] : 0);
+      out.push([base[i][0], Math.round(v * 10) / 10]);
     }
     return { pairs: out, key: off ? styleKey : null };
   }
-  // 应用风格：目标 = Parked v1 ＋ 风格偏移
+  // 应用风格：目标 = 当前基准曲线 ＋ 风格偏移
   DSP.setTargetStyle = function (styleKey) {
-    var c = composeStyle(styleKey);
-    DSP.targetBase = 'parked';
+    var basePairs = (DSP.targetBase === 'driving') ? TC_DRIVING : TC_PARKED;
+    var c = composeStyle(styleKey, basePairs);
     DSP.targetStyle = c.key;
     TARGET_PAIRS = c.pairs;
     DSP.TARGET = TARGET_PAIRS;
@@ -702,7 +713,9 @@ ul.clean li{margin:6px 0;}
   // 某风格的目标 31 点 dB（Parked ＋ 偏移，采样到 ISO31；图表多选对比用，不改变引擎状态）
   DSP.styleTarget31 = function (styleKey) {
     if (!STYLE_OFFSETS[styleKey]) return null;
-    var pairs = composeStyle(styleKey).pairs, out = [], i;
+    // v2.9.96: 按当前基准曲线合成
+    var basePairs = (DSP.targetBase === 'driving') ? TC_DRIVING : TC_PARKED;
+    var pairs = composeStyle(styleKey, basePairs).pairs, out = [], i;
     for (i = 0; i < DSP.ISO31.length; i++) {
       out.push(Math.round(interpPairs(pairs, DSP.ISO31[i]) * 10) / 10);
     }
@@ -3831,7 +3844,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.95 · 内测版';
+  ver.textContent = 'v2.9.96 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6217,7 +6230,7 @@ function initCurveStyleUI(){
         var w = el.getAttribute('data-curve');
         if(w === app.curveBase) return;
         app.curveBase = w;
-        app.styleSel = []; // 切曲线清掉风格（风格只叠加在驻车曲线上）
+        // v2.9.96: 切曲线保留风格（风格可叠加在任一基准上）
         track('curve_switch', {curve:w});
         applyCurveSelection();
       });
@@ -6237,9 +6250,10 @@ function initCurveStyleUI(){
     c.className='chip'; c.id='chip-'+k; c.setAttribute('data-style', k);
     c.textContent = tt('style.'+k);
     c.addEventListener('click', function(){
-      var idx = app.styleSel.indexOf(k);
-      if(idx>=0) app.styleSel.splice(idx,1); else app.styleSel.push(k);
-      track('style_select', {style:k, on:idx<0, sel:app.styleSel.slice()});
+      // v2.9.96: 风格单选互斥；点已选中的则取消回到标准
+      if(app.styleSel.indexOf(k) >= 0){ app.styleSel = []; }
+      else { app.styleSel = [k]; }
+      track('style_select', {style:k, sel:app.styleSel.slice()});
       applyCurveSelection();
     });
     box.appendChild(c);
@@ -6252,16 +6266,15 @@ function refreshCurveStyleUI(){
   }
   var driving = app.curveBase === 'driving';
   document.getElementById('curve-note').textContent = driving ? tt('curve.drivingNote') : '';
+  // v2.9.96: 风格在行车模式下也可用，不再禁用
   var chips = document.querySelectorAll('#style-chips .chip'), j;
   for(j=0;j<chips.length;j++){
     var k = chips[j].getAttribute('data-style');
-    chips[j].classList.toggle('dis', driving);
-    if(k){ chips[j].classList.toggle('on', !driving && app.styleSel.indexOf(k)>=0); }
-    else { chips[j].classList.toggle('on', !driving && app.styleSel.length===0); }
+    if(k){ chips[j].classList.toggle('on', app.styleSel.indexOf(k)>=0); }
+    else { chips[j].classList.toggle('on', app.styleSel.length===0); }
   }
   var note = document.getElementById('style-note');
-  if(driving){ note.textContent = tt('style.disabledTip'); }
-  else if(app.styleSel.length===0){ note.textContent = tt('style.clearedNote'); }
+  if(app.styleSel.length===0){ note.textContent = tt('style.clearedNote'); }
   else {
     var names = app.styleSel.map(function(s){ return tt('style.'+s); });
     note.textContent = tf('style.appliedNote')(names.join('、'));
@@ -6277,12 +6290,16 @@ function refreshCurveStyleUI(){
   }
 }
 // 应用当前曲线/风格选择：换 DSP 目标 → 重算方案 → 重绘报告（含增益与图表）
+// v2.9.96: 风格单选且可叠加在任一基准曲线上
 function applyCurveSelection(){
   var sel = app.styleSel || [];
   try{
-    if(app.curveBase === 'driving'){ DSP.setTargetCurve('driving'); }
-    else if(sel.length>0){ DSP.setTargetStyle(sel[sel.length-1]); }
-    else { DSP.setTargetCurve('parked'); }
+    if(sel.length > 0){
+      if(DSP.targetBase !== app.curveBase){ DSP.setTargetCurve(app.curveBase); }
+      DSP.setTargetStyle(sel[0]);
+    } else {
+      DSP.setTargetCurve(app.curveBase === 'driving' ? 'driving' : 'parked');
+    }
   }catch(e){}
   renderPlan(); // v2.9.91: 控件已移至方案页，切换后重算方案
   renderReport();
