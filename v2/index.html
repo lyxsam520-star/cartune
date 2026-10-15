@@ -580,10 +580,8 @@ ul.clean li{margin:6px 0;}
   DSP.ISO31 = [20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315,
     400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000,
     6300, 8000, 10000, 12500, 16000, 20000];
-  // v2.9.56: C 计权修正表（IEC 61672），基石方法论要求 RTA 用 C 加权（南方公园第一期）
-  DSP.C_WEIGHT = [-6.2,-4.4,-3.0,-2.0,-1.3,-0.8,-0.5,-0.3,-0.2,-0.1,0.0,
-    0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-0.1,-0.2,-0.3,-0.5,-0.8,-1.3,
-    -2.0,-3.0,-4.4,-6.2,-8.5,-11.2];
+  // v2.9.82: RTA 改用 Z（平直）计权——C 计权在 31.5Hz（-3dB）/16kHz（-8.5dB）的衰减超过 ±3dB 通过线本身，
+  // 与平直显示的专业 RTA 对比会系统性"假失败"。C 计权表已删除，不再加权（干净删除，不留残留）。
 
   /* v2-PATCH-01 (V2P01-DSP)：双曲线＋风格预设
    * 目标曲线数据（[频率Hz, 偏移dB]，以 1kHz = 0dB 为基准；与 v1 原数据一致为 30 点，缺 25Hz，
@@ -1972,8 +1970,12 @@ var MODELS_DB = {
   DSP.Measurer.prototype.initMic = function () {
     var self = this;
     if (!self.audioCtx) return Promise.reject(new Error('请先调用 initAudio'));
+    // v2.9.82 M-4: iOS 上只有 echoCancellation:false 真正有效（= 绕开 Apple Voice Processing 通路）；
+    // noiseSuppression/autoGainControl/channelCount/sampleRate 在 iOS 被直接忽略，传了只会制造"已关闭"假象。
+    var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     var constraints = {
-      audio: {
+      audio: _isIOS ? { echoCancellation: false } : {
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
@@ -1986,17 +1988,25 @@ var MODELS_DB = {
       self._buildAnalyser();
       // v2.9.81: iOS 在 getUserMedia 后异步切换音频会话，会把已 resume 的 AudioContext 重新挂起。
       // 此处同步 resume 抢不过异步的挂起——延迟重试 + statechange 自恢复（上下文已解锁，resume 无需手势）。
+      // v2.9.82 M-3: 补 `interrupted` 状态机——来电/锁屏/Siri 走 interrupted 而非 suspended；
+      // 中断期间 resume() 必然 reject，只能等系统自动恢复（回 running 或落 suspended），此时禁止 resume。
       try {
         var _c73 = self.audioCtx, _n73 = 0;
         var _r73 = function () {
-          try { if (_c73.state === 'suspended' && _n73 < 10) { _n73++; _c73.resume(); } } catch (_) {}
+          try {
+            if (_c73.state === 'interrupted') return; // 中断期：等自动恢复，不 resume
+            if (_c73.state === 'suspended' && _n73 < 10) { _n73++; _c73.resume().catch(function(){}); }
+          } catch (_) {}
         };
         _r73();
         setTimeout(_r73, 400); setTimeout(_r73, 1000); setTimeout(_r73, 2000);
         if (!_c73._v2973hook) {
           _c73._v2973hook = true;
           _c73.onstatechange = function () {
-            try { if (_c73.state === 'suspended') setTimeout(_r73, 300); } catch (_) {}
+            try {
+              if (_c73.state === 'interrupted') return; // 同上：中断期不碰
+              if (_c73.state === 'suspended') setTimeout(_r73, 300);
+            } catch (_) {}
           };
         }
       } catch (_) {}
@@ -2328,12 +2338,7 @@ var MODELS_DB = {
       function avg31(key) {
         var out = new Array(31), n = ns[key], sarr = sums[key], bb;
         for (bb = 0; bb < 31; bb++) out[bb] = n > 0 ? powerToDb(sarr[bb] / n) : -120;
-        // v2.9.56: 应用 C 计权（基石方法论要求）
-        if (key !== 'floor' && DSP.C_WEIGHT) {
-          for (bb = 0; bb < 31; bb++) {
-            if (out[bb] > -119) out[bb] += DSP.C_WEIGHT[bb];
-          }
-        }
+        // v2.9.82: Z（平直）计权——不再应用 C 计权（见 M-2）
         return out;
       }
       function phaseAt(el) {
@@ -3776,7 +3781,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.81 · 内测版';
+  ver.textContent = 'v2.9.82 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6520,12 +6525,16 @@ function renderBandTable(){
       var dev = (isNaN(m)) ? NaN : ((m-_off3) - tg);
       var flabel = (f>=1000) ? (f/1000)+'k' : String(f);
       function fmt(v){ return isNaN(v) ? '--' : v.toFixed(1); }
-      var devColor = isNaN(dev) ? '' : (Math.abs(dev)<=3 ? 'color:#34D399;' : (Math.abs(dev)<=6 ? 'color:#FF9F1C;' : 'color:#F87171;'));
+      // v2.9.82 M-1: 20/25Hz 段低于 8192 点 FFT 分辨下限（bin 5.86Hz > 段带宽），不参与合格判定
+      var unresolvable = (i < 2);
+      var devColor = unresolvable ? '' : (isNaN(dev) ? '' : (Math.abs(dev)<=3 ? 'color:#34D399;' : (Math.abs(dev)<=6 ? 'color:#FF9F1C;' : 'color:#F87171;')));
+      var devCell = unresolvable ? '<span style="color:var(--sub);" title="8192点FFT@48kHz 下物理不可分辨，不参与判定">不可分辨</span>'
+        : (isNaN(dev)?'--':(dev>=0?'+':'')+dev.toFixed(1));
       html += '<tr>'
         + '<td style="padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);">'+flabel+'Hz</td>'
         + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);">'+fmt(m)+'</td>'
         + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--sub);">'+fmt(tg)+'</td>'
-        + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);'+devColor+'">'+(isNaN(dev)?'--':(dev>=0?'+':'')+dev.toFixed(1))+'</td>'
+        + '<td style="text-align:right;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.05);'+devColor+'">'+devCell+'</td>'
         + '</tr>';
     }
     tb.innerHTML = html;
