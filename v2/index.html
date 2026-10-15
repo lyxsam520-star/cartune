@@ -381,7 +381,7 @@ ul.clean li{margin:6px 0;}
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
-    <!-- v2.9.66: 31 段实测读数表（iPad Pro RTA 校准用） -->
+    <!--  v2.9.67: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） -->
     <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
@@ -1916,15 +1916,19 @@ var MODELS_DB = {
    */
   DSP.Measurer.prototype.initAudio = function () {
     var self = this;
+    // v2.9.67: iOS 手势解锁——AudioContext 的创建与 resume() 必须在用户手势的同步执行中完成。
+    // 此前包在 Promise.resolve().then() 微任务里，手势上下文已丢失，iOS 上永久 suspended → 频谱无数据、监听卡死。
+    // 调用方 startMeasureFlow 在手势回调链内同步调用 initAudio（其首个 await 即本调用），故此处同步创建即生效。
+    var AC = global.AudioContext || global.webkitAudioContext;
+    if (!AC) return Promise.reject(new Error('当前浏览器不支持 Web Audio'));
+    try {
+      self.audioCtx = new AC({ sampleRate: 48000 });
+    } catch (e) {
+      self.audioCtx = new AC();
+    }
+    self.sampleRate = self.audioCtx.sampleRate;
+    try { if (self.audioCtx.state === 'suspended') self.audioCtx.resume(); } catch (_) {}
     return Promise.resolve().then(function () {
-      var AC = global.AudioContext || global.webkitAudioContext;
-      if (!AC) throw new Error('当前浏览器不支持 Web Audio');
-      try {
-        self.audioCtx = new AC({ sampleRate: 48000 });
-      } catch (e) {
-        self.audioCtx = new AC();
-      }
-      self.sampleRate = self.audioCtx.sampleRate;
       // 安全限幅器（2026-10-13 爆音事故）：主输出必经 DynamicsCompressor，
       // threshold -6dB / ratio 20:1 / knee 0 — 任何代码 bug 都不许再炸用户耳朵或喇叭，这是安全红线
       try {
@@ -1935,8 +1939,6 @@ var MODELS_DB = {
         self._masterOut = _comp;
         console.log('[initAudio] 安全限幅器已接入主输出');
       } catch (e) { console.warn('[initAudio] 限幅器创建失败', e); self._masterOut = null; }
-      // iOS 要求在手势后 resume，否则处于 suspended 拿不到数据
-      if (self.audioCtx.state === 'suspended') return self.audioCtx.resume();
     }).then(function () {
       // v2.9.65: 后台预加载 SMPTE 标准粉噪，不阻塞流程
       try { DSP.loadSmptePink(self.audioCtx); } catch (_) {}
@@ -3685,7 +3687,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.66 · 内测版';
+  ver.textContent = 'v2.9.67 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6318,7 +6320,7 @@ function drawReportChart(){
   }catch(_){}
 }
 
-/* v2.9.66: 31 段实测读数表（iPad Pro RTA 校准用） */
+/* v2.9.67: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
 function renderBandTable(){
   try{
     setText('band-table-title','report.bandTableTitle');
