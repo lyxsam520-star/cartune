@@ -582,6 +582,22 @@ ul.clean li{margin:6px 0;}
     6300, 8000, 10000, 12500, 16000, 20000];
   // v2.9.82: RTA 改用 Z（平直）计权——C 计权在 31.5Hz（-3dB）/16kHz（-8.5dB）的衰减超过 ±3dB 通过线本身，
   // 与平直显示的专业 RTA 对比会系统性"假失败"。C 计权表已删除，不再加权（干净删除，不留残留）。
+  // v2.9.83: iPad 麦克风修正表（31段，单位 dB）。2026-10-15 真机对比（同 iPad / AudioTools / 平直 / 粉噪连续测）：
+  // AudioTools 内置 iPad 麦克风频响修正而我们没有，导致 100Hz–12.5kHz 系统性倾斜（+11dB ~ -13dB），Phase 1 不通过。
+  // 本表 = (RTA_中频对齐值 - 我方_中频对齐值)，provisional（RTA 读数来自截图估算，±2dB），待精确数据后修订。
+  // 16k/20kHz 置 0：Safari 链路在该频段无有效数据（-120 dummy），不可修正，待采样率诊断结论。
+  DSP.IPAD_MIC_CORR = [2.7, 1.9, 5.3, 0.5, -3.1, -5.3, -9.6,
+    -9.6, -10.8, -11.1, -11.4, -8.1, -5.8, -3.1,
+    -2.7, -2.0, 1.1, 3.9, 1.2, -1.4, 0.1,
+    4.8, 3.8, 3.0, 3.6, 7.7, 9.5, 7.6, 12.9,
+    0, 0];
+  // v2.9.83: iPad 判定（含 iPadOS 13+ UA 报 MacIntel 的情况）
+  DSP.isIPad = function () {
+    try {
+      return /iPad/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    } catch (_) { return false; }
+  };
 
   /* v2-PATCH-01 (V2P01-DSP)：双曲线＋风格预设
    * 目标曲线数据（[频率Hz, 偏移dB]，以 1kHz = 0dB 为基准；与 v1 原数据一致为 30 点，缺 25Hz，
@@ -1930,6 +1946,8 @@ var MODELS_DB = {
       self.audioCtx = new AC();
     }
     self.sampleRate = self.audioCtx.sampleRate;
+    // v2.9.83: 一步一弹窗——确认 Safari 实际给的采样率（16k/20kHz 无数据疑为带宽限制；验证后删除）
+    try { alert('【诊断 v2.9.83】AudioContext 实际采样率：' + self.sampleRate + 'Hz（请求 48000Hz）。若不是 48000，高频段可能超出奈奎斯特。'); } catch (_) {}
     // v2.9.81: 异常弹窗——resume() 是异步的，必须等落定后再查 state；同步紧跟 resume 查必为 suspended，会误报
     (function () {
       var ctx = self.audioCtx, done = false;
@@ -2339,6 +2357,10 @@ var MODELS_DB = {
         var out = new Array(31), n = ns[key], sarr = sums[key], bb;
         for (bb = 0; bb < 31; bb++) out[bb] = n > 0 ? powerToDb(sarr[bb] / n) : -120;
         // v2.9.82: Z（平直）计权——不再应用 C 计权（见 M-2）
+        // v2.9.83: iPad 麦克风修正（31段）。仅 iPad 应用；iPhone 修正曲线不同，需单独标定。
+        if (DSP.isIPad && DSP.isIPad() && DSP.IPAD_MIC_CORR) {
+          for (bb = 0; bb < 31; bb++) out[bb] += DSP.IPAD_MIC_CORR[bb];
+        }
         return out;
       }
       function phaseAt(el) {
@@ -3240,7 +3262,7 @@ window.COPY = {
     progressMerged: "监听进度：50 秒合并监听",
     progressMergedEn: "Listening progress: 50s combined",
     stepMergedQuick: "合并监听（12 秒）：底噪 4s＋立体声 8s，一次跑完",
-    stepMergedDbgQuick: "直接测粉噪（12 秒）：跳过底噪，一次跑完",
+    stepMergedDbgQuick: "直接测粉噪（30 秒）：跳过底噪，一次跑完",
     stepMergedDbg: "直接测粉噪（50 秒）：跳过底噪，一次跑完",
     stepMergedTipDbg: "调试模式：跳过底噪阶段，直接测粉噪，一次跑完。",
     stepMergedQuickEn: "Combined listening (12s): 4s floor + 8s stereo, one pass",
@@ -3249,7 +3271,7 @@ window.COPY = {
     stepMergedTipDbgEn: "Debug mode: floor phase skipped, measuring pink noise directly, one pass.",
     stepMergedTipQuick: "一次跑完、中间不停顿：前 4 秒保持安静测底噪，随后粉噪自动淡入，12 秒后淡出收尾。",
     stepMergedTipQuickEn: "One pass with no pauses: first 4s measures the noise floor in silence, then pink noise fades in and out at 12s.",
-    progressMergedQuick: "监听进度：12 秒合并监听",
+    progressMergedQuick: "监听进度：30 秒合并监听",
     progressMergedQuickEn: "Listening progress: 12s combined",
     soundCheckTitle: "试音",
     soundCheckTitleEn: "Sound check",
@@ -3781,7 +3803,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.82 · 内测版';
+  ver.textContent = 'v2.9.83 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4590,7 +4612,7 @@ var PHASES_QUICK = [
   {key:'sig',   dur:8, side:null,  obj:'measure.objStereo'}
 ];
 /* v2.9.81: 调试直达——跳过底噪相位，直接测粉噪（先把频谱搞定，跑通后恢复） */
-var PHASES_DBG_QUICK = [ {key:'sig', dur:12, side:null, obj:'measure.objStereo'} ];
+var PHASES_DBG_QUICK = [ {key:'sig', dur:30, side:null, obj:'measure.objStereo'} ];
 var PHASES_DBG_STD   = [ {key:'sig', dur:50, side:null, obj:'measure.objStereo'} ];
 var PHASES_LR = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
