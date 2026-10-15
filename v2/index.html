@@ -621,7 +621,7 @@ ul.clean li{margin:6px 0;}
    * 生效目标 = 基准曲线（parked/driving）＋ 风格偏移。UI 只调 setTargetCurve / setTargetStyle；
    * 规则引擎（ruleEngine / simulate）内部直接读闭包 TARGET_PAIRS，无需改动——
    * cut-only、低频提升上限、梳状禁补偿等铁律保持在引擎内，换 target 不会绕过。 */
-  // Parked v1：静止调音基准（依据：Harman 车载目标曲线思想 + B&K 1974 低频抬升传统 + 实车验证调优）
+  // Parked v1：静止调音基准（依据：Harman 车载目标曲线思想 + B&K 1974 低频抬升传统；待实车验证）
   var TC_PARKED = [
     [20, 7.0], [31.5, 6.9], [40, 6.8], [50, 6.5], [63, 5.9], [80, 4.7],
     [100, 3.5], [125, 2.6], [160, 1.7], [200, 0.5], [250, 0.3], [315, 0.1],
@@ -2578,7 +2578,8 @@ var MODELS_DB = {
   DSP.detectComb = function (dev31) {
     var out = [];
     var i;
-    for (i = 1; i < 30; i++) {
+    // v2.9.94: 上界 30→29，排除 16kHz（已标不可测，不参与梳状检测）
+    for (i = 1; i < 29; i++) {
       if (dev31[i] < -10 &&
           (dev31[i - 1] - dev31[i]) >= 6 &&
           (dev31[i + 1] - dev31[i]) >= 6) {
@@ -3645,8 +3646,8 @@ window.COPY = {
       {
         t: "2 · 目标曲线",
         tEn: "2 · Target curves",
-        b: "两条目标曲线：驻车版（静态调音基准）与行车版（驻车版叠加 60–80km/h 路噪补偿：75–300Hz 高斯隆起，150Hz 处 +1.5dB）。设计起点是公开发表的车载实验目标曲线研究，我们做了面向原厂喇叭的声学再设计：20–50Hz 适度收敛（保护原厂喇叭冲程）、2kHz +0.3dB（人声清晰度）、高频自然滚降。",
-        bEn: "Two target curves: Parked (static tuning baseline) and Driving (Parked plus 60–80 km/h road-noise compensation: Gaussian bump at 75–300 Hz, +1.5 dB at 150 Hz). The design starts from published in-car target-curve research, re-engineered for stock speakers: restrained 20–50 Hz (protects stock driver excursion), +0.3 dB at 2 kHz (vocal clarity), natural high-frequency roll-off."
+        b: "两条目标曲线：驻车版（静态调音基准）与行车版（驻车版叠加 60–80km/h 路噪补偿：75–300Hz 高斯隆起，160Hz 处 +1.5dB）。设计起点是公开发表的车载实验目标曲线研究，我们做了面向原厂喇叭的声学再设计：20–50Hz 适度收敛（保护原厂喇叭冲程）、2kHz 人声频段清晰度优化、高频自然滚降。",
+        bEn: "Two target curves: Parked (static tuning baseline) and Driving (Parked plus 60–80 km/h road-noise compensation: Gaussian bump at 75–300 Hz, +1.5 dB at 160 Hz). The design starts from published in-car target-curve research, re-engineered for stock speakers: restrained 20–50 Hz (protects stock driver excursion), 2 kHz vocal clarity optimization, natural high-frequency roll-off."
       },
       {
         t: "3 · 规则引擎：增益数值零幻觉",
@@ -3827,7 +3828,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.93 · 内测版';
+  ver.textContent = 'v2.9.94 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
