@@ -5,7 +5,7 @@
 
 ## 当前状态（2026-10-15 19:30 更新，B）
 
-- **版本**：v2.9.67 两库已同步（部署库 5a8bb39；备份库 car-audio-tool/h5/v2/index.html 同样 5 组替换已 push，内容已验证）；Pages 重建中
+- **版本**：v2.9.67 两库已同步（部署库 5a8bb39；备份库 d070bbf，car-audio-tool/h5/v2/index.html 内容已验证）；Pages 重建中
 - **v2.9.67 部署**：两库完成。Vincent 点了 vscode.dev 授权＋1Password 浮层处理；仓库1（部署库）5a8bb39，仓库2（备份库）同样 5 组替换已 push；两库内容验证通过。Pages 自动重建中。
 - **P0 决策**：Vincent 拍板**立项**；产品定位：LLM 非必需——核心链路（31段→EQ增益）纯确定性算法，LLM 只做增强层（方案解读/问答，可降级）；对外口径保留"AI大模型+算法"。"31段→车机N段EQ映射算法规格 v1.0"已入库备份库 `car-audio-tool/docs/`（commit 3bd9ad1）：加权有界最小二乘＋整数坐标下降（CarEQ 路线），cut-only / 相邻带 ≤3dB / 梳状谷权重清零 / 车型参数表待实车数据。
 - **知识库修正**（搭车项，已入库，commit d7e2ba9）：§S4 Kicker 相邻带差 6dB→3dB；§A5 PubMed 链接格式；§G3 B&K 来源换原始文献 17-197；§P4 明确为 SPL 偏移盲校准。
