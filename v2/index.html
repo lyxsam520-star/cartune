@@ -3823,7 +3823,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.89 · 内测版';
+  ver.textContent = 'v2.9.90 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -3831,7 +3831,21 @@ function renderCTA(btns, sub){
     btn.textContent = b.text;
     if(b.disabled) btn.disabled = true;
     if(b.id) btn.id = b.id;
-    btn.onclick = b.onClick;
+    // v2.9.90: iOS 防吞点击——click + touchend 双通道（fixed 底栏滑动后 click 易失效）
+    (function(_btn, _fn){
+      var _fired = 0;
+      function _go(e){ var n = Date.now(); if(n - _fired < 600) return; _fired = n; try{ _fn(e); }catch(err){} }
+      _btn.addEventListener('click', _go);
+      var _sx = 0, _sy = 0;
+      _btn.addEventListener('touchstart', function(e){ var tc = e.touches[0]; _sx = tc.clientX; _sy = tc.clientY; }, {passive:true});
+      _btn.addEventListener('touchend', function(e){
+        var tc = e.changedTouches[0];
+        if(Math.abs(tc.clientX - _sx) < 12 && Math.abs(tc.clientY - _sy) < 12){
+          if(e.cancelable) e.preventDefault();
+          _go(e);
+        }
+      });
+    })(btn, b.onClick);
     box.appendChild(btn);
   });
   if(typeof sub==='string' && sub){
@@ -4875,6 +4889,24 @@ function rafLoop(){
   app.rafId = requestAnimationFrame(rafLoop);
 }
 function startRaf(){ stopRaf(); app.measuring = true; app.rafId = requestAnimationFrame(rafLoop); }
+// v2.9.90: iOS 滑动丢弃 canvas 内容后重绘（测量完成后静态帧）
+(function(){
+  var _ticking = false;
+  function _redraw(){
+    _ticking = false;
+    if(!app.measuring && app.lastFrame){
+      try{
+        if(document.getElementById('sec-measure').classList.contains('active')){
+          drawBars();
+          try{ if(S().pro) drawBars31(); }catch(_){}
+        }
+      }catch(_){}
+    }
+  }
+  window.addEventListener('scroll', function(){
+    if(!_ticking){ _ticking = true; requestAnimationFrame(_redraw); }
+  }, {passive:true});
+})();
 
 /* 实时帧回调：DSP.Measurer 透出 {eqLevels, peak, clipped} */
 function onFrame(f){
