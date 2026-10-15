@@ -3497,6 +3497,7 @@ window.COPY = {
     btnSave: "保存图片",
     cardPreview: "报告卡预览",
     saveHint: "图片已生成；如未自动保存，请长按图片 → 保存到相册",
+    saveHintIOS: "长按上方图片 → 存储图像，即可保存到相册",
     title: "车载音响调音报告",
     beta: "内测版",
     scoreLabel: "平整度评分",
@@ -3515,6 +3516,7 @@ window.COPY = {
       btnSave: "Save image",
       cardPreview: "Report card preview",
       saveHint: "Image generated. If not saved automatically, long-press the image to save.",
+      saveHintIOS: "Long-press the image above → Save to Photos.",
       title: "Car Audio Tuning Report",
       beta: "Beta",
       scoreLabel: "Flatness score",
@@ -3825,7 +3827,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.92 · 内测版';
+  ver.textContent = 'v2.9.93 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6748,6 +6750,14 @@ function saveShareCardImage(){
     var img = document.getElementById('reportcard-img');
     var url = img && img.src;
     if(!url){ return; }
+    // v2.9.93: iOS Safari 不支持 <a download>，直接提示长按保存；其他平台走下载
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if(isIOS){
+      img.scrollIntoView({behavior:'smooth', block:'center'});
+      setText('reportcard-hint', 'share.saveHintIOS');
+      track('share_card_save_ios_hint', {});
+      return;
+    }
     var a = document.createElement('a');
     a.href = url; a.download = 'tuning-report.png';
     document.body.appendChild(a); a.click();
