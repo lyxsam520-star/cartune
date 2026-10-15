@@ -381,7 +381,7 @@ ul.clean li{margin:6px 0;}
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
-    <!--  v2.9.67: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） -->
+    <!--  v2.9.68: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） -->
     <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
@@ -1916,7 +1916,7 @@ var MODELS_DB = {
    */
   DSP.Measurer.prototype.initAudio = function () {
     var self = this;
-    // v2.9.67: iOS 手势解锁——AudioContext 的创建与 resume() 必须在用户手势的同步执行中完成。
+    // v2.9.68: iOS 手势解锁——AudioContext 的创建与 resume() 必须在用户手势的同步执行中完成。
     // 此前包在 Promise.resolve().then() 微任务里，手势上下文已丢失，iOS 上永久 suspended → 频谱无数据、监听卡死。
     // 调用方 startMeasureFlow 在手势回调链内同步调用 initAudio（其首个 await 即本调用），故此处同步创建即生效。
     var AC = global.AudioContext || global.webkitAudioContext;
@@ -1928,6 +1928,12 @@ var MODELS_DB = {
     }
     self.sampleRate = self.audioCtx.sampleRate;
     try { if (self.audioCtx.state === 'suspended') self.audioCtx.resume(); } catch (_) {}
+    // v2.9.68: 异常弹窗——手势后仍 suspended 说明 iOS 手势上下文未生效
+    try {
+      if (self.audioCtx.state === 'suspended') {
+        alert('【诊断 v2.9.68】AudioContext 仍为 suspended：iOS 手势未生效，频谱将无数据。请从点击手势直接进入测量。');
+      }
+    } catch (_) {}
     return Promise.resolve().then(function () {
       // 安全限幅器（2026-10-13 爆音事故）：主输出必经 DynamicsCompressor，
       // threshold -6dB / ratio 20:1 / knee 0 — 任何代码 bug 都不许再炸用户耳朵或喇叭，这是安全红线
@@ -2271,6 +2277,18 @@ var MODELS_DB = {
       var freq = new Float32Array(self.analyser.frequencyBinCount);
       var time = new Float32Array(self.fftSize);
       var slowStreak = 0;
+      // v2.9.68: 异常弹窗——tick 看门狗（独立 timer，tick 静默死亡也能报）
+      var _wdFrames = 0, _wdLastCheck = -1, _wdStuckRounds = 0, _wdAlerted = false;
+      var _wd = setInterval(function () {
+        if (self._paused) { _wdStuckRounds = 0; _wdLastCheck = _wdFrames; return; }
+        if (_wdFrames === _wdLastCheck) {
+          _wdStuckRounds++;
+          if (_wdStuckRounds >= 6 && !_wdAlerted) {
+            _wdAlerted = true;
+            try { alert('【诊断 v2.9.68】tick 已 30 秒无新帧（frame=' + _wdFrames + '）：tick 可能静默中断。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
+          }
+        } else { _wdStuckRounds = 0; _wdLastCheck = _wdFrames; }
+      }, 5000);
       var curPhaseIdx = -1;
       var sigChecked = false;
       self._stop = false;
@@ -2298,7 +2316,8 @@ var MODELS_DB = {
       }
       function tick() {
         if (self._stop) { finish(false); return; }
-        if (self._paused) { setTimeout(tick, 120); return; } // v2.2 暂停中：时钟冻结，不累积
+        if (self._paused) { setTimeout(tickGuarded, 120); return; } // v2.2 暂停中：时钟冻结，不累积
+        _wdFrames++; // v2.9.68: 看门狗计数
         var el = (now() - t0 - (self._pauseTotal || 0)) / 1000;
         if (el >= TOTAL) { finish(false); return; }
         var pi = phaseAt(el), ph = phases[pi];
@@ -2315,7 +2334,10 @@ var MODELS_DB = {
           var fA = avg31('floor'), sA = avg31(phases[firstSigIdx].key);
           var lift = 0, cnt = 0, bi;
           for (bi = 14; bi <= 23; bi++) { lift += (sA[bi] - fA[bi]); cnt++; } // 500Hz–4kHz
-          if (cnt > 0 && lift / cnt < 3) { finish(true); return; }
+          if (cnt > 0 && lift / cnt < 3) {
+            try { alert('【诊断 v2.9.68】信号提升仅 ' + (lift / cnt).toFixed(1) + 'dB（<3dB）：疑似无测试信号，已停止测量。请确认粉噪正在播放且麦克风未被系统压制。'); } catch (_) {}
+            finish(true); return;
+          }
         }
         var f0 = now();
         self.analyser.getFloatFrequencyData(freq);
@@ -2331,6 +2353,12 @@ var MODELS_DB = {
         var peak = 0;
         for (k = 0; k < time.length; k++) { var a = time[k] < 0 ? -time[k] : time[k]; if (a > peak) peak = a; }
         var clipped = peak >= 0.99;
+        // v2.9.68: 异常弹窗——时域连续全零（输入链已死；真实麦克风噪声不可能精确为 0）
+        if (peak === 0) { self._zeroStreak = (self._zeroStreak || 0) + 1; } else { self._zeroStreak = 0; }
+        if (self._zeroStreak === 300 && !self._zeroAlerted) {
+          self._zeroAlerted = true;
+          try { alert('【诊断 v2.9.68】连续 300 帧时域全零：麦克风输入链无数据（stream 可能已死/被系统掐断）。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
+        }
         // v2.3 floor 相位异常熔断：底噪阶段本该安静，若持续出现大信号（>0.3 连续 20 帧≈333ms），
         // 说明有播放信号漏进来（调度 bug），立即熔断，不产垃圾数据
         // v2.9.17: 前 2.5 秒不判定（HFP 蓝牙管道延迟 500ms-1s＋探针 fade＋切换 pop，需要更长静置期）
@@ -2355,15 +2383,24 @@ var MODELS_DB = {
             });
           } catch (_) {}
         }
-        setTimeout(tick, 0);
+        setTimeout(tickGuarded, 0);
+      }
+      // v2.9.68: 异常弹窗——tick 守卫：tick 内抛异常会导致静默死亡（链断、无 resolve），在此捕获并弹窗
+      function tickGuarded() {
+        try { tick(); } catch (e) {
+          try { clearInterval(_wd); } catch (_) {}
+          try { alert('【诊断 v2.9.68】tick 异常中断：' + (e && e.message) + '，测量已停止'); } catch (_) {}
+          try { finish(false); } catch (_) {}
+        }
       }
       function finish(noSignal, floorAnomaly) {
+        try { clearInterval(_wd); } catch (_) {} // v2.9.68: 停看门狗
         try { self.stopPink(0.2); } catch (_) {} // 200ms fade out 收尾，防"掐断爆音"
         var seg31 = {}, kk2;
         for (kk2 = 0; kk2 < phases.length; kk2++) seg31[phases[kk2].key] = avg31(phases[kk2].key);
         resolve({ floor31: seg31.floor, seg31: seg31, noSignal: !!noSignal, floorAnomaly: !!floorAnomaly });
       }
-      tick();
+      tickGuarded();
     });
   };
 
@@ -3687,7 +3724,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.67 · 内测版';
+  ver.textContent = 'v2.9.68 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5753,9 +5790,21 @@ async function startMeasureFlow(opts){
   if(token!==app.runToken) return;
 
   // ③ 激活麦克风（连通性通过后）
+  // v2.9.68: 异常弹窗——initMic 15s 超时保护（权限弹窗未响应/设备无响应会导致无限卡住）
   try{
-    await M.initMic();
+    await Promise.race([
+      M.initMic(),
+      new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('initMic 超时 15s')); }, 15000); })
+    ]);
+    // v2.9.68: 异常弹窗——轨道状态检查
+    try {
+      var _trk = M.stream.getAudioTracks()[0];
+      if (!_trk) alert('【诊断 v2.9.68】麦克风无音频轨道');
+      else if (_trk.readyState === 'ended') alert('【诊断 v2.9.68】麦克风轨道已结束(ended)');
+      else if (_trk.muted) alert('【诊断 v2.9.68】麦克风被系统静音(muted)：检查控制中心麦克风模式是否为"标准"');
+    } catch (_) {}
   }catch(e){
+    try { alert('【诊断 v2.9.68】麦克风初始化失败：' + (e && e.message)); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
     document.getElementById('mic-err-body').textContent = ttx('measure.micErrBody','measure.safeNote');
@@ -6320,7 +6369,7 @@ function drawReportChart(){
   }catch(_){}
 }
 
-/* v2.9.67: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
+/* v2.9.68: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
 function renderBandTable(){
   try{
     setText('band-table-title','report.bandTableTitle');
