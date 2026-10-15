@@ -2972,7 +2972,9 @@ var MODELS_DB = {
       eqSpec: obj.eqSpec || null,
       engineResult: obj.engineResult || null,
       finalBands: obj.finalBands || null,
-      priceTier: obj.priceTier || null
+      priceTier: obj.priceTier || null,
+      targetBase: DSP.targetBase || 'parked', // v2.9.92: 保存所用曲线（驻车/行驶）
+      targetStyle: DSP.targetStyle || null // v2.9.92: 保存所用风格（null=标准）
     };
     store.plans.push(p);
     persistStore(store);
@@ -3823,7 +3825,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.91 · 内测版';
+  ver.textContent = 'v2.9.92 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6994,9 +6996,14 @@ function saveShareCard(){
   var gains = (plan.bands||[]).map(function(bd, bi){ return (bd.label||bandLabel(bi,_scBands,false))+((bd.gainDb>0?'+':'')+(bd.gainDb||0)+'dB'); }).join(' · ');
   var d = new Date();
   var dateStr = d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  // v2.9.92: 分享卡显示所用曲线和风格
+  var _curveName = (DSP.targetBase === 'driving') ? tt('curve.driving') : tt('curve.parked');
+  var _styleName = DSP.targetStyle ? tt('style.' + DSP.targetStyle) : tt('style.std');
+  var _csLine = _curveName + ' · ' + _styleName;
   card.innerHTML =
     '<div class="st">调音成绩单</div>'+
     '<div class="small mt8">'+escapeHtml(carName)+' · '+dateStr+'</div>'+
+    '<div class="small mt8" style="color:var(--sub);">'+escapeHtml(_csLine)+'</div>'+
     '<div class="small mt8 num" style="color:var(--cyan);">'+escapeHtml(gains)+'</div>'+
     '<div class="small mt8" style="color:var(--sub);">'+escapeHtml(tt('report.trustNote'))+'</div>';
   card.classList.remove('hidden');
