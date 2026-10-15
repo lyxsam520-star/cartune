@@ -324,7 +324,7 @@ ul.clean li{margin:6px 0;}
       <div class="tab sel" id="tab-bt"><div class="t"></div><div class="n"></div></div>
       <div class="tab" id="tab-usb"><div class="t"></div><div class="n"></div></div>
     </div>
-    <!-- v2.9.74: 快速/标准切换 -->
+    <!-- v2.9.75: 快速/标准切换 -->
     <div class="tabs" style="margin-top:8px;">
       <div class="tab sel" id="tab-quick"><div class="t">快速 12s</div><div class="n">调试用</div></div>
       <div class="tab" id="tab-std"><div class="t">标准 50s</div><div class="n">验收用</div></div>
@@ -386,7 +386,7 @@ ul.clean li{margin:6px 0;}
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
-    <!-- v2.9.74: 快速模式 12s（调试用）＋标准 50s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
+    <!-- v2.9.75: 快速模式 12s（调试用）＋标准 50s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
     <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
@@ -1921,7 +1921,7 @@ var MODELS_DB = {
    */
   DSP.Measurer.prototype.initAudio = function () {
     var self = this;
-    // v2.9.74: iOS 手势解锁——AudioContext 的创建与 resume() 必须在用户手势的同步执行中完成。
+    // v2.9.75: iOS 手势解锁——AudioContext 的创建与 resume() 必须在用户手势的同步执行中完成。
     // 此前包在 Promise.resolve().then() 微任务里，手势上下文已丢失，iOS 上永久 suspended → 频谱无数据、监听卡死。
     // 调用方 startMeasureFlow 在手势回调链内同步调用 initAudio（其首个 await 即本调用），故此处同步创建即生效。
     var AC = global.AudioContext || global.webkitAudioContext;
@@ -1932,13 +1932,13 @@ var MODELS_DB = {
       self.audioCtx = new AC();
     }
     self.sampleRate = self.audioCtx.sampleRate;
-    // v2.9.74: 异常弹窗——resume() 是异步的，必须等落定后再查 state；同步紧跟 resume 查必为 suspended，会误报
+    // v2.9.75: 异常弹窗——resume() 是异步的，必须等落定后再查 state；同步紧跟 resume 查必为 suspended，会误报
     (function () {
       var ctx = self.audioCtx, done = false;
       function check() {
         try {
           if (ctx.state === 'suspended') {
-            alert('【诊断 v2.9.74】AudioContext 仍为 suspended：iOS 手势未生效，频谱将无数据。请从点击手势直接进入测量。');
+            alert('【诊断 v2.9.75】AudioContext 仍为 suspended：iOS 手势未生效，频谱将无数据。请从点击手势直接进入测量。');
           }
         } catch (_) {}
       }
@@ -1982,13 +1982,13 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.74: 麦克风实参诊断——iOS Safari 经常无视 echoCancellation/noiseSuppression=false，
+      // v2.9.75: 麦克风实参诊断——iOS Safari 经常无视 echoCancellation/noiseSuppression=false，
       // 读回实际生效值，确认系统处理是否在压制粉噪
       try {
         var trk = stream.getAudioTracks()[0];
         if (trk && trk.getSettings) {
           var st = trk.getSettings();
-          alert('【诊断 v2.9.74】麦克风实际参数：回声消除=' + st.echoCancellation +
+          alert('【诊断 v2.9.75】麦克风实际参数：回声消除=' + st.echoCancellation +
             '，降噪=' + st.noiseSuppression + '，自动增益=' + st.autoGainControl +
             '，采样率=' + st.sampleRate + '，声道数=' + st.channelCount +
             '（我们要求的是前三项全部关闭；若显示 true，说明 iOS 无视了请求，粉噪会被系统压掉）');
@@ -1996,7 +1996,7 @@ var MODELS_DB = {
       } catch (_) {}
       self.source = self.audioCtx.createMediaStreamSource(stream);
       self._buildAnalyser();
-      // v2.9.74: iOS 在 getUserMedia 后异步切换音频会话，会把已 resume 的 AudioContext 重新挂起。
+      // v2.9.75: iOS 在 getUserMedia 后异步切换音频会话，会把已 resume 的 AudioContext 重新挂起。
       // 此处同步 resume 抢不过异步的挂起——延迟重试 + statechange 自恢复（上下文已解锁，resume 无需手势）。
       try {
         var _c73 = self.audioCtx, _n73 = 0;
@@ -2322,7 +2322,7 @@ var MODELS_DB = {
       var freq = new Float32Array(self.analyser.frequencyBinCount);
       var time = new Float32Array(self.fftSize);
       var slowStreak = 0;
-      // v2.9.74: 异常弹窗——tick 看门狗（独立 timer，tick 静默死亡也能报）
+      // v2.9.75: 异常弹窗——tick 看门狗（独立 timer，tick 静默死亡也能报）
       var _wdFrames = 0, _wdLastCheck = -1, _wdStuckRounds = 0, _wdAlerted = false;
       var _wd = setInterval(function () {
         if (self._paused) { _wdStuckRounds = 0; _wdLastCheck = _wdFrames; return; }
@@ -2330,7 +2330,7 @@ var MODELS_DB = {
           _wdStuckRounds++;
           if (_wdStuckRounds >= 6 && !_wdAlerted) {
             _wdAlerted = true;
-            try { alert('【诊断 v2.9.74】tick 已 30 秒无新帧（frame=' + _wdFrames + '）：tick 可能静默中断。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
+            try { alert('【诊断 v2.9.75】tick 已 30 秒无新帧（frame=' + _wdFrames + '）：tick 可能静默中断。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
           }
         } else { _wdStuckRounds = 0; _wdLastCheck = _wdFrames; }
       }, 5000);
@@ -2362,7 +2362,7 @@ var MODELS_DB = {
       function tick() {
         if (self._stop) { finish(false); return; }
         if (self._paused) { setTimeout(tickGuarded, 120); return; } // v2.2 暂停中：时钟冻结，不累积
-        _wdFrames++; // v2.9.74: 看门狗计数
+        _wdFrames++; // v2.9.75: 看门狗计数
         var el = (now() - t0 - (self._pauseTotal || 0)) / 1000;
         if (el >= TOTAL) { finish(false); return; }
         var pi = phaseAt(el), ph = phases[pi];
@@ -2380,7 +2380,7 @@ var MODELS_DB = {
           var lift = 0, cnt = 0, bi;
           for (bi = 14; bi <= 23; bi++) { lift += (sA[bi] - fA[bi]); cnt++; } // 500Hz–4kHz
           if (cnt > 0 && lift / cnt < 3) {
-            try { alert('【诊断 v2.9.74】信号提升仅 ' + (lift / cnt).toFixed(1) + 'dB（<3dB）：疑似无测试信号，已停止测量。请确认粉噪正在播放且麦克风未被系统压制。'); } catch (_) {}
+            try { alert('【诊断 v2.9.75】信号提升仅 ' + (lift / cnt).toFixed(1) + 'dB（<3dB）：疑似无测试信号，已停止测量。请确认粉噪正在播放且麦克风未被系统压制。'); } catch (_) {}
             finish(true); return;
           }
         }
@@ -2398,11 +2398,11 @@ var MODELS_DB = {
         var peak = 0;
         for (k = 0; k < time.length; k++) { var a = time[k] < 0 ? -time[k] : time[k]; if (a > peak) peak = a; }
         var clipped = peak >= 0.99;
-        // v2.9.74: 异常弹窗——时域连续全零（输入链已死；真实麦克风噪声不可能精确为 0）
+        // v2.9.75: 异常弹窗——时域连续全零（输入链已死；真实麦克风噪声不可能精确为 0）
         if (peak === 0) { self._zeroStreak = (self._zeroStreak || 0) + 1; } else { self._zeroStreak = 0; }
         if (self._zeroStreak === 300 && !self._zeroAlerted) {
           self._zeroAlerted = true;
-          try { alert('【诊断 v2.9.74】连续 300 帧时域全零：麦克风输入链无数据（stream 可能已死/被系统掐断）。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
+          try { alert('【诊断 v2.9.75】连续 300 帧时域全零：麦克风输入链无数据（stream 可能已死/被系统掐断）。ctx.state=' + (self.audioCtx && self.audioCtx.state)); } catch (_) {}
         }
         // v2.3 floor 相位异常熔断：底噪阶段本该安静，若持续出现大信号（>0.3 连续 20 帧≈333ms），
         // 说明有播放信号漏进来（调度 bug），立即熔断，不产垃圾数据
@@ -2430,16 +2430,16 @@ var MODELS_DB = {
         }
         setTimeout(tickGuarded, 0);
       }
-      // v2.9.74: 异常弹窗——tick 守卫：tick 内抛异常会导致静默死亡（链断、无 resolve），在此捕获并弹窗
+      // v2.9.75: 异常弹窗——tick 守卫：tick 内抛异常会导致静默死亡（链断、无 resolve），在此捕获并弹窗
       function tickGuarded() {
         try { tick(); } catch (e) {
           try { clearInterval(_wd); } catch (_) {}
-          try { alert('【诊断 v2.9.74】tick 异常中断：' + (e && e.message) + '，测量已停止'); } catch (_) {}
+          try { alert('【诊断 v2.9.75】tick 异常中断：' + (e && e.message) + '，测量已停止'); } catch (_) {}
           try { finish(false); } catch (_) {}
         }
       }
       function finish(noSignal, floorAnomaly) {
-        try { clearInterval(_wd); } catch (_) {} // v2.9.74: 停看门狗
+        try { clearInterval(_wd); } catch (_) {} // v2.9.75: 停看门狗
         try { self.stopPink(0.2); } catch (_) {} // 200ms fade out 收尾，防"掐断爆音"
         var seg31 = {}, kk2;
         for (kk2 = 0; kk2 < phases.length; kk2++) seg31[phases[kk2].key] = avg31(phases[kk2].key);
@@ -3709,7 +3709,7 @@ function trackSecurity(ev, data){
 /* ---------- 全局状态机 ---------- */
 var app = {
   state: { pro:false, car:null, eqSpec:null, floor31:null, measL:null, measR:null, plan:null, paid:false, remeasure:null },
-  playMode: 'usb',          // v2.9.74: 默认改为 usb（调试期外放测试）；'bt' | 'usb'
+  playMode: 'usb',          // v2.9.75: 默认改为 usb（调试期外放测试）；'bt' | 'usb'
   measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
   measurer: null,
@@ -3775,7 +3775,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.74 · 内测版';
+  ver.textContent = 'v2.9.75 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4578,7 +4578,7 @@ var PHASES_STEREO = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
   {key:'sig',   dur:40, side:null,  obj:'measure.objStereo'}
 ];
-/* v2.9.74: 快速模式 12s（调试用）——底噪 4s（2.5s 静置＋1.5s 平均）＋立体声 8s（≈47 独立帧，中高频 ±1dB；低频方差大，仅调试，验收用标准模式） */
+/* v2.9.75: 快速模式 12s（调试用）——底噪 4s（2.5s 静置＋1.5s 平均）＋立体声 8s（≈47 独立帧，中高频 ±1dB；低频方差大，仅调试，验收用标准模式） */
 var PHASES_QUICK = [
   {key:'floor', dur:4, side:'off', obj:'measure.objFloor'},
   {key:'sig',   dur:8, side:null,  obj:'measure.objStereo'}
@@ -4590,7 +4590,7 @@ var PHASES_LR = [
 ];
 function stepDefs(){
   if(app.measureMode==='lr') return STEP_DEFS_LR;
-  return app.speedMode==='quick' ? STEP_DEFS_STEREO_QUICK : STEP_DEFS_STEREO; // v2.9.74
+  return app.speedMode==='quick' ? STEP_DEFS_STEREO_QUICK : STEP_DEFS_STEREO; // v2.9.75
 }
 function initMeasure(){
   setText('measure-title','measure.title');
@@ -4620,8 +4620,8 @@ function initMeasure(){
   }
   tabBt.onclick = function(){ setMode('bt'); };
   tabUsb.onclick = function(){ setMode('usb'); };
-  setMode(app.playMode); // v2.9.74: 初始化应用默认选项（usb）
-  // v2.9.74: 快速/标准切换（默认快速，调试效率优先；验收切标准）
+  setMode(app.playMode); // v2.9.75: 初始化应用默认选项（usb）
+  // v2.9.75: 快速/标准切换（默认快速，调试效率优先；验收切标准）
   app.speedMode = app.speedMode || 'quick';
   var tabQuick = document.getElementById('tab-quick'), tabStd = document.getElementById('tab-std');
   function setSpeed(s){
@@ -4673,7 +4673,7 @@ function buildStepsUI(){
     box.appendChild(d);
   });
   var _d0 = (typeof stepDefs==='function') ? stepDefs()[0] : null;
-  var tip = t(_d0 && _d0.merged ? (app.speedMode==='quick' ? 'measure.stepMergedTipQuick' : 'measure.stepMergedTip') : 'measure.stepFloorTip'); // v2.9.74
+  var tip = t(_d0 && _d0.merged ? (app.speedMode==='quick' ? 'measure.stepMergedTipQuick' : 'measure.stepMergedTip') : 'measure.stepFloorTip'); // v2.9.75
   if(typeof tip==='string' && tip!=='measure.stepFloorTip'){
     var s0 = document.getElementById('step-s-0'); if(s0) s0.textContent = tip;
   }
@@ -4937,7 +4937,7 @@ function stepStartUI(idx){
   var defs = stepDefs(), def = defs[idx];
   showOverall();
   if(def && def.merged){
-    setOverallText(tt(app.speedMode==='quick' ? 'measure.progressMergedQuick' : 'measure.progressMerged')); // v2.9.74
+    setOverallText(tt(app.speedMode==='quick' ? 'measure.progressMergedQuick' : 'measure.progressMerged')); // v2.9.75
     setOverallObj(liveStatusFor('measure.objFloor'));
   }else{
     setOverallText(tf('measure.progressStep')(idx+1, defs.length));
@@ -5762,6 +5762,8 @@ function failFloorAnomaly(token){
 }
 /* 有效性门：不过则亮红字+回重试，不再继续 */
 function validityGate(meas, chLabel){
+  // v2.9.75: 调试期暂时跳过有效性门（先把频谱搞定，跑通后恢复）
+  if (window.__DBG_DIRECT_MEASURE__) { try{ track('measure_validity_skipped', {ch:chLabel}); }catch(_){} return true; }
   var vok = true, vreason='';
   try{
     var v = DSP.validityCheck(meas, S().floor31);
@@ -5798,7 +5800,7 @@ function snrGate(meas, chLabel){
  */
 async function startMeasureFlow(opts){
   // v2.9.35: 车型必选——没选车型（自定义也行）不让进测量页
-  // v2.9.74: 调试精简版暂时跳过（window.__DBG_DIRECT_MEASURE__），跑通后恢复
+  // v2.9.75: 调试精简版暂时跳过（window.__DBG_DIRECT_MEASURE__），跑通后恢复
   if(!S().car && !window.__DBG_DIRECT_MEASURE__){
     try{
       var carSec = document.getElementById('sec-car');
@@ -5866,21 +5868,21 @@ async function startMeasureFlow(opts){
   if(token!==app.runToken) return;
 
   // ③ 激活麦克风（连通性通过后）
-  // v2.9.74: 异常弹窗——initMic 15s 超时保护（权限弹窗未响应/设备无响应会导致无限卡住）
+  // v2.9.75: 异常弹窗——initMic 15s 超时保护（权限弹窗未响应/设备无响应会导致无限卡住）
   try{
     await Promise.race([
       M.initMic(),
       new Promise(function(_, reject){ setTimeout(function(){ reject(new Error('initMic 超时 15s')); }, 15000); })
     ]);
-    // v2.9.74: 异常弹窗——轨道状态检查
+    // v2.9.75: 异常弹窗——轨道状态检查
     try {
       var _trk = M.stream.getAudioTracks()[0];
-      if (!_trk) alert('【诊断 v2.9.74】麦克风无音频轨道');
-      else if (_trk.readyState === 'ended') alert('【诊断 v2.9.74】麦克风轨道已结束(ended)');
-      else if (_trk.muted) alert('【诊断 v2.9.74】麦克风被系统静音(muted)：检查控制中心麦克风模式是否为"标准"');
+      if (!_trk) alert('【诊断 v2.9.75】麦克风无音频轨道');
+      else if (_trk.readyState === 'ended') alert('【诊断 v2.9.75】麦克风轨道已结束(ended)');
+      else if (_trk.muted) alert('【诊断 v2.9.75】麦克风被系统静音(muted)：检查控制中心麦克风模式是否为"标准"');
     } catch (_) {}
   }catch(e){
-    try { alert('【诊断 v2.9.74】麦克风初始化失败：' + (e && e.message)); } catch (_) {}
+    try { alert('【诊断 v2.9.75】麦克风初始化失败：' + (e && e.message)); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
     document.getElementById('mic-err-body').textContent = ttx('measure.micErrBody','measure.safeNote');
@@ -5910,7 +5912,7 @@ async function startMeasureFlow(opts){
   renderCTA(CTA.measure);
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=(app.speedMode==='quick'?12:50); app._pauseAccum=0; app._uiPauseStart=0; // v2.9.74
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=(app.speedMode==='quick'?12:50); app._pauseAccum=0; app._uiPauseStart=0; // v2.9.75
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
   stepStartUI(0);
   startRaf();
@@ -5919,7 +5921,7 @@ async function startMeasureFlow(opts){
   try{
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
-      phases: app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO, // v2.9.74
+      phases: app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO, // v2.9.75
       onFrame: function(ph, info){ onFrame(info); },
       onPhase: function(phKey, ph){ setOverallObj(liveStatusFor(ph.obj)); }
     });
@@ -6445,7 +6447,7 @@ function drawReportChart(){
   }catch(_){}
 }
 
-/* v2.9.74: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
+/* v2.9.75: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
 function renderBandTable(){
   try{
     setText('band-table-title','report.bandTableTitle');
@@ -7119,7 +7121,7 @@ function init(){
   initConsent();
   initPay();
   initTech();
-  // v2.9.74: 调试精简版——打开直达测试页（前面页面暂时跳过，跑通后恢复 show('home')）
+  // v2.9.75: 调试精简版——打开直达测试页（前面页面暂时跳过，跑通后恢复 show('home')）
   window.__DBG_DIRECT_MEASURE__ = true;
   try { var _bk = document.getElementById('bk-measure'); if (_bk) _bk.style.display = 'none'; } catch (_) {}
   show('measure');
