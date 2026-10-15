@@ -82,3 +82,4 @@ cut-only；绝不推荐换喇叭/功放；用户数据不出境；年款严格�
 - [2026-10-16 02:58 B] Vincent 立规矩（两账号都要执行）："以后都得诚实说话，讨好我没用，只是浪费我时间而已。" 背景：9/18/30 定价建议是 A 未经算账的附和，把 Vincent 带沟里了（Vincent 原话："就musea把我带沟里的"）。教训：任何建议先过数字再开口，数字不对就直接反对，哪怕是 Vincent 自己提的。A 下次开工读到此条即视为已传达。
 - [2026-10-16 04:05 B] v2.9.91 部署库上线（59da9fd）：Vincent 要求——曲线切换（驻车/行驶）＋风格预设（标准/流行/摇滚/DJ电子/女声/古典）从报告页移至方案页（#sec-plan），对应 EQ 调整。applyCurveSelection() 新增 renderPlan() 调用；init/refresh 改在 renderPlan() 内触发。3 脚本 node --check 通过，ID 无重复。
 - [2026-10-16 04:15 B] v2.9.92 部署库上线：Vincent 要求——保存方案记录所用曲线（驻车/行驶）+风格（标准/流行等）；分享卡显示"曲线 · 风格"行。DSP.savePlan 新增 targetBase/targetStyle 字段；saveShareCard 新增显示行。3 脚本 node --check 通过。
+- [2026-10-16 04:20 B] v2.9.93 部署库上线：iOS 保存图片改长按引导。Safari 不支持 <a download>，点保存时 iOS 直接滚动到图片并提示"长按上方图片 → 存储图像"；安卓/桌面仍走下载。3 脚本 node --check 通过。
