@@ -586,10 +586,11 @@ ul.clean li{margin:6px 0;}
   // AudioTools 内置 iPad 麦克风频响修正而我们没有，导致 100Hz–12.5kHz 系统性倾斜（+11dB ~ -13dB），Phase 1 不通过。
   // 本表 = (RTA_中频对齐值 - 我方_中频对齐值)，provisional（RTA 读数来自截图估算，±2dB），待精确数据后修订。
   // 16k/20kHz 置 0：Safari 链路在该频段无有效数据（-120 dummy），不可修正，待采样率诊断结论。
-  DSP.IPAD_MIC_CORR = [2.7, 1.9, 5.3, 0.5, -3.1, -5.3, -9.6,
-    -9.6, -10.8, -11.1, -11.4, -8.1, -5.8, -3.1,
-    -2.7, -2.0, 1.1, 3.9, 1.2, -1.4, 0.1,
-    4.8, 3.8, 3.0, 3.6, 7.7, 9.5, 7.6, 12.9,
+  // v2.9.89: iPad 表重推（2026-10-16 AudioTools 数字导出精确验证 13/22，旧表系读图推导已作废，用真数字重算）
+  DSP.IPAD_MIC_CORR = [2.7, -6.6, -1.9, 5.7, 4.2, -2.7, -2.1,
+    -4.3, -3.5, -4.2, -4.3, -6.2, -5.3, -2.5,
+    -2.7, -1.5, 1.9, 5.3, 0.7, -2.2, -1.0,
+    3.8, 2.3, -5.6, -5.4, 0.1, -0.1, 3.8, 12.3,
     0, 0];
   // v2.9.85: iPhone 麦克风修正表（31段，单位 dB）。2026-10-16 真机对比（iPhone 12 Pro Max / AudioTools / 平直 / 粉噪连续测）：
   // 本表 = (RTA_中频对齐值 - 我方_中频对齐值)，provisional（RTA 读数来自竖屏/横屏截图目测，±4dB；31.5Hz 段不确定性最大）。
@@ -3822,7 +3823,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.88 · 内测版';
+  ver.textContent = 'v2.9.89 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
