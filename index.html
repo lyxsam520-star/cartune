@@ -331,7 +331,7 @@ ul.clean li{margin:6px 0;}
     <!-- v2.9.81: 快速/标准切换 -->
     <div class="tabs" style="margin-top:8px;">
       <div class="tab sel" id="tab-quick"><div class="t">快速 12s</div><div class="n">调试用</div></div>
-      <div class="tab" id="tab-std"><div class="t">标准 50s</div><div class="n">验收用</div></div>
+      <div class="tab" id="tab-std"><div class="t">标准 34s</div><div class="n">验收用</div></div>
     </div>
     <div class="alert amber" id="usb-tip"></div>
     <div class="alert amber show" id="position-tip"></div>
@@ -397,7 +397,7 @@ ul.clean li{margin:6px 0;}
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
-    <!-- v2.9.81: 快速模式 12s（调试用）＋标准 50s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
+    <!-- v2.9.81: 快速模式 12s（调试用）＋标准 34s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
     <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
@@ -3359,14 +3359,14 @@ window.COPY = {
     ctaStartEn: "Start Test",
     ctaReport: "生成调音报告",
     ctaReportEn: "Generate Tuning Report",
-    stepMerged: "合并监听（50 秒）：底噪 10s＋立体声 40s，一次跑完",
-    stepMergedEn: "Combined listening (50s): 10s floor + 40s stereo, one pass",
+    stepMerged: "合并监听（34 秒）：底噪 4s＋立体声 30s，一次跑完",
+    stepMergedEn: "Combined listening (34s): 4s floor + 30s stereo, one pass",
     stepMergedLr: "合并监听（50 秒）：底噪 10s＋左 20s＋右 20s，一次跑完",
     stepMergedLrEn: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
-    stepMergedTip: "一次跑完、中间不停顿：前 10 秒保持安静测底噪，随后粉噪自动淡入，50 秒后淡出收尾。",
-    stepMergedTipEn: "One pass with no pauses: first 10s measures the noise floor in silence, then pink noise fades in automatically and fades out at 50s.",
-    progressMerged: "监听进度：50 秒合并监听",
-    progressMergedEn: "Listening progress: 50s combined",
+    stepMergedTip: "一次跑完、中间不停顿：前 4 秒保持安静测底噪，随后粉噪自动淡入，34 秒后淡出收尾。",
+    stepMergedTipEn: "One pass with no pauses: first 4s measures the noise floor in silence, then pink noise fades in automatically and fades out at 34s.",
+    progressMerged: "监听进度：34 秒合并监听",
+    progressMergedEn: "Listening progress: 34s combined",
     stepMergedQuick: "合并监听（12 秒）：底噪 4s＋立体声 8s，一次跑完",
     stepMergedDbgQuick: "直接测粉噪（30 秒）：跳过底噪，一次跑完",
     stepMergedDbg: "直接测粉噪（50 秒）：跳过底噪，一次跑完",
@@ -3727,7 +3727,7 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "让每辆车，都有自己的声音。",
     heroTitleEn: "Every car deserves its own sound.",
-    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、50 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
+    heroBody: "汽车音响调音，曾经是少数人的特权——专业设备、老师傅的耳朵、一下午的时间。\n\n我们想改变这件事：一部手机、34 秒，你的车就能调出属于自己的好声音。\n\n测得越多，我们越懂车；越懂车，调得越准。",
     heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
@@ -3919,7 +3919,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.102 · 内测版';
+  ver.textContent = 'v2.9.103 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4726,15 +4726,15 @@ var STEP_DEFS_LR = [
   {key:'merged_lr', dur:50, merged:true, copy:'measure.stepMergedLr', obj:'measure.objFloor'}
 ];
 var STEP_DEFS_STEREO = [
-  {key:'merged', dur:50, merged:true, copy:'measure.stepMerged', obj:'measure.objFloor'}
+  {key:'merged', dur:34, merged:true, copy:'measure.stepMerged', obj:'measure.objFloor'}
 ];
 var STEP_DEFS_STEREO_QUICK = [
   {key:'merged', dur:12, merged:true, copy:'measure.stepMergedQuick', obj:'measure.objFloor'}
 ];
 /* 合并相位表：side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道 */
 var PHASES_STEREO = [
-  {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
-  {key:'sig',   dur:40, side:null,  obj:'measure.objStereo'}
+  {key:'floor', dur:4, side:'off', obj:'measure.objFloor'},
+  {key:'sig',   dur:30, side:null,  obj:'measure.objStereo'}
 ];
 /* v2.9.81: 快速模式 12s（调试用）——底噪 4s（2.5s 静置＋1.5s 平均）＋立体声 8s（≈47 独立帧，中高频 ±1dB；低频方差大，仅调试，验收用标准模式） */
 var PHASES_QUICK = [
@@ -4981,7 +4981,7 @@ function rafLoop(){
     document.getElementById('levelfill').style.width = (frac*100).toFixed(1)+'%';
     document.getElementById('leveldb').textContent = '音量 ' + pdb.toFixed(1);
   }
-  // v2.9.102: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
+  // v2.9.103: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
   if(app.avgShown){ app.rafId = 0; return; }
   app.rafId = requestAnimationFrame(rafLoop);
 }
@@ -6108,7 +6108,7 @@ async function startMeasureFlow(opts){
   setStepState(0,'active');
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=(app.speedMode==='quick'?12:50); app._pauseAccum=0; app._uiPauseStart=0; // v2.9.81
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  /* v2.9.102: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
+  /* v2.9.103: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
   try{ DSP._measStart = Date.now(); DSP._measQuick = (app.speedMode==='quick'); DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
@@ -6133,7 +6133,7 @@ async function startMeasureFlow(opts){
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
-  /* v2.9.102: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
+  /* v2.9.103: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
   S().channelIsolated = false;
   setStepState(0,'done');
@@ -6201,7 +6201,7 @@ async function startLrOptIn(){
   setStepState(0,'active');
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  /* v2.9.102: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
+  /* v2.9.103: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
   try{ DSP._measStart = Date.now(); DSP._measQuick = false; DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
@@ -6224,7 +6224,7 @@ async function startLrOptIn(){
   if(!validityGate(R31, 'R')) return;
   snrGate(L31, 'L'); snrGate(R31, 'R');
   S().measL = L31; S().measR = R31;
-  /* v2.9.102: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
+  /* v2.9.103: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
   S().channelIsolated = true;
   // v2.9.3: 先亮"正在生成"防假死
@@ -6421,7 +6421,7 @@ function renderReport(){
  *   电平对齐：500Hz–2kHz 中频段中位数（与算法 v1.3 一致）
  * ===================================================================== */
 /* =====================================================================
- * v2.9.102: 反作弊四层纵深防御（+ Layer 5 SNR）
+ * v2.9.103: 反作弊四层纵深防御（+ Layer 5 SNR）
  *   Layer 1: 测量时序证明 —— 验证真实 30s/50s/12s 测量发生过
  *   Layer 2: 数据合理性 —— 9 维度物理 plausibility 检查
  *   Layer 3: 函数完整性 —— hash 校验关键函数未被 devtools 替换
@@ -6456,7 +6456,7 @@ function _atClear(){
   try{ localStorage.setItem('ct_tamper_count','0'); }catch(_){}
   try{ DSP._tamperCount = 0; DSP._tamperReason = ''; }catch(_){}
 }
-/* v2.9.102: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
+/* v2.9.103: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
 function _atReasonToLayer(reason){
   var m = {
     'timing':'L1-timing', 'fn':'L3-fn',
@@ -6518,7 +6518,7 @@ function _atCheckTiming(){
   try{ t1=DSP._measStart||0; t2=DSP._measEnd||0; fr=DSP._measFrames||0; qm=!!DSP._measQuick; }catch(_){}
   if(!(t1>0 && t2>t1)) return false;
   var dur = (t2-t1)/1000;
-  // v2.9.102宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
+  // v2.9.103宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
   // 比任务示例的 20-40s 更宽，只拦"一眼假"（如 0 秒或 5 分钟）
   var ok;
   if(qm){ ok = (dur>=8 && dur<=20); }
@@ -6544,7 +6544,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=2;i<=28;i++){ sum+=(meas[i]||0); n++; }
   var mean=sum/n, vsum=0;
   for(i=2;i<=28;i++){ var dd=(meas[i]||0)-mean; vsum+=dd*dd; }
-  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.102宽松：0.3→0.2
+  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.103宽松：0.3→0.2
   // Dim 2: 相邻频段差值不能全部 < 0.1dB
   var allTiny=true;
   for(i=3;i<=28;i++){
@@ -6563,11 +6563,11 @@ function _atCheckData(meas, tAt, iso, opts){
   var mn=1e9, mx=-1e9;
   for(i=2;i<=28;i++){ v=meas[i]||0; if(v<mn)mn=v; if(v>mx)mx=v; }
   var range = mx-mn;
-  if(range < 2 || range > 50) return 'range2'; // v2.9.102宽松：3/40→2/50
+  if(range < 2 || range > 50) return 'range2'; // v2.9.103宽松：3/40→2/50
   // Dim 6: 相邻跳变 < 15dB（预测模式跳过：用户增益可能导致跳变）
   if(!isPred){
     for(i=3;i<=28;i++){
-      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.102宽松：15→18
+      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.103宽松：15→18
     }
   }
   // Dim 8: 16k/20kHz（index 29-30）应为 -120 dummy（±5）；undefined 跳过
@@ -6581,7 +6581,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=0;i<=1;i++){
     v = meas[i];
     if(typeof v==='number' && !isNaN(v)){
-      if(v > -110) return 'lf'; // v2.9.102宽松：-117→-110
+      if(v > -110) return 'lf'; // v2.9.103宽松：-117→-110
     }
   }
   // Dim 3 & 7: 需要目标曲线（预测模式跳过 Dim 3 精确匹配检查）
@@ -6600,7 +6600,7 @@ function _atCheckData(meas, tAt, iso, opts){
     // Dim 7: 偏差不能全部同号；至少 20% 正、20% 负
     var pos=0, neg=0;
     for(i=0;i<devs.length;i++){ if(devs[i] > 0.05) pos++; else if(devs[i] < -0.05) neg++; }
-    var need = Math.ceil(devs.length*0.1); // v2.9.102宽松：20%→10%，只拦均匀伪造
+    var need = Math.ceil(devs.length*0.1); // v2.9.103宽松：20%→10%，只拦均匀伪造
     if(pos < need || neg < need) return 'oneside';
   }
   return true;
@@ -6613,7 +6613,7 @@ function _atCheckSnr(meas){
     if(typeof DSP.snr !== 'function') return true;
     var r = DSP.snr(floor, meas);
     if(!r || typeof r.db !== 'number') return true;
-    if(r.db < 3) return 'lowsnr'; // v2.9.102宽松：6→3dB，只拦完全没信号
+    if(r.db < 3) return 'lowsnr'; // v2.9.103宽松：6→3dB，只拦完全没信号
   }catch(_){ return true; } // 异常时不误伤
   return true;
 }
@@ -6623,7 +6623,7 @@ function calcCarScore(){
   return calcCarScoreFrom(meas);
 }
 /* 由频响数组算分（供重测对比/自定义方案预测复用）
- * v2.9.102: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
+ * v2.9.103: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
 function calcCarScoreFrom(meas, opts){
   opts = opts || {};
   // Layer 3: 函数完整性
@@ -6651,7 +6651,7 @@ function calcCarScoreFrom(meas, opts){
     var t = (Math.log(f)-Math.log(f0)) / (Math.log(f1)-Math.log(f0));
     return d0 + t*(d1-d0);
   }
-  // v2.9.102 Layer 2: 数据合理性 9 维度检查
+  // v2.9.103 Layer 2: 数据合理性 9 维度检查
   var dcR = _atCheckData(meas, tAt, iso, opts);
   if(dcR !== true) return _atTampered(dcR);
   // 电平对齐：500Hz–2kHz（index 14–20）偏差中位数
@@ -6671,7 +6671,7 @@ function calcCarScoreFrom(meas, opts){
   _atClear(); // 成功打分，清除篡改计数
   return { score: score, rms: Math.round(rms*10)/10 };
 }
-/* v2.9.102 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
+/* v2.9.103 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
 try{ _atInitFnHash(); }catch(_){}
 function renderCarScore(){
   var el = document.getElementById('score-card');
@@ -6680,7 +6680,7 @@ function renderCarScore(){
   try{ r = calcCarScore(); }catch(_){ r = null; }
   if(!r){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  /* v2.9.102: 篡改时显示友好提示，不说作弊 */
+  /* v2.9.103: 篡改时显示友好提示，不说作弊 */
   if(r.tampered){
     try{ DSP._carScore = null; }catch(_){}
     setText('score-title', 'report.scoreTitle');
@@ -6690,7 +6690,7 @@ function renderCarScore(){
     document.getElementById('score-desc').textContent = _msg;
     var _btn = document.getElementById('btn-score-share');
     if(_btn) _btn.style.display = 'none';
-    /* v2.9.102: 申诉入口 */
+    /* v2.9.103: 申诉入口 */
     try{
       var _ap = document.getElementById('btn-score-appeal');
       if(!_ap){
