@@ -2490,7 +2490,7 @@ var MODELS_DB = {
           if (avgLift < 3) {
             finish(true); return;
           }
-          // v2.9.106: 弱信号提醒（不熔断，只提示）——lift 在 3-10dB 之间说明粉噪太轻，
+          // v2.9.107: 弱信号提醒（不熔断，只提示）——lift 在 3-10dB 之间说明粉噪太轻，
           // 测完 SNR 会很差，结果不可靠。提醒用户调大音量。
           if (avgLift < 10) {
             try {
@@ -2503,6 +2503,19 @@ var MODELS_DB = {
                 weakTip.textContent = '⚠️ 检测到测试信号偏弱，建议调大音量后重测，结果会更准。';
                 var mc = document.getElementById('measure-card');
                 if (mc && mc.parentNode) mc.parentNode.insertBefore(weakTip, mc.nextSibling);
+              }
+              // v2.9.107: 弱信号时频谱加遮罩——数据不可靠，不展示误导性柱子
+              var specCard = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
+              if (specCard && !document.getElementById('weak-signal-mask')) {
+                specCard.style.position = 'relative';
+                specCard.style.filter = 'blur(3px)';
+                specCard.style.opacity = '0.4';
+                specCard.style.pointerEvents = 'none';
+                var mask = document.createElement('div');
+                mask.id = 'weak-signal-mask';
+                mask.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:10;pointer-events:none;';
+                mask.innerHTML = '<div style="background:rgba(0,0,0,0.75);color:#FFB340;padding:12px 20px;border-radius:12px;font-size:15px;">信号太弱，频谱不可靠<br><span style="font-size:13px;color:#999;">调大音量后重测</span></div>';
+                specCard.appendChild(mask);
               }
             } catch (_) {}
           }
@@ -2527,7 +2540,7 @@ var MODELS_DB = {
           self._zeroAlerted = true;
           try { alert('麦克风无声音输入，测量已停止。请检查麦克风权限，或重新开始测量。'); } catch (_) {}
         }
-        // v2.9.106: floor 异常熔断改频域判定——时域 peak 被低频主导，吊扇/空调
+        // v2.9.107: floor 异常熔断改频域判定——时域 peak 被低频主导，吊扇/空调
         // 的低频轰鸣轻松过 0.3 导致误杀。真粉噪泄漏是全频带的，中高频（500Hz-4kHz）
         // 也会起来；环境噪声（风扇）只在低频。用中频能量判定。
         if (ph.key === 'floor') {
@@ -3869,7 +3882,7 @@ function trackSecurity(ev, data){
 /* ---------- 全局状态机 ---------- */
 var app = {
   state: { pro:false, car:null, eqSpec:null, floor31:null, measL:null, measR:null, plan:null, paid:false, remeasure:null },
-  playMode: 'bt',           // v2.9.106: 默认蓝牙；'bt' | 'usb'
+  playMode: 'bt',           // v2.9.107: 默认蓝牙；'bt' | 'usb'
   measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
   measurer: null,
@@ -3934,7 +3947,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.106 · 内测版';
+  ver.textContent = 'v2.9.107 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4797,8 +4810,8 @@ function initMeasure(){
   }
   tabBt.onclick = function(){ setMode('bt'); };
   tabUsb.onclick = function(){ setMode('usb'); };
-  setMode(app.playMode); // v2.9.106: 默认蓝牙
-  // v2.9.106: 快速模式已移除，统一 34s 标准模式
+  setMode(app.playMode); // v2.9.107: 默认蓝牙
+  // v2.9.107: 快速模式已移除，统一 34s 标准模式
   app.speedMode = 'std';
 
   document.getElementById('mic-retry').onclick = function(){
@@ -4986,7 +4999,7 @@ function rafLoop(){
     document.getElementById('levelfill').style.width = (frac*100).toFixed(1)+'%';
     document.getElementById('leveldb').textContent = '音量 ' + pdb.toFixed(1);
   }
-  // v2.9.106: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
+  // v2.9.107: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
   if(app.avgShown){ app.rafId = 0; return; }
   app.rafId = requestAnimationFrame(rafLoop);
 }
@@ -6111,9 +6124,16 @@ async function startMeasureFlow(opts){
   renderCTA(CTA.measure);
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=34; app._pauseAccum=0; app._uiPauseStart=0; // v2.9.106: 统一34s
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=34; app._pauseAccum=0; app._uiPauseStart=0; // v2.9.107: 统一34s
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  /* v2.9.106: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
+  // v2.9.107: 清除弱信号遮罩
+  try {
+    var _wt = document.getElementById('weak-signal-tip'); if (_wt) _wt.remove();
+    var _wm = document.getElementById('weak-signal-mask'); if (_wm) _wm.remove();
+    var _sc = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
+    if (_sc) { _sc.style.filter = ''; _sc.style.opacity = ''; _sc.style.pointerEvents = ''; }
+  } catch (_) {}
+  /* v2.9.107: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
   try{ DSP._measStart = Date.now(); DSP._measQuick = (app.speedMode==='quick'); DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
@@ -6138,7 +6158,7 @@ async function startMeasureFlow(opts){
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
-  /* v2.9.106: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
+  /* v2.9.107: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
   S().channelIsolated = false;
   setStepState(0,'done');
@@ -6206,7 +6226,14 @@ async function startLrOptIn(){
   setStepState(0,'active');
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  /* v2.9.106: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
+  // v2.9.107: 清除弱信号遮罩
+  try {
+    var _wt2 = document.getElementById('weak-signal-tip'); if (_wt2) _wt2.remove();
+    var _wm2 = document.getElementById('weak-signal-mask'); if (_wm2) _wm2.remove();
+    var _sc2 = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
+    if (_sc2) { _sc2.style.filter = ''; _sc2.style.opacity = ''; _sc2.style.pointerEvents = ''; }
+  } catch (_) {}
+  /* v2.9.107: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
   try{ DSP._measStart = Date.now(); DSP._measQuick = false; DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
@@ -6229,7 +6256,7 @@ async function startLrOptIn(){
   if(!validityGate(R31, 'R')) return;
   snrGate(L31, 'L'); snrGate(R31, 'R');
   S().measL = L31; S().measR = R31;
-  /* v2.9.106: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
+  /* v2.9.107: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
   S().channelIsolated = true;
   // v2.9.3: 先亮"正在生成"防假死
@@ -6426,7 +6453,7 @@ function renderReport(){
  *   电平对齐：500Hz–2kHz 中频段中位数（与算法 v1.3 一致）
  * ===================================================================== */
 /* =====================================================================
- * v2.9.106: 反作弊四层纵深防御（+ Layer 5 SNR）
+ * v2.9.107: 反作弊四层纵深防御（+ Layer 5 SNR）
  *   Layer 1: 测量时序证明 —— 验证真实 30s/50s/12s 测量发生过
  *   Layer 2: 数据合理性 —— 9 维度物理 plausibility 检查
  *   Layer 3: 函数完整性 —— hash 校验关键函数未被 devtools 替换
@@ -6461,7 +6488,7 @@ function _atClear(){
   try{ localStorage.setItem('ct_tamper_count','0'); }catch(_){}
   try{ DSP._tamperCount = 0; DSP._tamperReason = ''; }catch(_){}
 }
-/* v2.9.106: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
+/* v2.9.107: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
 function _atReasonToLayer(reason){
   var m = {
     'timing':'L1-timing', 'fn':'L3-fn',
@@ -6523,7 +6550,7 @@ function _atCheckTiming(){
   try{ t1=DSP._measStart||0; t2=DSP._measEnd||0; fr=DSP._measFrames||0; qm=!!DSP._measQuick; }catch(_){}
   if(!(t1>0 && t2>t1)) return false;
   var dur = (t2-t1)/1000;
-  // v2.9.106宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
+  // v2.9.107宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
   // 比任务示例的 20-40s 更宽，只拦"一眼假"（如 0 秒或 5 分钟）
   var ok;
   if(qm){ ok = (dur>=8 && dur<=20); }
@@ -6549,7 +6576,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=2;i<=28;i++){ sum+=(meas[i]||0); n++; }
   var mean=sum/n, vsum=0;
   for(i=2;i<=28;i++){ var dd=(meas[i]||0)-mean; vsum+=dd*dd; }
-  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.106宽松：0.3→0.2
+  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.107宽松：0.3→0.2
   // Dim 2: 相邻频段差值不能全部 < 0.1dB
   var allTiny=true;
   for(i=3;i<=28;i++){
@@ -6568,11 +6595,11 @@ function _atCheckData(meas, tAt, iso, opts){
   var mn=1e9, mx=-1e9;
   for(i=2;i<=28;i++){ v=meas[i]||0; if(v<mn)mn=v; if(v>mx)mx=v; }
   var range = mx-mn;
-  if(range < 2 || range > 50) return 'range2'; // v2.9.106宽松：3/40→2/50
+  if(range < 2 || range > 50) return 'range2'; // v2.9.107宽松：3/40→2/50
   // Dim 6: 相邻跳变 < 15dB（预测模式跳过：用户增益可能导致跳变）
   if(!isPred){
     for(i=3;i<=28;i++){
-      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.106宽松：15→18
+      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.107宽松：15→18
     }
   }
   // Dim 8: 16k/20kHz（index 29-30）应为 -120 dummy（±5）；undefined 跳过
@@ -6586,7 +6613,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=0;i<=1;i++){
     v = meas[i];
     if(typeof v==='number' && !isNaN(v)){
-      if(v > -110) return 'lf'; // v2.9.106宽松：-117→-110
+      if(v > -110) return 'lf'; // v2.9.107宽松：-117→-110
     }
   }
   // Dim 3 & 7: 需要目标曲线（预测模式跳过 Dim 3 精确匹配检查）
@@ -6605,7 +6632,7 @@ function _atCheckData(meas, tAt, iso, opts){
     // Dim 7: 偏差不能全部同号；至少 20% 正、20% 负
     var pos=0, neg=0;
     for(i=0;i<devs.length;i++){ if(devs[i] > 0.05) pos++; else if(devs[i] < -0.05) neg++; }
-    var need = Math.ceil(devs.length*0.1); // v2.9.106宽松：20%→10%，只拦均匀伪造
+    var need = Math.ceil(devs.length*0.1); // v2.9.107宽松：20%→10%，只拦均匀伪造
     if(pos < need || neg < need) return 'oneside';
   }
   return true;
@@ -6618,7 +6645,7 @@ function _atCheckSnr(meas){
     if(typeof DSP.snr !== 'function') return true;
     var r = DSP.snr(floor, meas);
     if(!r || typeof r.db !== 'number') return true;
-    if(r.db < 3) return 'lowsnr'; // v2.9.106宽松：6→3dB，只拦完全没信号
+    if(r.db < 3) return 'lowsnr'; // v2.9.107宽松：6→3dB，只拦完全没信号
   }catch(_){ return true; } // 异常时不误伤
   return true;
 }
@@ -6628,7 +6655,7 @@ function calcCarScore(){
   return calcCarScoreFrom(meas);
 }
 /* 由频响数组算分（供重测对比/自定义方案预测复用）
- * v2.9.106: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
+ * v2.9.107: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
 function calcCarScoreFrom(meas, opts){
   opts = opts || {};
   // Layer 3: 函数完整性
@@ -6656,7 +6683,7 @@ function calcCarScoreFrom(meas, opts){
     var t = (Math.log(f)-Math.log(f0)) / (Math.log(f1)-Math.log(f0));
     return d0 + t*(d1-d0);
   }
-  // v2.9.106 Layer 2: 数据合理性 9 维度检查
+  // v2.9.107 Layer 2: 数据合理性 9 维度检查
   var dcR = _atCheckData(meas, tAt, iso, opts);
   if(dcR !== true) return _atTampered(dcR);
   // 电平对齐：500Hz–2kHz（index 14–20）偏差中位数
@@ -6676,7 +6703,7 @@ function calcCarScoreFrom(meas, opts){
   _atClear(); // 成功打分，清除篡改计数
   return { score: score, rms: Math.round(rms*10)/10 };
 }
-/* v2.9.106 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
+/* v2.9.107 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
 try{ _atInitFnHash(); }catch(_){}
 function renderCarScore(){
   var el = document.getElementById('score-card');
@@ -6685,7 +6712,7 @@ function renderCarScore(){
   try{ r = calcCarScore(); }catch(_){ r = null; }
   if(!r){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  /* v2.9.106: 篡改时显示友好提示，不说作弊 */
+  /* v2.9.107: 篡改时显示友好提示，不说作弊 */
   if(r.tampered){
     try{ DSP._carScore = null; }catch(_){}
     setText('score-title', 'report.scoreTitle');
@@ -6695,7 +6722,7 @@ function renderCarScore(){
     document.getElementById('score-desc').textContent = _msg;
     var _btn = document.getElementById('btn-score-share');
     if(_btn) _btn.style.display = 'none';
-    /* v2.9.106: 申诉入口 */
+    /* v2.9.107: 申诉入口 */
     try{
       var _ap = document.getElementById('btn-score-appeal');
       if(!_ap){
