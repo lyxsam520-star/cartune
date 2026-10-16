@@ -40,7 +40,7 @@ body{
   -webkit-text-size-adjust:100%;
 }
 #app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding:0 16px calc(96px + var(--sat));}
-/* v2.9.131: 全机型自适应——iOS/Android/鸿蒙 */
+/* v2.9.132: 全机型自适应——iOS/Android/鸿蒙 */
 /* 超小屏（iPhone SE 320px 等）：收紧边距 */
 @media (max-width:360px){
   #app{padding-left:10px;padding-right:10px;}
@@ -222,7 +222,7 @@ ul.clean li{margin:6px 0;}
 .kv .k{color:var(--sub);}
 .price{font-size:20px;font-weight:800;color:var(--amber);}
 .center{text-align:center;}
-/* v2.9.131: 全站文字默认左对齐，居中只保留给标题/徽章/按钮 */
+/* v2.9.132: 全站文字默认左对齐，居中只保留给标题/徽章/按钮 */
 .sec{text-align:left;}
 .sec .small,.sec p,.sec li{text-align:left;}
 .card{text-align:left;}
@@ -236,7 +236,7 @@ ul.clean li{margin:6px 0;}
 
   <!-- ============ 1. 首页 ============ -->
   <section class="sec" id="sec-home">
-    <!-- v2.9.131: 首页 banner——logo + slogan，居左 -->
+    <!-- v2.9.132: 首页 banner——logo + slogan，居左 -->
     <div style="display:flex;align-items:center;gap:14px;padding:20px 4px 6px;">
       <img src="logo.png" alt="调音玩" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
@@ -276,7 +276,7 @@ ul.clean li{margin:6px 0;}
       </div>
       <div style="color:var(--sub);font-size:20px;line-height:1;">&rsaquo;</div>
     </div>
-    <!-- v2.9.131: 测前准备（原第二页 5 项检查精简并入），点击展开 -->
+    <!-- v2.9.132: 测前准备（原第二页 5 项检查精简并入），点击展开 -->
     <div class="card mt16" id="home-tips-card" style="cursor:pointer;">
       <div style="display:flex;align-items:center;gap:12px;">
         <div style="font-size:22px;line-height:1;">📋</div>
@@ -336,7 +336,7 @@ ul.clean li{margin:6px 0;}
         <button class="linklike" id="car-change"></button>
       </div>
     </div>
-    <!-- v2.9.131: 手动输入入口移到车型下方 -->
+    <!-- v2.9.132: 手动输入入口移到车型下方 -->
     <div style="margin:8px 0;" id="car-manual-wrap">
       <button class="linklike" id="car-manual-toggle"></button>
     </div>
@@ -350,7 +350,7 @@ ul.clean li{margin:6px 0;}
       <input class="input num" id="car-hu" inputmode="decimal">
       <div class="hint" id="car-hu-hint"></div>
     </div>
-    <!-- v2.9.131: 手动输入按钮已上移至车型下方，此处删除 -->
+    <!-- v2.9.132: 手动输入按钮已上移至车型下方，此处删除 -->
     <div id="car-manual-box" class="hidden">
       <div class="field">
         <label id="car-year-manual-label"></label>
@@ -370,7 +370,7 @@ ul.clean li{margin:6px 0;}
       <div class="tab" id="tab-usb"><div class="t"></div><div class="n"></div></div>
     </div>
     <div class="alert amber" id="usb-tip"></div>
-    <!-- v2.9.131: 测试页三要点已并入首页，删除避免重复 -->
+    <!-- v2.9.132: 测试页三要点已并入首页，删除避免重复 -->
     <div class="card" id="measure-card">
       <div id="overall-wrap" class="hidden">
         <div class="overall-row">
@@ -2529,7 +2529,7 @@ var MODELS_DB = {
           if (avgLift < 3) {
             finish(true); return;
           }
-          // v2.9.131: 弱信号提醒（不熔断，只提示）——lift 在 3-10dB 之间说明粉噪太轻，
+          // v2.9.132: 弱信号提醒（不熔断，只提示）——lift 在 3-10dB 之间说明粉噪太轻，
           // 测完 SNR 会很差，结果不可靠。提醒用户调大音量。
           if (avgLift < 10) {
             try {
@@ -2543,7 +2543,7 @@ var MODELS_DB = {
                 var mc = document.getElementById('measure-card');
                 if (mc && mc.parentNode) mc.parentNode.insertBefore(weakTip, mc.nextSibling);
               }
-              // v2.9.131: 弱信号时频谱加遮罩——数据不可靠，不展示误导性柱子
+              // v2.9.132: 弱信号时频谱加遮罩——数据不可靠，不展示误导性柱子
               var specCard = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
               if (specCard && !document.getElementById('weak-signal-mask')) {
                 specCard.style.position = 'relative';
@@ -2579,7 +2579,7 @@ var MODELS_DB = {
           self._zeroAlerted = true;
           try { alert('麦克风无声音输入，测量已停止。请检查麦克风权限，或重新开始测量。'); } catch (_) {}
         }
-        // v2.9.131: floor 异常熔断改频域判定——时域 peak 被低频主导，吊扇/空调
+        // v2.9.132: floor 异常熔断改频域判定——时域 peak 被低频主导，吊扇/空调
         // 的低频轰鸣轻松过 0.3 导致误杀。真粉噪泄漏是全频带的，中高频（500Hz-4kHz）
         // 也会起来；环境噪声（风扇）只在低频。用中频能量判定。
         if (ph.key === 'floor') {
@@ -3922,7 +3922,7 @@ function trackSecurity(ev, data){
 /* ---------- 全局状态机 ---------- */
 var app = {
   state: { pro:false, car:null, eqSpec:null, floor31:null, measL:null, measR:null, plan:null, paid:false, remeasure:null },
-  playMode: 'bt',           // v2.9.131: 默认蓝牙；'bt' | 'usb'
+  playMode: 'bt',           // v2.9.132: 默认蓝牙；'bt' | 'usb'
   measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
   measurer: null,
@@ -3987,7 +3987,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.131 · 内测版';
+  ver.textContent = 'v2.9.132 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4071,7 +4071,7 @@ function initHome(){
     });
   }catch(_){}
   document.getElementById('home-tech-link').onclick = function(){ show('tech'); };
-  // v2.9.131: 测前三要点卡片点击展开/收起
+  // v2.9.132: 测前三要点卡片点击展开/收起
   var _htc = document.getElementById('home-tips-card');
   if(_htc) _htc.onclick = function(){
     var body = document.getElementById('home-tips-body');
@@ -4157,7 +4157,7 @@ function initChecklist(){
       });
     }
   });
-  // v2.9.131: checklist 页已删除，CTA.checklist 废弃
+  // v2.9.132: checklist 页已删除，CTA.checklist 废弃
 }
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
@@ -4387,7 +4387,7 @@ function initCar(){
     carCtaErr('');
     listWrap.classList.add('hidden');
     selCard.classList.add('hidden');
-    // v2.9.131: 清除选车时恢复手动输入入口
+    // v2.9.132: 清除选车时恢复手动输入入口
     var _mw3 = document.getElementById('car-manual-wrap');
     if(_mw3) _mw3.style.display = '';
     bandPicker.classList.add('hidden');
@@ -4453,7 +4453,7 @@ function initCar(){
       listWrap.classList.add('hidden');
       document.getElementById('car-lastcard').classList.add('hidden');
       selCard.classList.remove('hidden');
-      // v2.9.131: 选好车型后隐藏手动输入入口
+      // v2.9.132: 选好车型后隐藏手动输入入口
       var _mw = document.getElementById('car-manual-wrap');
       if(_mw) _mw.style.display = 'none';
       renderEqSpec();
@@ -4536,7 +4536,7 @@ function initCar(){
       brandSel.name + ' · ' + seriesSel.name + ' · ' + y;
     listWrap.classList.add('hidden');
     selCard.classList.remove('hidden');
-    // v2.9.131: 选好车型后隐藏手动输入入口
+    // v2.9.132: 选好车型后隐藏手动输入入口
     var _mw2 = document.getElementById('car-manual-wrap');
     if(_mw2) _mw2.style.display = 'none';
     S().car = { brand: brandSel.name, series: seriesSel.name, year: y };
@@ -4712,7 +4712,7 @@ function resolvePreset(bands){
 }
 function renderEqSpec(){
   var spec = S().eqSpec, box = document.getElementById('eqspec-panel');
-  // v2.9.131: 无车型时默认7段展示（纠错入口始终可见）
+  // v2.9.132: 无车型时默认7段展示（纠错入口始终可见）
   if(!spec){
     spec = { bands: 7, labels: ['重低音','低音','中低音','中音','中高音','高音','超高音'],
              centers: null, rangeDb: 9, stepDb: 1, confidence: '默认', note: '未选车型，默认7段' };
@@ -4736,16 +4736,16 @@ function renderEqSpec(){
     '<div class="card"><div class="small" style="margin-bottom:8px;">'+escapeHtml(noteTxt)+'</div>'+
     '<div class="kv"><span class="k">EQ 段数</span><span class="num"><b>'+spec.bands+'</b></span></div>'+
     '<div class="kv"><span class="k">标签</span><span>'+escapeHtml(labels)+'</span></div>'+
-    // v2.9.131: 中心频率栏去除（数据多为推断，展示误导）
+    // v2.9.132: 中心频率栏去除（数据多为推断，展示误导）
     '<div class="kv"><span class="k">范围 / 步进</span><span class="num">±'+spec.rangeDb+'dB / '+spec.stepDb+'dB</span></div>'+
     '<div style="margin-top:10px;"><span class="badge '+badgeCls+'">'+escapeHtml(spec.confidence||'')+'</span>'+
-    // v2.9.131: EQ 段数纠错入口——车友可报错并填写正确段数
+    // v2.9.132: EQ 段数纠错入口——车友可报错并填写正确段数
     ' <span id="eq-correct-link" style="font-size:12px;color:#5AC8FA;margin-left:8px;cursor:pointer;text-decoration:underline;">段数不对？点此纠错</span></div>'+
     (spec.note?'<div class="small mt8">'+escapeHtml(spec.note)+'</div>':'')+'</div>';
   // 纠错逻辑
   var _ecl = document.getElementById('eq-correct-link');
   if (_ecl) _ecl.onclick = function(){ showEqCorrectDialog(spec); };
-  // v2.9.131: 选了车型后不显示悬赏入口（只在未选车型/调试时显示）
+  // v2.9.132: 选了车型后不显示悬赏入口（只在未选车型/调试时显示）
   var _hasCar = !!(S().car && (S().car.brand || S().car.series));
   if(!spec.centersVerified && !_hasCar){
     box.innerHTML +=
@@ -4757,7 +4757,7 @@ function renderEqSpec(){
     if(bc) bc.onclick = function(){ show('bounty'); };
   }
 }
-/* v2.9.131: EQ 段数纠错弹窗——车友报错并填写正确段数，存 localStorage 待上传 */
+/* v2.9.132: EQ 段数纠错弹窗——车友报错并填写正确段数，存 localStorage 待上传 */
 function showEqCorrectDialog(spec){
   var car = S().car;
   var carName = car ? (car.brand + ' ' + car.series + ' ' + (car.year||'')) : '未选车型';
@@ -4769,7 +4769,7 @@ function showEqCorrectDialog(spec){
     alert('请输入 1-16 之间的数字');
     return;
   }
-  // v2.9.131: 纠错时填写范围极限（车友知道的是±几dB，不是每格几dB）
+  // v2.9.132: 纠错时填写范围极限（车友知道的是±几dB，不是每格几dB）
   var curRange = spec ? spec.rangeDb : 9;
   var rangeInput = prompt('请输入该车机 EQ 的调节范围（最大±多少dB，如 9）：', String(curRange));
   if(rangeInput === null) return;
@@ -4801,7 +4801,7 @@ function showEqCorrectDialog(spec){
     // 上限 50 条
     if(arr.length > 50) arr = arr.slice(-50);
     localStorage.setItem(key, JSON.stringify(arr));
-    // v2.9.131: 纠错后直接按正确段数+步进生成方案
+    // v2.9.132: 纠错后直接按正确段数+步进生成方案
     var genNow = confirm('感谢纠错！已记录：' + carName + ' 应为 ' + n + '段/±' + rangeDb + 'dB\n（当前显示' + cur + '段/±' + curRange + 'dB）\n\n是否立即按纠正后的参数重新生成调音方案？');
     try{ track('eq_correct_submit', {car: carName, from: cur, to: n, fromRange: curRange, toRange: rangeDb, genNow: genNow}); }catch(_){}
     if(genNow){
@@ -4929,7 +4929,7 @@ function initMeasure(){
   setText('bk-measure','common.back');
   setText('bars-caption','measure.barsCaption');
   setText('usb-tip','measure.usbPlayingTip');
-  // v2.9.131: 三要点已删，setText 留空安全
+  // v2.9.132: 三要点已删，setText 留空安全
   setText('clip-alert','measure.clipAlert');
   setText('snr-alert','measure.snrWarn');
   setText('mic-retry','common.retry');
@@ -4949,8 +4949,8 @@ function initMeasure(){
   }
   tabBt.onclick = function(){ setMode('bt'); };
   tabUsb.onclick = function(){ setMode('usb'); };
-  setMode(app.playMode); // v2.9.131: 默认蓝牙
-  // v2.9.131: 快速模式已移除，统一 34s 标准模式
+  setMode(app.playMode); // v2.9.132: 默认蓝牙
+  // v2.9.132: 快速模式已移除，统一 34s 标准模式
   app.speedMode = 'std';
 
   document.getElementById('mic-retry').onclick = function(){
@@ -5138,7 +5138,7 @@ function rafLoop(){
     document.getElementById('levelfill').style.width = (frac*100).toFixed(1)+'%';
     document.getElementById('leveldb').textContent = '音量 ' + pdb.toFixed(1);
   }
-  // v2.9.131: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
+  // v2.9.132: 进入最终平均就停 RAF——数据已采完，频谱定格在最后一帧，不再画实时底噪
   if(app.avgShown){ app.rafId = 0; return; }
   app.rafId = requestAnimationFrame(rafLoop);
 }
@@ -6263,26 +6263,26 @@ async function startMeasureFlow(opts){
   renderCTA(CTA.measure);
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
-  app.curStep=0; app.stepStart=performance.now(); app.stepDur=34; app._pauseAccum=0; app._uiPauseStart=0; // v2.9.131: 统一34s
+  app.curStep=0; app.stepStart=performance.now(); app.stepDur=34; app._pauseAccum=0; app._uiPauseStart=0; // v2.9.132: 统一34s
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  // v2.9.131: 清除弱信号遮罩
+  // v2.9.132: 清除弱信号遮罩
   try {
     var _wt = document.getElementById('weak-signal-tip'); if (_wt) _wt.remove();
     var _wm = document.getElementById('weak-signal-mask'); if (_wm) _wm.remove();
     var _sc = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
     if (_sc) { _sc.style.filter = ''; _sc.style.opacity = ''; _sc.style.pointerEvents = ''; }
   } catch (_) {}
-  /* v2.9.131: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
+  /* v2.9.132: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
   try{ DSP._measStart = Date.now(); DSP._measQuick = (app.speedMode==='quick'); DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
   // v2.9.43: GPS 持续监控已移除
   var res = null;
-  // v2.9.131: 测试开始语音提示
+  // v2.9.132: 测试开始语音提示
   try{
     if(window.speechSynthesis){
       var u = new SpeechSynthesisUtterance('测试开始');
-      u.lang = 'zh-CN'; u.rate = 1.0; u.volume = 0.7;
+      u.lang = 'zh-CN'; u.rate = 1.0; u.volume = 0.6;
       window.speechSynthesis.speak(u);
     }
   }catch(_){}
@@ -6305,7 +6305,7 @@ async function startMeasureFlow(opts){
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
-  /* v2.9.131: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
+  /* v2.9.132: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
   S().channelIsolated = false;
   setStepState(0,'done');
@@ -6373,14 +6373,14 @@ async function startLrOptIn(){
   setStepState(0,'active');
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0;
   app.frameCount=0; app.avgShown=false; app._shownFrames=-1; app.clipStreak=0; app.lowStreak=0;
-  // v2.9.131: 清除弱信号遮罩
+  // v2.9.132: 清除弱信号遮罩
   try {
     var _wt2 = document.getElementById('weak-signal-tip'); if (_wt2) _wt2.remove();
     var _wm2 = document.getElementById('weak-signal-mask'); if (_wm2) _wm2.remove();
     var _sc2 = document.querySelector('.spectrum-card') || document.getElementById('spectrum-wrap');
     if (_sc2) { _sc2.style.filter = ''; _sc2.style.opacity = ''; _sc2.style.pointerEvents = ''; }
   } catch (_) {}
-  /* v2.9.131: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
+  /* v2.9.132: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
   try{ DSP._measStart = Date.now(); DSP._measQuick = false; DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
   stepStartUI(0);
   startRaf();
@@ -6403,13 +6403,13 @@ async function startLrOptIn(){
   if(!validityGate(R31, 'R')) return;
   snrGate(L31, 'L'); snrGate(R31, 'R');
   S().measL = L31; S().measR = R31;
-  /* v2.9.131: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
+  /* v2.9.132: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
   try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
-  // v2.9.131: 测试结束语音提示
+  // v2.9.132: 测试结束语音提示
   try{
     if(window.speechSynthesis){
       var u3 = new SpeechSynthesisUtterance('测试结束');
-      u3.lang = 'zh-CN'; u3.rate = 1.0; u3.volume = 0.7;
+      u3.lang = 'zh-CN'; u3.rate = 1.0; u3.volume = 0.6;
       window.speechSynthesis.speak(u3);
     }
   }catch(_){}
@@ -6456,7 +6456,7 @@ function avg31(){
 /* 规则引擎层（v1）：数值方案由 DSP.ruleEngine 产生；LLM 文案层为 v2 预留 */
 function buildPlan(){
   // v2.9.34: eqSpec 为空时默认 7 段（用户没选车型时也出方案，不再空白）
-  // v2.9.131: 段数严格对应车型填写的 EQ 段数；网易云 10 段仅为预设选项，不作默认
+  // v2.9.132: 段数严格对应车型填写的 EQ 段数；网易云 10 段仅为预设选项，不作默认
   var spec = S().eqSpec;
   if(!spec || !spec.bands){
     spec = { bands: 7, labels: null, centers: null, rangeDb: 9, stepDb: 1 };
@@ -6608,7 +6608,7 @@ function renderReport(){
  *   电平对齐：500Hz–2kHz 中频段中位数（与算法 v1.3 一致）
  * ===================================================================== */
 /* =====================================================================
- * v2.9.131: 反作弊四层纵深防御（+ Layer 5 SNR）
+ * v2.9.132: 反作弊四层纵深防御（+ Layer 5 SNR）
  *   Layer 1: 测量时序证明 —— 验证真实 30s/50s/12s 测量发生过
  *   Layer 2: 数据合理性 —— 9 维度物理 plausibility 检查
  *   Layer 3: 函数完整性 —— hash 校验关键函数未被 devtools 替换
@@ -6643,7 +6643,7 @@ function _atClear(){
   try{ localStorage.setItem('ct_tamper_count','0'); }catch(_){}
   try{ DSP._tamperCount = 0; DSP._tamperReason = ''; }catch(_){}
 }
-/* v2.9.131: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
+/* v2.9.132: 申诉通道 —— 记录触发层+数据指纹（不存原始数据），供 A/B 复盘阈值 */
 function _atReasonToLayer(reason){
   var m = {
     'timing':'L1-timing', 'fn':'L3-fn',
@@ -6705,7 +6705,7 @@ function _atCheckTiming(){
   try{ t1=DSP._measStart||0; t2=DSP._measEnd||0; fr=DSP._measFrames||0; qm=!!DSP._measQuick; }catch(_){}
   if(!(t1>0 && t2>t1)) return false;
   var dur = (t2-t1)/1000;
-  // v2.9.131宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
+  // v2.9.132宽松哲学：quick=12s→8-20s，标准/隔离=50s/30s→20-70s
   // 比任务示例的 20-40s 更宽，只拦"一眼假"（如 0 秒或 5 分钟）
   var ok;
   if(qm){ ok = (dur>=8 && dur<=20); }
@@ -6731,7 +6731,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=2;i<=28;i++){ sum+=(meas[i]||0); n++; }
   var mean=sum/n, vsum=0;
   for(i=2;i<=28;i++){ var dd=(meas[i]||0)-mean; vsum+=dd*dd; }
-  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.131宽松：0.3→0.2
+  if(Math.sqrt(vsum/n) < 0.2) return 'flat'; // v2.9.132宽松：0.3→0.2
   // Dim 2: 相邻频段差值不能全部 < 0.1dB
   var allTiny=true;
   for(i=3;i<=28;i++){
@@ -6750,11 +6750,11 @@ function _atCheckData(meas, tAt, iso, opts){
   var mn=1e9, mx=-1e9;
   for(i=2;i<=28;i++){ v=meas[i]||0; if(v<mn)mn=v; if(v>mx)mx=v; }
   var range = mx-mn;
-  if(range < 2 || range > 50) return 'range2'; // v2.9.131宽松：3/40→2/50
+  if(range < 2 || range > 50) return 'range2'; // v2.9.132宽松：3/40→2/50
   // Dim 6: 相邻跳变 < 15dB（预测模式跳过：用户增益可能导致跳变）
   if(!isPred){
     for(i=3;i<=28;i++){
-      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.131宽松：15→18
+      if(Math.abs((meas[i]||0)-(meas[i-1]||0)) >= 18) return 'jump'; // v2.9.132宽松：15→18
     }
   }
   // Dim 8: 16k/20kHz（index 29-30）应为 -120 dummy（±5）；undefined 跳过
@@ -6768,7 +6768,7 @@ function _atCheckData(meas, tAt, iso, opts){
   for(i=0;i<=1;i++){
     v = meas[i];
     if(typeof v==='number' && !isNaN(v)){
-      if(v > -110) return 'lf'; // v2.9.131宽松：-117→-110
+      if(v > -110) return 'lf'; // v2.9.132宽松：-117→-110
     }
   }
   // Dim 3 & 7: 需要目标曲线（预测模式跳过 Dim 3 精确匹配检查）
@@ -6787,7 +6787,7 @@ function _atCheckData(meas, tAt, iso, opts){
     // Dim 7: 偏差不能全部同号；至少 20% 正、20% 负
     var pos=0, neg=0;
     for(i=0;i<devs.length;i++){ if(devs[i] > 0.05) pos++; else if(devs[i] < -0.05) neg++; }
-    var need = Math.ceil(devs.length*0.1); // v2.9.131宽松：20%→10%，只拦均匀伪造
+    var need = Math.ceil(devs.length*0.1); // v2.9.132宽松：20%→10%，只拦均匀伪造
     if(pos < need || neg < need) return 'oneside';
   }
   return true;
@@ -6800,7 +6800,7 @@ function _atCheckSnr(meas){
     if(typeof DSP.snr !== 'function') return true;
     var r = DSP.snr(floor, meas);
     if(!r || typeof r.db !== 'number') return true;
-    if(r.db < 3) return 'lowsnr'; // v2.9.131宽松：6→3dB，只拦完全没信号
+    if(r.db < 3) return 'lowsnr'; // v2.9.132宽松：6→3dB，只拦完全没信号
   }catch(_){ return true; } // 异常时不误伤
   return true;
 }
@@ -6810,7 +6810,7 @@ function calcCarScore(){
   return calcCarScoreFrom(meas);
 }
 /* 由频响数组算分（供重测对比/自定义方案预测复用）
- * v2.9.131: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
+ * v2.9.132: opts {skipTiming, isPrediction} —— 预测模式跳过时序+部分严格维度 */
 function calcCarScoreFrom(meas, opts){
   opts = opts || {};
   // Layer 3: 函数完整性
@@ -6838,7 +6838,7 @@ function calcCarScoreFrom(meas, opts){
     var t = (Math.log(f)-Math.log(f0)) / (Math.log(f1)-Math.log(f0));
     return d0 + t*(d1-d0);
   }
-  // v2.9.131 Layer 2: 数据合理性 9 维度检查
+  // v2.9.132 Layer 2: 数据合理性 9 维度检查
   var dcR = _atCheckData(meas, tAt, iso, opts);
   if(dcR !== true) return _atTampered(dcR);
   // 电平对齐：500Hz–2kHz（index 14–20）偏差中位数
@@ -6858,7 +6858,7 @@ function calcCarScoreFrom(meas, opts){
   _atClear(); // 成功打分，清除篡改计数
   return { score: score, rms: Math.round(rms*10)/10 };
 }
-/* v2.9.131 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
+/* v2.9.132 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
 try{ _atInitFnHash(); }catch(_){}
 function renderCarScore(){
   var el = document.getElementById('score-card');
@@ -6867,7 +6867,7 @@ function renderCarScore(){
   try{ r = calcCarScore(); }catch(_){ r = null; }
   if(!r){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  /* v2.9.131: 篡改时显示友好提示，不说作弊 */
+  /* v2.9.132: 篡改时显示友好提示，不说作弊 */
   if(r.tampered){
     try{ DSP._carScore = null; }catch(_){}
     setText('score-title', 'report.scoreTitle');
@@ -6877,7 +6877,7 @@ function renderCarScore(){
     document.getElementById('score-desc').textContent = _msg;
     var _btn = document.getElementById('btn-score-share');
     if(_btn) _btn.style.display = 'none';
-    /* v2.9.131: 申诉入口 */
+    /* v2.9.132: 申诉入口 */
     try{
       var _ap = document.getElementById('btn-score-appeal');
       if(!_ap){
@@ -7927,7 +7927,7 @@ function saveCustomToLibrary(){
   if(!gains) return;
   var label = '';
   try{ label = prompt('给这套方案起个名字吧', '我的自定义方案') || '我的自定义方案'; }catch(_){ label = '我的自定义方案'; }
-  // v2.9.131: 记录车型+段数——自定义方案是 EQ 数据的第二来源，可用于校验车型库
+  // v2.9.132: 记录车型+段数——自定义方案是 EQ 数据的第二来源，可用于校验车型库
   var car = null;
   try{ car = S().car; }catch(_){}
   savePlanToLibrary({
@@ -7965,7 +7965,7 @@ function savePlanToLibrary(item){
       /* v2.9.99: 导入方案来源信息 */
       import_source: item.import_source || null,
       source_car: item.source_car || null,
-      /* v2.9.131: 车型+段数——用于校验车型库 EQ 数据 */
+      /* v2.9.132: 车型+段数——用于校验车型库 EQ 数据 */
       car_brand: item.car_brand || '',
       car_series: item.car_series || '',
       car_year: item.car_year || '',
@@ -8389,7 +8389,7 @@ function init(){
   if(!window.COPY){ window.COPY = {}; }
   initBackButtons();
   initWxBanner();
-  // v2.9.131: 所有页面注入统一 banner（logo + 调音玩 + slogan），居右
+  // v2.9.132: 所有页面注入统一 banner（logo + 调音玩 + slogan），居右
   try{
     var bannerHTML =
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
@@ -8411,14 +8411,14 @@ function init(){
     });
   }catch(_){}
   initHome();
-  // v2.9.131: initChecklist 已删除（第二页移除）
+  // v2.9.132: initChecklist 已删除（第二页移除）
   initCar();
   initBounty();
   initMeasure();
   initConsent();
   initPay();
   initTech();
-  // v2.9.131: 恢复完整流程——首页→检查清单→车型→测试（调试精简版已完成使命）
+  // v2.9.132: 恢复完整流程——首页→检查清单→车型→测试（调试精简版已完成使命）
   show('home');
   // 内测到期前 7 天：首页温和提示（不阻塞）
   if(betaExpiringSoon()){
