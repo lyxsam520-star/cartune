@@ -1965,18 +1965,52 @@ var MODELS_DB = {
     if(sr === 44100) return 'audio/smpte2095-pink-44k1-stereo-60s.wav';
     return 'audio/smpte2095-pink-48k-stereo-60s.wav';
   };
+  // v2.9.219: WAV 存 IndexedDB，下载一次以后走本地
+  DSP._idbGet = function(key){
+    return new Promise(function(resolve){
+      try{
+        var req = indexedDB.open('cartune-pink', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('wav'); };
+        req.onsuccess = function(){
+          var tx = req.result.transaction('wav', 'readonly');
+          var get = tx.objectStore('wav').get(key);
+          get.onsuccess = function(){ resolve(get.result || null); };
+          get.onerror = function(){ resolve(null); };
+        };
+        req.onerror = function(){ resolve(null); };
+      }catch(_){ resolve(null); }
+    });
+  };
+  DSP._idbSet = function(key, val){
+    try{
+      var req = indexedDB.open('cartune-pink', 1);
+      req.onupgradeneeded = function(){ req.result.createObjectStore('wav'); };
+      req.onsuccess = function(){
+        var tx = req.result.transaction('wav', 'readwrite');
+        tx.objectStore('wav').put(val, key);
+      };
+    }catch(_){}
+  };
   DSP.loadSmptePink = function (ctx) {
     if (DSP._smpteBuf) return Promise.resolve(DSP._smpteBuf);
     if (DSP._smpteLoading) return DSP._smpteLoading;
-    DSP._smpteLoading = fetch(DSP.smpteUrlFor(ctx)).then(function (resp) {
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      return resp.arrayBuffer();
-    }).then(function (ab) {
+    var _url = DSP.smpteUrlFor(ctx);
+    var _decode = function(ab){
       return new Promise(function (resolve, reject) {
         try {
           var p = ctx.decodeAudioData(ab, resolve, reject);
           if (p && p.then) p.then(resolve, reject);
         } catch (e) { reject(e); }
+      });
+    };
+    DSP._smpteLoading = DSP._idbGet(_url).then(function(cached){
+      if(cached) return _decode(cached);
+      return fetch(_url).then(function (resp) {
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        return resp.arrayBuffer();
+      }).then(function(ab){
+        DSP._idbSet(_url, ab);
+        return _decode(ab);
       });
     }).then(function (buf) {
       DSP._smpteBuf = buf;
@@ -4058,7 +4092,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.218 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
+  ver.innerHTML = 'v2.9.219 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
