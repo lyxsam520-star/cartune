@@ -1995,6 +1995,8 @@ var MODELS_DB = {
   DSP.getPinkBuffer = function (ctx, seconds, side) {
     var smpte = DSP._smpteBuf;
     if (smpte && smpte.numberOfChannels >= 2) {
+      DSP._pinkSource = 'wav';
+      try{ var _p1 = document.getElementById('pink-src'); if(_p1) _p1.textContent = '· wav'; }catch(_){}
       try {
         var len = smpte.length;
         var buf = ctx.createBuffer(2, len, smpte.sampleRate);
@@ -2012,6 +2014,8 @@ var MODELS_DB = {
       } catch (e) {
       }
     }
+    DSP._pinkSource = 'fallback';
+    try{ var _p2 = document.getElementById('pink-src'); if(_p2) _p2.textContent = '· fallback'; }catch(_){}
     return DSP.makeStereoPink(ctx, seconds, side);
   };
 
@@ -4054,7 +4058,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.textContent = 'v2.9.215 · 内测版';
+  ver.textContent = 'v2.9.216 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
