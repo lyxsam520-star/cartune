@@ -546,6 +546,7 @@ ul.clean li{margin:6px 0;}
       <div class="small" id="curve-note" style="color:var(--sub);margin:0 0 8px;"></div>
       <!-- v2.9.231: 偏好已删（无声学支撑） -->
       <div class="small mt8" id="plan-perband"></div>
+      <div class="small" style="color:var(--sub);margin-bottom:8px;">调音原则：只减不增。宁可把凸起压下去，不把凹陷提起来——提升会引入失真，衰减更干净。</div>
       <div id="plan-bands"></div>
       <div class="card" style="border-color:rgba(255,77,77,.5);">
         <div class="h" id="plan-burnt" style="color:var(--red);font-size:15px;"></div>
@@ -4016,7 +4017,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.236 · 内测版';
+  ver.innerHTML = 'v2.9.237 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
