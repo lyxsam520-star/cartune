@@ -4018,7 +4018,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.239 · 内测版';
+  ver.innerHTML = 'v2.9.240 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4837,7 +4837,10 @@ function renderEqSpec(){
     '<div style="margin-top:10px;"><span class="badge '+badgeCls+'">'+escapeHtml(spec.confidence||'')+'</span>'+
     // v2.9.215: EQ 段数纠错入口——车友可报错并填写正确段数
     ' <span id="eq-correct-link" style="font-size:12px;color:#5AC8FA;margin-left:8px;cursor:pointer;text-decoration:underline;">段数不对？点此纠错</span></div>'+
-    (spec.note?'<div class="small mt8">'+escapeHtml(spec.note)+'</div>':'')+'</div>';
+    (spec.note?'<div class="small mt8">'+escapeHtml(spec.note)+'</div>':'')+'</div>'+
+    // v2.9.240: 车友方案（社交属性）——后端上线前显示占位
+    '<div class="card mt16" id="car-friend-plan"><div class="h" style="font-size:15px;margin-bottom:8px;">车友方案</div>'+
+    '<div class="small" style="color:var(--sub);">暂无同车型车友数据。测完你的车，成为第一个分享方案的车主。</div></div>';
   // 纠错逻辑
   var _ecl = document.getElementById('eq-correct-link');
   if (_ecl) _ecl.onclick = function(){ showEqCorrectDialog(spec); };
@@ -6388,8 +6391,7 @@ async function startMeasureFlow(opts){
     renderCTA(CTA.measure, tt('measure.ctaSub'));
   }}];
   renderCTA(CTA.measure);
-  CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
-  renderCTA(CTA.measure);
+  // v2.9.240: 删除覆盖停止按钮的 disabled tip（bugfix）
 
   // ② 试音（仅蓝牙模式）：3s 粉噪 → 确认能出声 → 不通过则排查指引
   // v2.6: 只做连通性确认（"听得到吗"），音量确认移到麦克风激活后——
