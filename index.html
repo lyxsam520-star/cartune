@@ -466,6 +466,7 @@ ul.clean li{margin:6px 0;}
         <tbody id="band-table-body"></tbody>
       </table>
     </div>
+    <div class="small" style="color:var(--sub);margin-top:6px;">灰色频段（20/25Hz、16k/20kHz）为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。</div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
     <!-- v2-C: diag+peq report blocks -->
@@ -4008,7 +4009,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.228 · 内测版';
+  ver.innerHTML = 'v2.9.229 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
