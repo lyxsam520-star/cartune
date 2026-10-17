@@ -4020,7 +4020,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.241 · 内测版';
+  ver.innerHTML = 'v2.9.242 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6465,8 +6465,7 @@ async function startMeasureFlow(opts){
   if(token!==app.runToken) return;
 
   // ④ 30s 合并测量：底噪 5s → 立体声 25s，一次跑完无停顿
-  CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
-  renderCTA(CTA.measure);
+  // v2.9.242: 保留停止按钮（不覆盖为disabled tip）
   app.measureMode = 'stereo'; buildStepsUI();
   setStepState(0,'active');
   app.curStep=0; app.stepStart=performance.now(); app.stepDur=30; app._pauseAccum=0; app._uiPauseStart=0; // v2.9.215: 统一30s
