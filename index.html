@@ -4018,7 +4018,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.238 · 内测版';
+  ver.innerHTML = 'v2.9.239 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6378,6 +6378,16 @@ async function startMeasureFlow(opts){
   app.measurer = M;
   try{ M.setEqSpec(spec); }catch(_){}
   track('measure_start', {mode:app.playMode, bands:spec?spec.bands:0});
+  // v2.9.239: 测量中显示"停止测量"按钮
+  CTA.measure = [{ text: '停止测量', onClick: function(){
+    app.runToken++; // 作废当前测量
+    try{ stopRaf(); }catch(_){}
+    try{ if(app.measurer){ app.measurer.stopPink(0.1); } }catch(_){}
+    try{ document.getElementById('measure-status').textContent = '已停止'; }catch(_){}
+    CTA.measure = [{ text: tt('measure.ctaStart'), onClick: startMeasureFlow }];
+    renderCTA(CTA.measure, tt('measure.ctaSub'));
+  }}];
+  renderCTA(CTA.measure);
   CTA.measure = [{ text: tt('measure.measuringTip'), disabled:true, onClick:function(){} }];
   renderCTA(CTA.measure);
 
@@ -6793,7 +6803,9 @@ function renderReport(){
   try{ var _peq = document.getElementById('peq-toggle'); if(_peq) _peq.style.display='none'; }catch(_){}
   try{ var _peqt = document.getElementById('peq-table'); if(_peqt) _peqt.style.display='none'; }catch(_){}
   // v2.9.230: consent 页已删（H5 数据不出本机，无需单独授权），直接进方案
-  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); renderPlan(); show('plan'); } }];
+  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); renderPlan(); show('plan'); } },
+    // v2.9.239: 常驻"重新跑分"按钮
+    { text: '重新跑分', primary: false, onClick: function(){ show('measure'); } }];
   // 已出方案（S().plan）后：报告页也放复测验证入口（__REMEASURE_V1__）
   if(S().plan){ CTA.report.unshift({ text: tt('remeasure.btn'), primary:false, onClick: startRemeasurePrompt }); }
   initReportShareCard(); // [v2-workerD-sharecard] 挂载分享按钮
