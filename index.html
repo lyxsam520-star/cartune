@@ -4100,7 +4100,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.222 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
+  ver.innerHTML = 'v2.9.223 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5151,6 +5151,15 @@ function initMeasure(){
             _directM = new DSP.Measurer();
             await _directM.initAudio();
           }
+          // v2.9.223: 竞速等 WAV（最多2秒），超时用 fallback，绝不卡死
+          try{
+            if(!DSP._smpteBuf){
+              await Promise.race([
+                DSP.loadSmptePink(_directM.audioCtx),
+                new Promise(function(r){ setTimeout(function(){ r(null); }, 2000); })
+              ]);
+            }
+          }catch(_){}
           _directM.playPink(null, 0.5, 0.7);
           _directPlaying = true;
           _directBtn.textContent = '⏸ 停止播放';
