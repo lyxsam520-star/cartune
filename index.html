@@ -543,12 +543,7 @@ ul.clean li{margin:6px 0;}
         <div class="tab" data-curve="driving"><div class="t" id="tab-driving-t"></div><div class="n" id="tab-driving-n"></div></div>
       </div>
       <div class="small" id="curve-note" style="color:var(--sub);margin:0 0 8px;"></div>
-      <div id="style-block">
-        <div class="small" id="style-label" style="color:var(--sub);margin:8px 0 2px;"></div>
-        <div class="small" id="style-desc" style="color:var(--sub);font-size:12px;margin-bottom:2px;"></div>
-        <div class="chips" id="style-chips"></div>
-        <div class="small" id="style-note" style="color:var(--sub);margin-top:6px;"></div>
-      </div>
+      <!-- v2.9.231: 偏好已删（无声学支撑） -->
       <div class="small mt8" id="plan-perband"></div>
       <div id="plan-bands"></div>
       <div class="card" style="border-color:rgba(255,77,77,.5);">
@@ -4009,7 +4004,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.230 · 内测版';
+  ver.innerHTML = 'v2.9.231 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
