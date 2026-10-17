@@ -3638,7 +3638,7 @@ window.COPY = {
     drivingNoteEn: "Driving curve: a static compromise for typical 60–80 km/h road noise (75–300 Hz lift); highs untouched."
   },
   style: {
-    label: "风格预设",
+    label: "偏好",
     labelEn: "Style presets",
     std: "标准",
     stdEn: "Neutral",
@@ -3652,7 +3652,7 @@ window.COPY = {
     vocalEn: "Vocal",
     classical: "古典",
     classicalEn: "Classical",
-    desc: "风格是偏好预设（在驻车曲线上加一点味道），不是声学标准；不改变 cut-only 等安全铁律。",
+    desc: "偏好为经验值，仅供参考；打分只按驻车/行车标准曲线。",
     descEn: "Styles are preference presets layered on the Parked curve, not acoustic standards; cut-only and other safety rules still apply.",
     appliedNote: function (s) { return "当前应用：" + s + "；多选时图表叠加对比，方案按最后选中的风格生成。"; },
     clearedNote: "标准：无风格偏移，目标曲线为驻车曲线原样。",
@@ -4008,7 +4008,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.225 · 内测版';
+  ver.innerHTML = 'v2.9.226 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5243,7 +5243,7 @@ function rafLoop(){
             app._ttsEndPlayed = true;
             window.speechSynthesis.cancel();
             var uEnd = new SpeechSynthesisUtterance('测试结束');
-            uEnd.lang = 'zh-CN'; uEnd.rate = 1.0; uEnd.volume = 0.7;
+            uEnd.lang = 'zh-CN'; uEnd.rate = 1.0; uEnd.volume = 1.0;
             window.speechSynthesis.speak(uEnd);
           }
         }catch(_){}
@@ -6492,7 +6492,7 @@ async function startMeasureFlow(opts){
       app._ttsEndPlayed = true;
       window.speechSynthesis.cancel();
       var uEnd2 = new SpeechSynthesisUtterance('测试结束');
-      uEnd2.lang = 'zh-CN'; uEnd2.rate = 1.0; uEnd2.volume = 0.7;
+      uEnd2.lang = 'zh-CN'; uEnd2.rate = 1.0; uEnd2.volume = 1.0;
       window.speechSynthesis.speak(uEnd2);
     }
   }catch(_){}
@@ -6740,13 +6740,10 @@ function refreshCurveStyleUI(){
 // v2.9.96: 风格单选且可叠加在任一基准曲线上
 function applyCurveSelection(){
   var sel = app.styleSel || [];
+  // v2.9.226: 风格不再改目标曲线（无声学支撑）。打分永远按驻车/行车目标算。
+  // 风格仅为偏好标记，不影响声学目标。
   try{
-    if(sel.length > 0){
-      if(DSP.targetBase !== app.curveBase){ DSP.setTargetCurve(app.curveBase); }
-      DSP.setTargetStyle(sel[0]);
-    } else {
-      DSP.setTargetCurve(app.curveBase === 'driving' ? 'driving' : 'parked');
-    }
+    DSP.setTargetCurve(app.curveBase === 'driving' ? 'driving' : 'parked');
   }catch(e){}
   renderPlan(); // v2.9.91: 控件已移至方案页，切换后重算方案
   renderReport();
