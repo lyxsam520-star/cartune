@@ -4009,7 +4009,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.229 · 内测版';
+  ver.innerHTML = 'v2.9.230 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6783,7 +6783,8 @@ function renderReport(){
   // renderPeq();  // v2-C：DSP PEQ 参数输出
   try{ var _peq = document.getElementById('peq-toggle'); if(_peq) _peq.style.display='none'; }catch(_){}
   try{ var _peqt = document.getElementById('peq-table'); if(_peqt) _peqt.style.display='none'; }catch(_){}
-  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); show('consent'); } }];
+  // v2.9.230: consent 页已删（H5 数据不出本机，无需单独授权），直接进方案
+  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); renderPlan(); show('plan'); } }];
   // 已出方案（S().plan）后：报告页也放复测验证入口（__REMEASURE_V1__）
   if(S().plan){ CTA.report.unshift({ text: tt('remeasure.btn'), primary:false, onClick: startRemeasurePrompt }); }
   initReportShareCard(); // [v2-workerD-sharecard] 挂载分享按钮
