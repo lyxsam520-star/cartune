@@ -1968,17 +1968,25 @@ var MODELS_DB = {
   // v2.9.219: WAV 存 IndexedDB，下载一次以后走本地
   DSP._idbGet = function(key){
     return new Promise(function(resolve){
+      var _done = false;
+      var _finish = function(v){ if(!_done){ _done = true; resolve(v); } };
+      // v2.9.221: 3 秒超时，防止 IndexedDB 卡死
+      setTimeout(function(){ _finish(null); }, 3000);
       try{
+        if(!window.indexedDB){ _finish(null); return; }
         var req = indexedDB.open('cartune-pink', 1);
-        req.onupgradeneeded = function(){ req.result.createObjectStore('wav'); };
+        req.onupgradeneeded = function(){ try{ req.result.createObjectStore('wav'); }catch(_){} };
         req.onsuccess = function(){
-          var tx = req.result.transaction('wav', 'readonly');
-          var get = tx.objectStore('wav').get(key);
-          get.onsuccess = function(){ resolve(get.result || null); };
-          get.onerror = function(){ resolve(null); };
+          try{
+            var tx = req.result.transaction('wav', 'readonly');
+            var get = tx.objectStore('wav').get(key);
+            get.onsuccess = function(){ _finish(get.result || null); };
+            get.onerror = function(){ _finish(null); };
+          }catch(_){ _finish(null); }
         };
-        req.onerror = function(){ resolve(null); };
-      }catch(_){ resolve(null); }
+        req.onerror = function(){ _finish(null); };
+        req.onblocked = function(){ _finish(null); };
+      }catch(_){ _finish(null); }
     });
   };
   DSP._idbSet = function(key, val){
@@ -4092,7 +4100,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.220 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
+  ver.innerHTML = 'v2.9.221 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
