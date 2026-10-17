@@ -3740,7 +3740,7 @@ window.COPY = {
     combNote: "该频段存在声学干涉谷，EQ 硬拉只会越补越糟，已自动跳过",
     snrWarn: "轻度环境干扰",
     snrWarnEn: "Mild noise contamination",
-    snrBad: "环境干扰太大，未出方案",
+    snrBad: "数据不可信，未出方案",
     snrBadEn: "Noise contaminated, no gain issued",
     burnTitle: "试听前必读（防烧喇叭）",
     burnBody: "三句话：只做衰减不做提升；低频不要硬推；音量由小渐大试听，听到破音立刻调小。",
@@ -4004,7 +4004,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.233 · 内测版';
+  ver.innerHTML = 'v2.9.234 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
