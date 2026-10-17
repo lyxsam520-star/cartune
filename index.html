@@ -2096,11 +2096,12 @@ var MODELS_DB = {
     })();
     return Promise.resolve().then(function () {
       // 安全限幅器（2026-10-13 爆音事故）：主输出必经 DynamicsCompressor，
-      // threshold -6dB / ratio 20:1 / knee 0 — 任何代码 bug 都不许再炸用户耳朵或喇叭，这是安全红线
+      // v2.9.238: threshold -6→-3dB / ratio 20→10:1 — 稍放宽，仍防爆音
+      // 任何代码 bug 都不许再炸用户耳朵或喇叭，这是安全红线
       // v2.9.215 AB 测试证实旁路无提升，已恢复
       try {
         var _comp = self.audioCtx.createDynamicsCompressor();
-        _comp.threshold.value = -6; _comp.knee.value = 0; _comp.ratio.value = 20;
+        _comp.threshold.value = -3; _comp.knee.value = 0; _comp.ratio.value = 10;
         _comp.attack.value = 0.002; _comp.release.value = 0.1;
         _comp.connect(self.audioCtx.destination);
         self._masterOut = _comp;
@@ -4017,7 +4018,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.237 · 内测版';
+  ver.innerHTML = 'v2.9.238 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
