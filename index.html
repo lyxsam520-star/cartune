@@ -4004,7 +4004,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.232 · 内测版';
+  ver.innerHTML = 'v2.9.233 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7840,7 +7840,7 @@ function renderPlan(){
     card.innerHTML =
       '<div class="gl"><div class="gt">'+escapeHtml(dispLabel)+snrDot+
         (isComb?' <span class="tag" style="color:var(--red);border-color:rgba(255,77,77,.5);">梳状谷</span>':'')+'</div>'+
-        '<div class="gc num">'+escapeHtml(centerTxt)+(bd.action?' · '+escapeHtml(String(bd.action)):'')+'</div>'+
+        '<div class="gc num">'+escapeHtml(centerTxt)+'</div>'+
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
         unfix+'</div>'+
       '<div class="gv num">'+escapeHtml(gv)+'</div>';
