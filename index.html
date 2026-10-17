@@ -255,6 +255,7 @@ ul.clean li{margin:6px 0;}
         <div style="font-size:22px;line-height:1;">🏆</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:18px;font-weight:800;">本车音响得分：<span id="home-car-score" style="color:var(--amber);">--</span><span id="home-score-delta" class="small" style="font-weight:400;"></span></div>
+          <div class="small" id="home-score-device" style="color:var(--sub);margin-top:4px;"></div>
           <div class="small" style="text-align:right;color:var(--sub);font-size:10px;margin-top:2px;">算法 v1.3</div>
         </div>
       </div>
@@ -3968,6 +3969,17 @@ function show(id){
         }
         if(_max > 0){
           _se.textContent = _max + ' 分';
+          // v2.9.235: 显示测试设备
+          var _bestDevice = '';
+          for(var _j = 0; _j < _h.length; _j++){
+            var _jt = _h[_j];
+            var _js = (_jt.after != null) ? _jt.after : _jt.before;
+            if(_js === _max && _jt.device){ _bestDevice = _jt.device; break; }
+          }
+          if(_bestDevice){
+            var _devEl = document.getElementById('home-score-device');
+            if(_devEl) _devEl.textContent = ' · ' + _bestDevice + '测得';
+          }
           // v2.9.215: 显示比原车提升多少分
           if(_de && _maxDelta > 0){
             _de.textContent = '（比原车提升' + _maxDelta + '分）';
@@ -4004,7 +4016,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.234 · 内测版';
+  ver.innerHTML = 'v2.9.236 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7126,7 +7138,9 @@ function shareCarScore(){
   try{ car = S().car; }catch(_){}
   var carName = car ? [car.brand, car.series, car.year].filter(Boolean).join(' ') : '';
   if(!carName) carName = '我的车';
-  var txt = '【' + carName + '】原车音响得分 ' + r.score + ' 分';
+  // v2.9.236: 分享带设备
+  var _device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : '手机');
+  var txt = '【' + carName + '】原车音响得分 ' + r.score + ' 分（' + _device + '测得）';
   function done(ok){
     try{ track('score_share', { ok: !!ok, score: r.score }); }catch(_){}
     try{
@@ -7514,6 +7528,9 @@ function buildShareCard(){
   var carName = car ? [car.brand, car.series, car.year].filter(function(x){ return !!x; }).join(' ') : '';
   // 顶部：车型 + 标题 + 内测 badge
   shareCardText(c, carName || '—', W / 2, 92, 30, '#9aa4b2');
+  // v2.9.236: 测试设备
+  var _shareDevice = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : '');
+  if(_shareDevice) shareCardText(c, '测试设备：' + _shareDevice, W / 2, 128, 24, '#5b6472');
   shareCardText(c, tt('share.title'), W / 2, 168, 56, '#ffffff', true);
   c.strokeStyle = 'rgba(255,159,28,.8)'; c.lineWidth = 2;
   var bw = 150, bx = W - bw - 56, by = 52;
@@ -8046,7 +8063,9 @@ function finishRemeasure(meas){
       var _model = _car ? (_car.brand + ' ' + _car.series) : '';
       // v2.9.215: 记录播放方式（app特调）
       var _playMethod = app.playMode === 'app' ? ('app:' + (app.playApp || '未知')) : app.playMode;
-      saveScoreHistory({ date: entry.ts, before: sc1.score, after: sc2.score, delta: entry.delta, model: _model, playMethod: _playMethod });
+      // v2.9.235: 记录测试设备
+      var _device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : '其他设备');
+      saveScoreHistory({ date: entry.ts, before: sc1.score, after: sc2.score, delta: entry.delta, model: _model, playMethod: _playMethod, device: _device });
     }
   }catch(_){}
   renderRemeasureResult(entry, before, after, tgt);
