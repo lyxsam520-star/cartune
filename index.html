@@ -4008,7 +4008,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.226 · 内测版';
+  ver.innerHTML = 'v2.9.227 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7358,7 +7358,8 @@ function drawReportChart(){
     // v2.9.81: simulate 要 band 对象数组（内部取 .gainDb）；之前误传数字数组得 NaN，曲线全灭
     var _spec80 = (S().eqSpec && S().eqSpec.bands) ? S().eqSpec : {bands:7};
     var _s80 = DSP.simulate(meas, draft.bands||[], _spec80);
-    if(_s80 && _s80.sim31) sim = _s80.sim31;
+    // v2.9.227: 图表也用保守预估（70%）
+    if(_s80 && _s80.sim31) sim = _s80.sim31.map(function(v, i){ return meas[i] + (v - meas[i]) * 0.7; });
   }catch(_){}
   // v2.9.81: 电平对齐显示——实测绝对电平 vs 目标相对曲线，按均值差对齐后比较形状
   var _off2=0, _cn2=0, _k2;
@@ -7770,7 +7771,9 @@ function renderPlan(){
     var _spec = S().eqSpec || { bands: 7 };
     if(_meas31 && _bands.length && typeof DSP.simulate === 'function' && typeof calcCarScoreFrom === 'function'){
       var _sim31 = DSP.simulate(_meas31, _bands, _spec);
-      var _cr = calcCarScoreFrom(_sim31, {skipTiming:true, isPrediction:true});
+      // v2.9.227: 保守预估——只按 70% 改善算（用户实测反馈模拟分偏高）
+      var _conservative31 = _sim31.map(function(v, i){ return _meas31[i] + (v - _meas31[i]) * 0.7; });
+      var _cr = calcCarScoreFrom(_conservative31, {skipTiming:true, isPrediction:true});
       var _ceiling = (_cr && typeof _cr.score === 'number') ? _cr.score : null;
       var _cur = null;
       try{ var _curR = calcCarScore(); _cur = (_curR && typeof _curR.score === 'number') ? _curR.score : null; }catch(_){}
