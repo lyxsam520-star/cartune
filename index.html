@@ -4008,7 +4008,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.224 · 内测版';
+  ver.innerHTML = 'v2.9.225 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7823,8 +7823,8 @@ function renderPlan(){
     var card = document.createElement('div');
     var isComb = !!bd.comb || combIdx.indexOf(i)>=0;
     card.className = 'gaincard' + (isComb?' comb':'') + ((bd.gainDb||0)>0.5?' boost':'');
-    // 中心频率未知时显示"经验预设"
-    var centerTxt = (spec.centersVerified && bd.centerHz!=null) ? (bd.centerHz+' Hz') : tt('car.centersPending');
+    // v2.9.225: 中心频率未验证时显示 ~预估值（比"待实测"清楚）
+    var centerTxt = (bd.centerHz!=null) ? ((spec.centersVerified ? '' : '~') + bd.centerHz + ' Hz') : tt('car.centersPending');
     var gv = (bd.gainDb>0?'+':'') + (bd.gainDb||0) + 'dB';
     // 分频段 SNR 状态点：绿可信 / 黄轻度污染 / 灰未出方案
     var snrState = bd.snr||'ok';
