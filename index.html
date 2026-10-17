@@ -4008,7 +4008,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.227 · 内测版';
+  ver.innerHTML = 'v2.9.228 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5216,7 +5216,9 @@ function drawBars31(){
     var db = (typeof b31[i]==='number')?b31[i]:_mn31;
     var frac = Math.max(0, Math.min(1,(db-_mn31)/60));
     var bh = frac*(H-6);
-    ctx.fillStyle = levelColor(frac);
+    // v2.9.228: 不可测频段（20/25Hz不可分辨，16k/20kHz不可测）灰显
+    if(i<=1 || i>=29){ ctx.fillStyle = 'rgba(138,148,166,0.35)'; }
+    else { ctx.fillStyle = levelColor(frac); }
     ctx.fillRect(i*bw+1, H-bh, Math.max(1,bw-2), bh);
   }
 }
