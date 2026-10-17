@@ -1956,108 +1956,16 @@ var MODELS_DB = {
    * 策略：同源 fetch → decodeAudioData → 内存缓存；失败则回退内置 Paul Kellet 生成。
    * 预加载时机：initAudio 成功后触发（不阻塞测量流程）。
    */
-  DSP._smpteBuf = null;
-  DSP._smpteLoading = null;
   // v2.9.215: 按 context 采样率选文件，消除 decodeAudioData 内重采样
   // Mac Chrome 44.1kHz → 用 44.1k 文件；其他 → 48k 文件
-  DSP.smpteUrlFor = function(ctx){
-    var sr = ctx ? ctx.sampleRate : 0;
-    if(sr === 44100) return 'audio/smpte2095-pink-44k1-stereo-60s.wav';
-    return 'audio/smpte2095-pink-48k-stereo-60s.wav';
-  };
-  // v2.9.219: WAV 存 IndexedDB，下载一次以后走本地
-  DSP._idbGet = function(key){
-    return new Promise(function(resolve){
-      var _done = false;
-      var _finish = function(v){ if(!_done){ _done = true; resolve(v); } };
-      // v2.9.221: 3 秒超时，防止 IndexedDB 卡死
-      setTimeout(function(){ _finish(null); }, 3000);
-      try{
-        if(!window.indexedDB){ _finish(null); return; }
-        var req = indexedDB.open('cartune-pink', 1);
-        req.onupgradeneeded = function(){ try{ req.result.createObjectStore('wav'); }catch(_){} };
-        req.onsuccess = function(){
-          try{
-            var tx = req.result.transaction('wav', 'readonly');
-            var get = tx.objectStore('wav').get(key);
-            get.onsuccess = function(){ _finish(get.result || null); };
-            get.onerror = function(){ _finish(null); };
-          }catch(_){ _finish(null); }
-        };
-        req.onerror = function(){ _finish(null); };
-        req.onblocked = function(){ _finish(null); };
-      }catch(_){ _finish(null); }
-    });
-  };
-  DSP._idbSet = function(key, val){
-    try{
-      var req = indexedDB.open('cartune-pink', 1);
-      req.onupgradeneeded = function(){ req.result.createObjectStore('wav'); };
-      req.onsuccess = function(){
-        var tx = req.result.transaction('wav', 'readwrite');
-        tx.objectStore('wav').put(val, key);
-      };
-    }catch(_){}
-  };
-  DSP.loadSmptePink = function (ctx) {
-    if (DSP._smpteBuf) return Promise.resolve(DSP._smpteBuf);
-    if (DSP._smpteLoading) return DSP._smpteLoading;
-    var _url = DSP.smpteUrlFor(ctx);
-    var _decode = function(ab){
-      return new Promise(function (resolve, reject) {
-        try {
-          var p = ctx.decodeAudioData(ab, resolve, reject);
-          if (p && p.then) p.then(resolve, reject);
-        } catch (e) { reject(e); }
-      });
-    };
-    DSP._smpteLoading = DSP._idbGet(_url).then(function(cached){
-      if(cached) return _decode(cached);
-      return fetch(_url).then(function (resp) {
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return resp.arrayBuffer();
-      }).then(function(ab){
-        DSP._idbSet(_url, ab);
-        return _decode(ab);
-      });
-    }).then(function (buf) {
-      DSP._smpteBuf = buf;
-      DSP._smpteLoading = null;
-      return buf;
-    }).catch(function (e) {
-      DSP._smpteLoading = null;
-      return null;
-    });
-    return DSP._smpteLoading;
-  };
+  // v2.9.224: WAV 相关已删除，直接用 fallback
+
   /**
    * 取播放用 AudioBuffer：优先 SMPTE 缓存，否则内置生成。
    * side='L'/'R' 时从 SMPTE 立体声派生单声道（另一声道置零）。
    */
+  // v2.9.224: 直接用内置 fallback（WAV 无提升，砍掉 11MB 下载）
   DSP.getPinkBuffer = function (ctx, seconds, side) {
-    var smpte = DSP._smpteBuf;
-    if (smpte && smpte.numberOfChannels >= 2) {
-      DSP._pinkSource = 'wav';
-      try{ var _p1 = document.getElementById('pink-src'); if(_p1) _p1.textContent = '· wav'; }catch(_){}
-      try {
-        var len = smpte.length;
-        var buf = ctx.createBuffer(2, len, smpte.sampleRate);
-        var s0 = smpte.getChannelData(0), s1 = smpte.getChannelData(1);
-        var d0 = buf.getChannelData(0), d1 = buf.getChannelData(1);
-        var i;
-        if (side === 'R') {
-          for (i = 0; i < len; i++) { d0[i] = 0; d1[i] = s1[i]; }
-        } else if (side === 'L') {
-          for (i = 0; i < len; i++) { d0[i] = s0[i]; d1[i] = 0; }
-        } else {
-          for (i = 0; i < len; i++) { d0[i] = s0[i]; d1[i] = s1[i]; }
-        }
-        return buf;
-      } catch (e) {
-      }
-    }
-    DSP._pinkSource = 'fallback';
-    try{ var _p2 = document.getElementById('pink-src'); if(_p2) _p2.textContent = '· fallback'; }catch(_){}
     return DSP.makeStereoPink(ctx, seconds, side);
   };
 
@@ -2201,7 +2109,7 @@ var MODELS_DB = {
       } catch (e) { self._masterOut = null; }
     }).then(function () {
       // v2.9.65: 后台预加载 SMPTE 标准粉噪，不阻塞流程
-      try { DSP.loadSmptePink(self.audioCtx); } catch (_) {}
+      // v2.9.224: WAV 已砍，无需预加载
       return self;
     });
   };
@@ -4100,7 +4008,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.223 · 内测版 <span id="pink-src" style="opacity:.6"></span>';
+  ver.innerHTML = 'v2.9.224 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5151,15 +5059,6 @@ function initMeasure(){
             _directM = new DSP.Measurer();
             await _directM.initAudio();
           }
-          // v2.9.223: 竞速等 WAV（最多2秒），超时用 fallback，绝不卡死
-          try{
-            if(!DSP._smpteBuf){
-              await Promise.race([
-                DSP.loadSmptePink(_directM.audioCtx),
-                new Promise(function(r){ setTimeout(function(){ r(null); }, 2000); })
-              ]);
-            }
-          }catch(_){}
           _directM.playPink(null, 0.5, 0.7);
           _directPlaying = true;
           _directBtn.textContent = '⏸ 停止播放';
