@@ -97,7 +97,6 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .btn-primary{background:var(--amber);color:#231400;}
 .btn-primary:disabled{background:#3a3f4a;color:#7a828f;cursor:not-allowed;}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);flex:0 0 auto;padding:15px 18px;}
-.btn-danger-ghost{background:transparent;color:var(--red);border:1px solid rgba(255,77,77,.4);}
 /* 声道隔离自检弹窗 */
 .iso-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
 .iso-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;width:100%;max-width:340px;}
@@ -108,7 +107,6 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .backbtn::before{content:"‹ ";font-size:18px;line-height:1;}
 .linklike{background:none;border:none;color:var(--cyan);font-size:14px;padding:10px 4px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
 /* 开关 */
-.switchrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;}
 .switch{position:relative;width:52px;height:30px;flex:0 0 auto;}
 .switch input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:2;}
 .knob{position:absolute;inset:0;background:#2a3240;border-radius:999px;transition:.2s;border:1px solid var(--border);}
@@ -128,11 +126,6 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .errtext{font-size:12px;color:var(--red);margin-top:6px;display:none;}
 .errtext.show{display:block;}
 /* 车型下拉 */
-#model-results{list-style:none;margin:6px 0 0;padding:0;max-height:220px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#0f141c;display:none;}
-#model-results.show{display:block;}
-#model-results li{padding:12px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;}
-#model-results li:last-child{border-bottom:none;}
-#model-results li:active{background:#1a2230;}
 /* 三级联选 */
 .picklist{list-style:none;margin:6px 0 0;padding:0;max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#0f141c;display:none;}
 .picklist.show{display:block;}
@@ -162,10 +155,8 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .tab.sel{border-color:var(--amber);background:rgba(255,159,28,.07);}
 .tab.sel .t{color:var(--amber);}
 /* v2-PATCH-01 (V2P01-CSS)：风格 chip（微信字阶 13px，系统字体继承 body） */
-.chips{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0;}
 .chip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--text);background:var(--card);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
 .chip.on{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.08);}
-.chip.dis{opacity:.35;pointer-events:none;}
 /* 实时柱 */
 #bars-wrap{margin:8px 0;}
 #bars{width:100%;height:190px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;}
@@ -191,7 +182,6 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .gaincard .gt{font-size:15px;font-weight:700;}
 .gaincard .gc{font-size:12px;color:var(--sub);margin-top:2px;}
 .gaincard .gv{font-size:20px;font-weight:800;color:var(--cyan);}
-.gaincard.boost .gv{color:var(--amber);}
 .gaincard.comb{border-color:rgba(255,77,77,.5);background:rgba(255,77,77,.05);}
 .gaincard.comb .gv{color:var(--red);}
 .gaincard .tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
@@ -4020,7 +4010,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.242 · 内测版';
+  ver.innerHTML = 'v2.9.243 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7447,10 +7437,7 @@ function isDevMode(){
 }
 function renderBandTable(){
   try{
-    // v2.9.215: 内测阶段31段保持可见（Vincent 要对数据），上线前再开 gating
-    // var _bt = document.getElementById('band-table-wrap');
-    // if(!isDevMode()){ if(_bt) _bt.style.display = 'none'; return; }
-    // if(_bt) _bt.style.display = '';
+    // v2.9.215: 内测阶段31段保持可见（Vincent 要对数据），上线前再开 gating（见 isDevMode）
     setText('band-table-title','report.bandTableTitle');
     setText('band-th-freq','report.bandColFreq');
     setText('band-th-meas','report.bandColMeas');
