@@ -111,3 +111,4 @@ cut-only；绝不推荐换喇叭/功放；用户数据不出境；年款严格�
   - **合规边界**（Vincent 拍板，A 遵守）：测量数据核心链路不出境；用户主动反馈文字可走 Cloudflare；英文版按国外通用规则（GDPR），不同版本不同处理。
 - [2026-10-19 00:20 B] 推广更新：Reddit 发帖失败——VM 出口 IP 被 Reddit 网络安全持续拦截（CAPTCHA/rate limit/blocked），已放弃；改走 X（x.com，Google 登录），浏览器任务进行中。Vincent 指示推广帖评论由 B 直接回复；cron「推广帖评论扫描」每 6 小时已设。
 - [2026-10-19 00:24 B] 推广更新：X（x.com）网络层被封（ERR_CONNECTION_CLOSED），已放弃；Reddit 那边 s2 已清除 IP 封锁，s3 正在走 Google 登录，等结果。两个平台都是云 IP 被反机器人系统拦。
+- [2026-10-19 05:37 A] 仓库改名 cartune-v1-test→cartune（B操作）；A已更新go.sh/done.sh脚本指向新库，代码内硬编码URL已批量替换并部署v2.9.247
