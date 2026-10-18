@@ -6837,7 +6837,7 @@ function renderReport(){
   try{ var _peq = document.getElementById('peq-toggle'); if(_peq) _peq.style.display='none'; }catch(_){}
   try{ var _peqt = document.getElementById('peq-table'); if(_peqt) _peqt.style.display='none'; }catch(_){}
   // v2.9.230: consent 页已删（H5 数据不出本机，无需单独授权），直接进方案
-  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ try{ alert('DIAG: 查看完整方案 clicked'); }catch(_){} track('report_unlock_click'); try{ renderPlan(); }catch(e){ try{ alert('DIAG: renderPlan failed: ' + (e.message||e)); }catch(_){} return; } try{ alert('DIAG: renderPlan ok, showing plan'); }catch(_){} show('plan'); } }];
+  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); try{ renderPlan(); }catch(e){ try{ alert('方案加载失败，请重试'); }catch(_){} return; } show('plan'); } }];
   // 已出方案（S().plan）后：报告页也放复测验证入口（__REMEASURE_V1__）
   if(S().plan){ CTA.report.unshift({ text: tt('remeasure.btn'), primary:false, onClick: startRemeasurePrompt }); }
   initReportShareCard(); // [v2-workerD-sharecard] 挂载分享按钮
@@ -7658,26 +7658,20 @@ function buildShareCard(){
   return cv;
 }
 function showShareCard(){
-  try{ alert('DIAG: showShareCard start'); }catch(_){}
   try{
     var cv = buildShareCard();
-    try{ alert('DIAG: buildShareCard ok'); }catch(_){}
-    var url = '';
-    try{ url = cv.toDataURL('image/png'); }catch(e){ try{ alert('DIAG: toDataURL failed: ' + (e.message||e)); }catch(_){} }
-    try{ alert('DIAG: dataURL len=' + url.length); }catch(_){}
+    var url = cv.toDataURL('image/png');
     var img = document.getElementById('reportcard-img');
-    try{ if(!img) alert('DIAG: reportcard-img is NULL'); }catch(_){}
-    try{ alert('DIAG: img hidden before=' + img.classList.contains('hidden')); }catch(_){}
+    if(!img) return;
     img.src = url; img.classList.remove('hidden');
     /* iOS Safari: force repaint for data-URL images */
     try{ void img.offsetHeight; }catch(_){}
     try{ img.style.display='none'; void img.offsetHeight; img.style.display=''; }catch(_){}
-    try{ alert('DIAG: img src set, hidden after=' + img.classList.contains('hidden')); }catch(_){}
     document.getElementById('btn-reportcard-save').classList.remove('hidden');
     setText('reportcard-hint', 'share.saveHint');
     track('share_card', { score: shareCardFlatScore(), issues: shareCardIssues(),
       curve: (S() && S().curve) || 'parked', style: (S() && S().style) || 'standard' });
-  }catch(e){ try{ alert('DIAG: showShareCard error: ' + (e.message||e)); }catch(_){} }
+  }catch(e){ /* 生成失败静默，按钮仍可重试 */ }
 }
 function saveShareCardImage(){
   try{
@@ -7867,7 +7861,7 @@ function renderPlan(){
   setText('plan-restoret','plan.restoreTitle');
   setText('plan-avgnote','plan.avgNote');
   var rs = t('plan.restoreSteps');
-  var rul = document.getElementById('plan-restoresteps'); try{ if(!rul) alert('DIAG: plan-restoresteps is NULL'); }catch(_){} rul.innerHTML='';
+  var rul = document.getElementById('plan-restoresteps'); if(rul) rul.innerHTML='';
   (Array.isArray(rs)?rs:[]).forEach(function(s){ var li=document.createElement('li'); li.textContent=s; rul.appendChild(li); });
 
   var plan = S()._planDraft;
@@ -7895,7 +7889,7 @@ function renderPlan(){
       setText('plan-errt','plan.errTitle');
       // v2.9.48: 错误页追加诊断码，方便定位
       try{
-        try{ if(!document.getElementById('plan-errb')) alert('DIAG: plan-errb is NULL'); }catch(_){} document.getElementById('plan-errb').innerHTML = tt('plan.errBody') + '<br><br><span style="font-size:11px;color:#666;">诊断码：' + _diag + '｜' + String(e&&e.message||e).slice(0,60) + '</span>';
+        var _peb = document.getElementById('plan-errb'); if(_peb) _peb.innerHTML = tt('plan.errBody') + '<br><br><span style="font-size:11px;color:#666;">诊断码：' + _diag + '｜' + String(e&&e.message||e).slice(0,60) + '</span>';
       }catch(_){ setText('plan-errb','plan.errBody'); }
       setText('plan-err-retry','plan.errRetry');
       document.getElementById('plan-err-retry').onclick = function(){ show('measure'); };
@@ -7958,7 +7952,7 @@ function renderPlan(){
   // 梳状谷检测（规则引擎层 v1 标注）
   var combIdx = [];
   try{ combIdx = DSP.detectComb(avg31()) || []; }catch(_){}
-  var box = document.getElementById('plan-bands'); try{ if(!box) alert('DIAG: plan-bands is NULL'); }catch(_){} box.innerHTML='';
+  var box = document.getElementById('plan-bands'); if(box) box.innerHTML='';
   var _nBands = (spec && spec.bands) || bands.length || 7;
   bands.forEach(function(bd, i){
     var dispLabel = bd.label || bandLabel(i, _nBands, false);
