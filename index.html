@@ -7859,7 +7859,7 @@ function renderPlan(){
   setText('plan-restoret','plan.restoreTitle');
   setText('plan-avgnote','plan.avgNote');
   var rs = t('plan.restoreSteps');
-  var rul = document.getElementById('plan-restoresteps'); rul.innerHTML='';
+  var rul = document.getElementById('plan-restoresteps'); try{ if(!rul) alert('DIAG: plan-restoresteps is NULL'); }catch(_){} rul.innerHTML='';
   (Array.isArray(rs)?rs:[]).forEach(function(s){ var li=document.createElement('li'); li.textContent=s; rul.appendChild(li); });
 
   var plan = S()._planDraft;
@@ -7887,7 +7887,7 @@ function renderPlan(){
       setText('plan-errt','plan.errTitle');
       // v2.9.48: 错误页追加诊断码，方便定位
       try{
-        document.getElementById('plan-errb').innerHTML = tt('plan.errBody') + '<br><br><span style="font-size:11px;color:#666;">诊断码：' + _diag + '｜' + String(e&&e.message||e).slice(0,60) + '</span>';
+        try{ if(!document.getElementById('plan-errb')) alert('DIAG: plan-errb is NULL'); }catch(_){} document.getElementById('plan-errb').innerHTML = tt('plan.errBody') + '<br><br><span style="font-size:11px;color:#666;">诊断码：' + _diag + '｜' + String(e&&e.message||e).slice(0,60) + '</span>';
       }catch(_){ setText('plan-errb','plan.errBody'); }
       setText('plan-err-retry','plan.errRetry');
       document.getElementById('plan-err-retry').onclick = function(){ show('measure'); };
@@ -7950,7 +7950,7 @@ function renderPlan(){
   // 梳状谷检测（规则引擎层 v1 标注）
   var combIdx = [];
   try{ combIdx = DSP.detectComb(avg31()) || []; }catch(_){}
-  var box = document.getElementById('plan-bands'); box.innerHTML='';
+  var box = document.getElementById('plan-bands'); try{ if(!box) alert('DIAG: plan-bands is NULL'); }catch(_){} box.innerHTML='';
   var _nBands = (spec && spec.bands) || bands.length || 7;
   bands.forEach(function(bd, i){
     var dispLabel = bd.label || bandLabel(i, _nBands, false);
