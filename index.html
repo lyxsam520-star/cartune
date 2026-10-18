@@ -4051,7 +4051,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.248 · 内测版';
+  ver.innerHTML = 'v2.9.249 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6768,7 +6768,7 @@ function refreshCurveStyleUI(){
     tabs[i].classList.toggle('sel', tabs[i].getAttribute('data-curve') === app.curveBase);
   }
   var driving = app.curveBase === 'driving';
-  document.getElementById('curve-note').textContent = driving ? tt('curve.drivingNote') : '';
+  var _cn = document.getElementById('curve-note'); if(_cn) _cn.textContent = driving ? tt('curve.drivingNote') : '';
   // v2.9.96: 风格在行车模式下也可用，不再禁用
   var chips = document.querySelectorAll('#style-chips .chip'), j;
   for(j=0;j<chips.length;j++){
@@ -6776,7 +6776,7 @@ function refreshCurveStyleUI(){
     if(k){ chips[j].classList.toggle('on', app.styleSel.indexOf(k)>=0); }
     else { chips[j].classList.toggle('on', app.styleSel.length===0); }
   }
-  var note = document.getElementById('style-note');
+  var note = document.getElementById('style-note'); if(!note) return;
   if(app.styleSel.length===0){ note.textContent = tt('style.clearedNote'); }
   else {
     var names = app.styleSel.map(function(s){ return tt('style.'+s); });
