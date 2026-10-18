@@ -109,3 +109,4 @@ cut-only；绝不推荐换喇叭/功放；用户数据不出境；年款严格�
   - **统计**：beacon 4 事件（page_view/measure_start/measure_complete/plan_view）已接线，Worker 正常。
   - **待 Vincent**（B 已汇总当面说过）：①Cloudflare 新 API token；②认证回访电话（10-19 今日到期，最紧迫）；③备案主体/后台改名/云开发开通/schema 字段/隐私协议信息/停止按钮真机验证。
   - **合规边界**（Vincent 拍板，A 遵守）：测量数据核心链路不出境；用户主动反馈文字可走 Cloudflare；英文版按国外通用规则（GDPR），不同版本不同处理。
+- [2026-10-19 00:20 B] 推广更新：Reddit 发帖失败——VM 出口 IP 被 Reddit 网络安全持续拦截（CAPTCHA/rate limit/blocked），已放弃；改走 X（x.com，Google 登录），浏览器任务进行中。Vincent 指示推广帖评论由 B 直接回复；cron「推广帖评论扫描」每 6 小时已设。
