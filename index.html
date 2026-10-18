@@ -7623,10 +7623,10 @@ function buildShareCard(){
   shareCardText(c, tt('share.scoreLabel'), W / 2, dy + 92, 30, '#9aa4b2');
   var row = tf('share.issuesN')(issues) + '  ·  ' + tt('share.curveLabel') + '：' + shareCardCurveName() +
             '  ·  ' + tt('share.styleLabel') + '：' + shareCardStyleName();
-  shareCardText(c, row, W / 2, dy + 148, 26, '#c7d0dd');
+  shareCardText(c, row, W / 2, dy + 138, 24, '#c7d0dd');
 
-  // 底部：slogan + 二维码占位框
-  shareCardText(c, tt('share.slogan'), W / 2, 1080, 38, '#ffffff', true);
+  // 底部：slogan + 二维码
+  shareCardText(c, tt('share.slogan'), W / 2, 1105, 36, '#ffffff', true);
   var qs = 200, qx = W / 2 - qs / 2, qy = 1130;
   /* Real QR code -> site URL (replaces placeholder text) */
   try{
@@ -7669,6 +7669,9 @@ function showShareCard(){
     try{ if(!img) alert('DIAG: reportcard-img is NULL'); }catch(_){}
     try{ alert('DIAG: img hidden before=' + img.classList.contains('hidden')); }catch(_){}
     img.src = url; img.classList.remove('hidden');
+    /* iOS Safari: force repaint for data-URL images */
+    try{ void img.offsetHeight; }catch(_){}
+    try{ img.style.display='none'; void img.offsetHeight; img.style.display=''; }catch(_){}
     try{ alert('DIAG: img src set, hidden after=' + img.classList.contains('hidden')); }catch(_){}
     document.getElementById('btn-reportcard-save').classList.remove('hidden');
     setText('reportcard-hint', 'share.saveHint');
