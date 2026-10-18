@@ -1,6 +1,6 @@
 <!--
-版权所有 © 2026 Vincent。保留所有权利。
-本软件为专有软件，未经书面许可，不得复制、修改、分发或用于商业用途。
+Copyright © 2026 Vincent. All rights reserved.
+This software is proprietary. No copying, modification, distribution, or commercial use without written permission.
 -->
 <!DOCTYPE html>
 <html lang="en-US">
@@ -403,7 +403,7 @@ ul.clean li{margin:6px 0;}
       <!-- v2.9.215: 新建品牌/车型/年款三步 -->
       <div class="field">
         <label>Brand</label>
-        <input class="input" id="car-brand-manual" placeholder="e.g. Geely">
+        <input class="input" id="car-brand-manual" placeholder="e.g. Toyota">
       </div>
       <div class="field">
         <label>Model</label>
@@ -971,874 +971,654 @@ ul.clean li{margin:6px 0;}
  * v0 本地内置；v1+ 由 H5 采集 + 云端聚合补充
  * ============================================================ */
 var MODELS_DB = {
- "version": "2026-10-13",
+ "version": "2026-10-19",
  "brands": [
   {
-   "name": "比亚迪",
+   "name": "Toyota",
    "series": [
     {
-     "name": "秦PLUS",
+     "name": "Camry",
      "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    },
-    {
-     "name": "宋PLUS新能源",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    },
-    {
-     "name": "海鸥",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    },
-    {
-     "name": "元PLUS",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "媒体实测5段：80/500/1k/5k/16kHz"
-    },
-    {
-     "name": "汉",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2020款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    },
-    {
-     "name": "唐新能源",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2022款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    },
-    {
-     "name": "海豹",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    },
-    {
-     "name": "宋Pro新能源",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "推断与元PLUS同源5段（80/500/1k/5k/16kHz），待验证"
-    }
-   ]
-  },
-  {
-   "name": "吉利",
-   "series": [
-    {
-     "name": "星越L",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2022款",
-      "2021款"
-     ],
-     "eq_bands": 7,
-     "eq_note": "用户实测7段：重低音/低音/中低音/中音/中高音/高音/超高音，±9dB"
-    },
-    {
-     "name": "星愿",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "博越",
-     "years": [
-      "2025款",
-      "2023款",
-      "2022款",
-      "2020款"
-     ]
-    },
-    {
-     "name": "帝豪",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "银河E5",
-     "years": [
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "银河L7",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    },
-    {
-     "name": "缤越",
-     "years": [
-      "2024款",
-      "2022款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "领克",
-   "series": [
-    {
-     "name": "领克01",
-     "years": [
-      "2025款",
-      "2023款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "极氪",
-   "series": [
-    {
-     "name": "极氪001",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "极氪007",
-     "years": [
-      "2025款",
-      "2024款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "长安",
-   "series": [
-    {
-     "name": "CS75 PLUS",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "逸动",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "UNI-V",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "UNI-K",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "CS55 PLUS",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "深蓝",
-   "series": [
-    {
-     "name": "深蓝SL03",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "哈弗",
-   "series": [
-    {
-     "name": "哈弗H6",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "哈弗大狗",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2020款"
-     ]
-    },
-    {
-     "name": "哈弗M6",
-     "years": [
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "坦克",
-   "series": [
-    {
-     "name": "坦克300",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "坦克500",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "奇瑞",
-   "series": [
-    {
-     "name": "瑞虎8",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2020款"
-     ]
-    },
-    {
-     "name": "瑞虎7",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 8,
-     "eq_note": "车主实测疑似8段（64/250/500/1000/3150/8000Hz等），待确认"
-    },
-    {
-     "name": "艾瑞泽8",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "捷途",
-   "series": [
-    {
-     "name": "捷途X70",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2020款"
-     ]
-    },
-    {
-     "name": "捷途旅行者",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "五菱",
-   "series": [
-    {
-     "name": "宏光MINIEV",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2020款"
-     ]
-    },
-    {
-     "name": "缤果",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    },
-    {
-     "name": "星光",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    },
-    {
-     "name": "星辰",
-     "years": [
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "特斯拉",
-   "series": [
-    {
-     "name": "Model Y",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "Model 3",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "小鹏",
-   "series": [
-    {
-     "name": "MONA M03",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "P7",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "G6",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款"
-     ]
-    },
-    {
-     "name": "X9",
-     "years": [
-      "2025款",
-      "2024款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "理想",
-   "series": [
-    {
-     "name": "L6",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "L7",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "L8",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "L9",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "ONE",
-     "years": [
-      "2021款",
-      "2020款"
-     ],
-     "eq_bands": 5,
-     "eq_note": "媒体实测5段：低音/中低音/中音/中高音/高音（无Hz标注），约±6dB"
-    }
-   ]
-  },
-  {
-   "name": "蔚来",
-   "series": [
-    {
-     "name": "ES6",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "ET5",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "EC6",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "ET9",
-     "years": [
-      "2025款"
-     ],
-     "eq_bands": 0,
-     "eq_note": "无用户EQ可调（媒体实测）"
-    }
-   ]
-  },
-  {
-   "name": "问界",
-   "series": [
-    {
-     "name": "M7",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    },
-    {
-     "name": "M9",
-     "years": [
-      "2026款",
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "M5",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "小米",
-   "series": [
-    {
-     "name": "SU7",
-     "years": [
-      "2025款",
-      "2024款"
-     ]
-    },
-    {
-     "name": "YU7",
-     "years": [
-      "2025款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "零跑",
-   "series": [
-    {
-     "name": "C10",
-     "years": [
-      "2025款",
-      "2024款"
-     ]
-    }
-   ]
-  },
-  {
-   "name": "大众",
-   "series": [
-    {
-     "name": "朗逸",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023",
+      "2022",
+      "2021",
+      "2020"
      ],
      "eq_bands": 3,
-     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "速腾",
+     "name": "Corolla",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023",
+      "2022",
+      "2021",
+      "2020"
      ],
      "eq_bands": 3,
-     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "迈腾",
+     "name": "RAV4",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
+      "2025",
+      "2024",
+      "2023",
+      "2022",
+      "2021",
+      "2020"
      ],
      "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "途观L",
+     "name": "Highlander",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023",
+      "2022",
+      "2021"
      ],
      "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "探岳",
+     "name": "Tacoma",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+      "2024",
+      "2023",
+      "2022",
+      "2021",
+      "2020"
+     ]
     },
     {
-     "name": "帕萨特",
+     "name": "4Runner",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "MIB同源推断3段：高音/中音/低音，待验证"
+      "2024",
+      "2023",
+      "2022",
+      "2021"
+     ]
+    },
+    {
+     "name": "Prius",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
     }
    ]
   },
   {
-   "name": "丰田",
+   "name": "Honda",
    "series": [
     {
-     "name": "卡罗拉",
+     "name": "Civic",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023",
+      "2022"
      ],
      "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "凯美瑞",
+     "name": "Accord",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023"
      ],
      "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
-    },
-    {
-     "name": "RAV4荣放",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2020款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
-    },
-    {
-     "name": "汉兰达",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
-    },
-    {
-     "name": "威兰达",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2020款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "TNGA同源推断3段：高音/中音/低音，待验证"
-    }
-   ]
-  },
-  {
-   "name": "本田",
-   "series": [
-    {
-     "name": "雅阁",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
      "name": "CR-V",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023"
      ],
      "eq_bands": 3,
-     "eq_note": "手册实锤3段：高音/中音/低音"
+     "eq_note": "Standard 3-band (Bass/Mid/Treble) head unit"
     },
     {
-     "name": "思域",
+     "name": "Pilot",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "同源Display Audio推断3段：高音/中音/低音，待验证"
-    },
-    {
-     "name": "皓影",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
-     ],
-     "eq_bands": 3,
-     "eq_note": "同源Display Audio推断3段：高音/中音/低音，待验证"
-    }
-   ]
-  },
-  {
-   "name": "日产",
-   "series": [
-    {
-     "name": "轩逸",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023"
      ]
     },
     {
-     "name": "天籁",
+     "name": "HR-V",
      "years": [
-      "2024款",
-      "2023款",
-      "2022款",
-      "2021款"
-     ]
-    },
-    {
-     "name": "逍客",
-     "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023"
      ]
     }
    ]
   },
   {
-   "name": "别克",
+   "name": "Ford",
    "series": [
     {
-     "name": "昂科威",
+     "name": "F-150",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2020款"
+      "2025",
+      "2024",
+      "2023",
+      "2022",
+      "2021"
      ]
     },
     {
-     "name": "君越",
+     "name": "Mustang",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2021款"
+      "2025",
+      "2024",
+      "2023"
      ]
     },
     {
-     "name": "GL8",
+     "name": "Explorer",
      "years": [
-      "2025款",
-      "2024款",
-      "2023款",
-      "2022款"
+      "2025",
+      "2024",
+      "2023",
+      "2022"
+     ]
+    },
+    {
+     "name": "Escape",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Bronco",
+     "years": [
+      "2025",
+      "2024",
+      "2023",
+      "2022"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Chevrolet",
+   "series": [
+    {
+     "name": "Silverado",
+     "years": [
+      "2025",
+      "2024",
+      "2023",
+      "2022"
+     ]
+    },
+    {
+     "name": "Equinox",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Malibu",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Tahoe",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Traverse",
+     "years": [
+      "2025",
+      "2024"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Nissan",
+   "series": [
+    {
+     "name": "Altima",
+     "years": [
+      "2025",
+      "2024",
+      "2023",
+      "2022"
+     ]
+    },
+    {
+     "name": "Sentra",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Rogue",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Pathfinder",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Hyundai",
+   "series": [
+    {
+     "name": "Elantra",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Sonata",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Tucson",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Santa Fe",
+     "years": [
+      "2025",
+      "2024"
+     ]
+    },
+    {
+     "name": "Palisade",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kia",
+   "series": [
+    {
+     "name": "Forte",
+     "years": [
+      "2024",
+      "2023",
+      "2022"
+     ]
+    },
+    {
+     "name": "K5",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Sportage",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Sorento",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Telluride",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Volkswagen",
+   "series": [
+    {
+     "name": "Jetta",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Golf",
+     "years": [
+      "2024",
+      "2023",
+      "2022"
+     ]
+    },
+    {
+     "name": "Tiguan",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Atlas",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mazda",
+   "series": [
+    {
+     "name": "Mazda3",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "CX-5",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "CX-50",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Subaru",
+   "series": [
+    {
+     "name": "Impreza",
+     "years": [
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Crosstrek",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Forester",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Outback",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "BMW",
+   "series": [
+    {
+     "name": "3 Series",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "5 Series",
+     "years": [
+      "2025",
+      "2024"
+     ]
+    },
+    {
+     "name": "X3",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "X5",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mercedes-Benz",
+   "series": [
+    {
+     "name": "C-Class",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "E-Class",
+     "years": [
+      "2025",
+      "2024"
+     ]
+    },
+    {
+     "name": "GLC",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "GLE",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Audi",
+   "series": [
+    {
+     "name": "A3",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "A4",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Q5",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Q7",
+     "years": [
+      "2025",
+      "2024"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tesla",
+   "series": [
+    {
+     "name": "Model 3",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Model Y",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Model S",
+     "years": [
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Model X",
+     "years": [
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Jeep",
+   "series": [
+    {
+     "name": "Wrangler",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Grand Cherokee",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "Compass",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ram",
+   "series": [
+    {
+     "name": "1500",
+     "years": [
+      "2025",
+      "2024",
+      "2023"
+     ]
+    },
+    {
+     "name": "2500",
+     "years": [
+      "2024",
+      "2023"
      ]
     }
    ]
@@ -1850,77 +1630,34 @@ var MODELS_DB = {
    * 车型种子库（v0：本地内置；v1+ 由 H5 采集 + 云端聚合补充）
    * confidence 等级：user实测 > media实测 > manual手册 > forum论坛 > guess推断
    * ============================================================ */
-  DSP.MODELS = [
-    { brand: '吉利', series: '星越L', years: '2026款',
-      eq: { bands: 7, labels: ['Sub Bass', 'Bass', 'Low Mid', 'Mid', 'High Mid', 'Treble', 'Super Treble'],
-            centers: null, rangeDb: 9, stepDb: 1, confidence: 'user实测',
-            note: '用户实拍，中心频率未知' } },
-    { brand: '吉利', series: '星越L', years: '2021-2023款', eq: null },
-    { brand: '吉利', series: '星越L', years: '2024-2025款', eq: null },
-    { brand: '领克', series: '领克01', years: '2017-2025', eq: null },
-    { brand: '领克', series: '领克09', years: '2021+', eq: null },
-    { brand: '极氪', series: '极氪001', years: '2021-2025', eq: null },
-    { brand: '比亚迪', series: '元PLUS', years: '2022-2024',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'media实测', note: '' } },
-    { brand: '比亚迪', series: '汉', years: '在售',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'guess推断', note: '推断与元PLUS同源，待验证' } },
-    { brand: '比亚迪', series: '唐', years: '在售',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'guess推断', note: '推断与元PLUS同源，待验证' } },
-    { brand: '比亚迪', series: '宋', years: '在售',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'guess推断', note: '推断与元PLUS同源，待验证' } },
-    { brand: '比亚迪', series: '秦', years: '在售',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'guess推断', note: '推断与元PLUS同源，待验证' } },
-    { brand: '比亚迪', series: '海豹', years: '在售',
-      eq: { bands: 5, labels: ['80Hz', '500Hz', '1kHz', '5kHz', '16kHz'],
-            centers: [80, 500, 1000, 5000, 16000], rangeDb: 9, stepDb: 1,
-            confidence: 'guess推断', note: '推断与元PLUS同源，待验证' } },
-    { brand: '理想', series: '理想ONE', years: '2020-2022',
-      eq: { bands: 5, labels: ['Bass', 'Low Mid', 'Mid', 'High Mid', 'Treble'],
-            centers: null, rangeDb: 6, stepDb: 1, confidence: 'media实测', note: '' } },
-    { brand: '蔚来', series: 'ET9', years: '2025',
-      eq: { bands: 0, labels: [], centers: [], rangeDb: 0, stepDb: 1,
-            confidence: 'manual手册', note: '无用户可调EQ' } },
-    { brand: '大众', series: '探岳', years: '2019+',
+    DSP.MODELS = [
+    { brand: 'Toyota', series: 'Camry', years: '2020+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '大众', series: '途观L', years: '2019+',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Toyota', series: 'Corolla', years: '2020+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '大众', series: '迈腾', years: '2019+',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Toyota', series: 'RAV4', years: '2020+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '大众', series: 'ID.', years: '2019+',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Honda', series: 'Civic', years: '2022+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '丰田', series: '凯美瑞', years: '在售',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Honda', series: 'Accord', years: '2023+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '丰田', series: 'RAV4', years: '在售',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Honda', series: 'CR-V', years: '2023+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '丰田', series: '卡罗拉', years: '在售',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Volkswagen', series: 'Jetta', years: '2019+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '丰田', series: '汉兰达', years: '在售',
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Volkswagen', series: 'Tiguan', years: '2020+',
       eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '本田', series: '雅阁', years: '2020+',
-      eq: { bands: 3, labels: ['Bass', 'Mid', 'Treble'], centers: null,
-            rangeDb: 6, stepDb: 1, confidence: 'manual手册', note: '' } },
-    { brand: '奇瑞', series: '瑞虎7', years: '在售',
-      eq: { bands: 8, labels: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
-            centers: [64, 250, 500, 1000, 3150, 8000], rangeDb: 9, stepDb: 1,
-            confidence: 'forum论坛', note: '仅记录到6个中心频率值，待补全' } }
+            rangeDb: 6, stepDb: 1, confidence: 'manual', note: '' } },
+    { brand: 'Ford', series: 'F-150', years: '2021+', eq: null },
+    { brand: 'Tesla', series: 'Model 3', years: '2023+', eq: null },
+    { brand: 'Tesla', series: 'Model Y', years: '2023+', eq: null }
   ];
 
   /**
@@ -3812,7 +3549,7 @@ window.COPY = {
     saveCardBtn: "Save report card",
     shareCopyText: "Just measured and tuned my car audio with my phone — bands aligned to target. Measured curve attached.",
     et9Title: "Plan generation not supported for this model",
-    et9Body: "该车型车机未开放 EQ 调节，无法输出可执行的调整动作。",
+    et9Body: "This head unit has no user-adjustable EQ, so no actionable plan can be generated.",
     doneBtn: "Done"
   },
   /* __REMEASURE_V1__ 复测验证闭环文案（中英双版：中文 key + 同名 En key） */
@@ -4074,7 +3811,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.244 · Beta';
+  ver.innerHTML = 'v2.9.245 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4314,18 +4051,18 @@ function carSearch(q){
 /* 由 eq_note 文案推导可信度等级 */
 function carConfidenceFromNote(note){
   note = String(note || '');
-  if (note.indexOf('用户实') !== -1) return '用户实测';
-  if (note.indexOf('媒体实测') !== -1) return 'media实测';
-  if (note.indexOf('手册实锤') !== -1) return 'manual手册';
-  if (note.indexOf('推断') !== -1) return '推断';
-  if (note.indexOf('待确认') !== -1 || note.indexOf('车主实测') !== -1) return 'forum论坛';
-  return '推断';
+  if (note.indexOf('user-measured') !== -1) return 'user-measured';
+  if (note.indexOf('media-tested') !== -1) return 'media-tested';
+  if (note.indexOf('manual-confirmed') !== -1) return 'manual-confirmed';
+  if (note.indexOf('inferred') !== -1) return 'inferred';
+  if (note.indexOf('unconfirmed') !== -1 || note.indexOf('owner-measured') !== -1) return 'owner-reported';
+  return 'inferred';
 }
 /* 已知车系的标签/中心频率/范围覆盖（源自 25 车系调研实锤） */
 var CAR_LABEL_OVERRIDES = {
-  '吉利|星越L':    { labels: ['Sub Bass','Bass','Low Mid','Mid','High Mid','Treble','Super Treble'], centers: null, rangeDb: 9, stepDb: 1 },
-  '比亚迪|元PLUS': { labels: ['80Hz','500Hz','1kHz','5kHz','16kHz'], centers: [80,500,1000,5000,16000], rangeDb: 9, stepDb: 1 },
-  '理想|ONE':      { labels: ['Bass','Low Mid','Mid','High Mid','Treble'], centers: null, rangeDb: 6, stepDb: 1 }
+  'Toyota|Camry':    { labels: ['Bass','Mid','Treble'], centers: null, rangeDb: 9, stepDb: 1 },
+  'Honda|Civic': { labels: ['Bass','Mid','Treble'], centers: null, rangeDb: 6, stepDb: 1 },
+  'Ford|F-150':      { labels: ['Bass','Mid','Treble'], centers: null, rangeDb: 6, stepDb: 1 }
 };
 /**
  * 由 models.json 车系条目推导 EQ 规格
@@ -4343,7 +4080,7 @@ function carSpecFromSeries(brand, se){
   var labels, centers = null, rangeDb = 9, stepDb = 1;
   if (ov){ labels = ov.labels; centers = ov.centers; rangeDb = ov.rangeDb; stepDb = ov.stepDb; }
   else if (bands === 3){ labels = ['Bass','Mid','Treble']; rangeDb = 6; }
-  else if (bands === 5 && brand === '比亚迪'){ labels = ['80Hz','500Hz','1kHz','5kHz','16kHz']; centers = [80,500,1000,5000,16000]; }
+  else if (bands === 3){ labels = ['Bass','Mid','Treble']; centers = null; }
   else if (bands === 5){ labels = ['Bass','Low Mid','Mid','High Mid','Treble']; }
   else if (bands === 7){ labels = ['Sub Bass','Bass','Low Mid','Mid','High Mid','Treble','Super Treble']; }
   else if (bands === 8){ labels = ['B1','B2','B3','B4','B5','B6','B7','B8']; centers = [64,250,500,1000,3150,8000]; }
@@ -4351,7 +4088,7 @@ function carSpecFromSeries(brand, se){
   var conf = carConfidenceFromNote(se.eq_note);
   return { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
            confidence: conf, note: se.eq_note || '',
-           centersVerified: !!(centers && (conf === '用户实测' || conf === 'media实测')) };
+           centersVerified: !!(centers && (conf === 'user-measured' || conf === 'media-tested')) };
 }
 function initCar(){
   setText('car-title','car.title');
@@ -4856,9 +4593,9 @@ function resolvePreset(bands){
                   7:['Sub Bass','Bass','Low Mid','Mid','High Mid','Treble','Super Treble'],
                   8:['Sub Bass','Bass','Low Mid','Mid','High Mid','Treble','Super Treble','Ultra Treble']}[bands] || null;
     spec = { bands:bands, labels:labels||Array.from({length:bands},function(_,i){return 'B'+(i+1);}),
-             centers:null, rangeDb:9, stepDb:1, confidence:'经验预设', note:'' };
+             centers:null, rangeDb:9, stepDb:1, confidence:'preset', note:'' };
   }
-  spec.confidence = spec.confidence || '经验预设';
+  spec.confidence = spec.confidence || 'preset';
   spec.centersVerified = false; // 手动/预设的中心频率均为经验值，展示时标"Pending measurement"
   return spec;
 }
@@ -4867,7 +4604,7 @@ function renderEqSpec(){
   // v2.9.215: 无车型时默认7段展示（纠错入口始终可见）
   if(!spec){
     spec = { bands: 7, labels: ['Sub Bass','Bass','Low Mid','Mid','High Mid','Treble','Super Treble'],
-             centers: null, rangeDb: 9, stepDb: 1, confidence: '默认', note: '未选车型，默认7段' };
+             centers: null, rangeDb: 9, stepDb: 1, confidence: 'default', note: '未选车型，默认7段' };
   }
   if(spec.bands === 0){
     box.innerHTML =
@@ -4879,11 +4616,11 @@ function renderEqSpec(){
   }
   var labels = (spec.labels||[]).join(' / ');
   var centers = spec.centersVerified ? spec.centers.map(function(c){return c+'Hz';}).join(' / ') : escapeHtml(tt('car.centersPending'));
-  var measured = (spec.confidence==='用户实测'||spec.confidence==='media实测');
+  var measured = (spec.confidence==='user-measured'||spec.confidence==='media-tested');
   var noteTxt = measured ? tt('car.eqFoundNote') : tt('car.eqSpecNote');
   noteTxt = noteTxt.split('{n}').join(spec.bands).split('{r}').join(spec.rangeDb).split('{c}').join(spec.confidence||'');
   var badgeCls = measured ? 'green'
-    : ((spec.confidence==='经验预设'||spec.confidence==='推断') ? 'amber' : 'cyan');
+    : ((spec.confidence==='preset'||spec.confidence==='inferred') ? 'amber' : 'cyan');
   box.innerHTML =
     '<div class="card"><div class="small" style="margin-bottom:8px;">'+escapeHtml(noteTxt)+'</div>'+
     '<div class="kv"><span class="k">EQ bands</span><span class="num"><b>'+spec.bands+'</b></span></div>'+
@@ -7210,7 +6947,7 @@ function shareCarScore(){
   if(!carName) carName = 'My car';
   // v2.9.236: 分享带设备
   var _device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Phone');
-  var txt = '【' + carName + '] Stock audio score ' + r.score + ' 分（' + _device + ' measured)';
+  var txt = '[' + carName + '] Stock audio score ' + r.score + ' (' + _device + ' measured)';
   function done(ok){
     try{ track('score_share', { ok: !!ok, score: r.score }); }catch(_){}
     try{
@@ -8119,6 +7856,8 @@ function finishRemeasure(meas){
   s.remeasure.push(entry);
   while(s.remeasure.length > REMEASURE_MAX_KEEP) s.remeasure.shift(); // 只留最近 3 次
   track('remeasure_done', {r1:entry.r1, r2:entry.r2, fit1:entry.fit1, fit2:entry.fit2});
+  /* Flywheel: send updated payload with remeasure data */
+  try{ if(typeof window.__enMSend === 'function') setTimeout(window.__enMSend, 500); }catch(_){}
   /* v2.9.98: 打分对比——调前/调后原车音响得分，存历史 */
   try{
     var sc1 = calcCarScoreFrom(before), sc2 = calcCarScoreFrom(after);
@@ -8465,7 +8204,7 @@ function decodePlanToken(str){
   str = (str || '').trim();
   if(!str) return null;
   /* 从分享文案中提取 [方案口令：XXXX] */
-  var m = str.match(/方案口令[：:]\s*([A-Za-z0-9+/=]+)/);
+  var m = str.match(/(?:方案口令|Plan Code)[：:]\s*([A-Za-z0-9+/=]+)/);
   if(m) str = m[1];
   /* 先试 base64 */
   try{
@@ -8816,6 +8555,7 @@ else{ init(); }
     }catch(_){}
   }
   window.__enT = send;
+  window.__enMSend = mMaybeSend;  /* Flywheel: expose for remeasure trigger */
   send('page_view');
 
   /* 4. Anonymized measurement data (opt-in, GDPR) */
@@ -8860,17 +8600,53 @@ else{ init(); }
       try{
         device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Other');
       }catch(_){}
+      // Flywheel: session ID links initial measurement with remeasures
+      var sessionId = '';
+      try{
+        sessionId = localStorage.getItem('ss_session_id') || '';
+        if(!sessionId){
+          sessionId = 'ss-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,10);
+          localStorage.setItem('ss_session_id', sessionId);
+        }
+      }catch(_){}
+      // Flywheel Stream 4: include latest remeasure (pre/post residuals = north star metric)
+      var remeasure = null;
+      try{
+        var rmList = st.remeasure || [];
+        if(rmList.length > 0){
+          var rm = rmList[rmList.length - 1];
+          remeasure = {
+            r1: rm.r1, r2: rm.r2,
+            fit1: rm.fit1, fit2: rm.fit2,
+            score1: rm.score1, score2: rm.score2, delta: rm.delta,
+            target: rm.target || '',
+            dspVer: rm.dsp || '',
+            ts: rm.ts || 0
+          };
+        }
+      }catch(_){}
+      // Flywheel Stream 1: specific device model for mic calibration
+      var deviceModel = '';
+      try{
+        var ua = navigator.userAgent || '';
+        var m = ua.match(/iPhone OS ([\d_]+)/);
+        if(m) deviceModel = 'iPhone iOS ' + m[1].replace(/_/g, '.');
+        else if(/iPad/.test(ua)) deviceModel = 'iPad';
+      }catch(_){}
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.244',
+        appVer: 'v2.9.245',
+        session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
         car: { brand: car.brand || '', series: car.series || '', year: car.year || '' },
         playMethod: (typeof app !== 'undefined' && app.playMode) ? String(app.playMode) : '',
         device: device,
+        deviceModel: deviceModel,
         eqBands: (st.eqSpec && st.eqSpec.bands) || 0,
-        plan: planGains
+        plan: planGains,
+        remeasure: remeasure
       };
       fetch(M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload), keepalive: true }).catch(function(){});
