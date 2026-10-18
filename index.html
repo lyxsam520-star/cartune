@@ -8726,8 +8726,9 @@ else{ init(); }
 </div>
 <script>
 (function(){
-  // 国内版反馈邮箱
-  var CN_SUPPORT_EMAIL = '511531@qq.com';
+  // 国内版反馈：直连 Cloudflare Worker（与英文版同一套 /feedback 接口）
+  // 合规边界：仅用户主动提交的反馈文字走该通道；测量数据（核心链路）不出境
+  var FB_URL = 'https://soundscore-stats.lyxsam520.workers.dev/feedback';
   var fbModal = document.getElementById('ss-fb-modal');
   var fbType = 'bug';
   var fbMsg = document.getElementById('ss-fb-msg');
@@ -8759,17 +8760,21 @@ else{ init(); }
     var ta = document.getElementById('ss-fb-text');
     var text = ta ? ta.value.trim() : '';
     if(text.length < 3){ fbSay('请多写几个字描述一下。'); return; }
-    if(!CN_SUPPORT_EMAIL){ fbSay('反馈通道配置中，请稍后再试。'); return; }
+    fbSend.disabled = true;
+    fbSay('发送中...');
     var page = 'unknown';
     try{
       var vis = document.querySelector('.sec:not([style*="display:none"])');
-      page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown');
+      page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown').slice(0, 64);
     }catch(_){}
-    var subject = encodeURIComponent('【调音玩反馈】' + (fbType === 'bug' ? 'Bug' : '建议') + '（' + page + '页）');
-    var body = encodeURIComponent(text + '\n\n—— 来自调音玩 H5 反馈入口');
-    window.location.href = 'mailto:' + CN_SUPPORT_EMAIL + '?subject=' + subject + '&body=' + body;
-    fbSay('正在打开邮件客户端...');
-    setTimeout(fbClose, 1200);
+    fetch(FB_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type: fbType, text: text, page: page, ua: (navigator.userAgent||'').slice(0,200) })
+    }).then(function(r){
+      fbSend.disabled = false;
+      if(r.ok){ fbSay('感谢反馈，我们会跟进！'); if(ta) ta.value=''; setTimeout(fbClose, 1500); }
+      else if(r.status === 429){ fbSay('提交太频繁，请稍后再试。'); }
+      else { fbSay('发送失败，请重试。'); }
+    }).catch(function(){ fbSend.disabled = false; fbSay('发送失败，请重试。'); });
   });
 })();
 </script>
