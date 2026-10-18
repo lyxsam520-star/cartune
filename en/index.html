@@ -258,6 +258,23 @@ ul.clean li{margin:6px 0;}
       <div class="small" style="text-align:left;">Your model has  <span id="home-model-num" style="color:var(--amber);font-weight:700;">0</span>  scored runs</div>
       <div class="small" style="text-align:left;color:var(--sub);margin-top:4px;">Your de-identified measurements help fellow owners tune better</div>
     </div>
+    <!-- SoundScore EN only: prominent tip jar (was buried at bottom) -->
+    <div class="card mt16 center" id="ss-tip-card" style="border-color:rgba(255,159,28,.45);">
+      <div style="font-size:16px;font-weight:800;">☕ Enjoying SoundScore?</div>
+      <div class="small" style="color:var(--sub);margin:6px 0 12px;">Support independent development</div>
+      <a href="https://ko-fi.com/soundscore" target="_blank" rel="noopener" class="btn btn-primary" style="display:inline-block;text-decoration:none;padding:12px 32px;">Buy me a coffee</a>
+    </div>
+    <!-- SoundScore EN only: prominent feedback entry (was buried at bottom) -->
+    <div class="card mt16 center" id="ss-feedback-card" style="cursor:pointer;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+        <div style="font-size:20px;line-height:1;">💬</div>
+        <div style="text-align:left;">
+          <div style="font-size:15px;font-weight:700;">Feedback</div>
+          <div class="small" style="color:var(--sub);">Report a bug or share an idea</div>
+        </div>
+        <div style="color:var(--sub);font-size:20px;line-height:1;">&rsaquo;</div>
+      </div>
+    </div>
     <div class="card center mt16">
       <!-- v2.9.46: 首页专业模式卡片已移除，开关移到测量页频谱旁 -->
       <div class="card" id="home-tech-link" style="display:flex;align-items:center;gap:12px;cursor:pointer;">
@@ -293,7 +310,6 @@ ul.clean li{margin:6px 0;}
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);">Total:  <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  cars scored</div>
-    <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">Feedback — report a bug or share an idea</a></div>
     <div class="small center" style="margin-top:6px;"><a href="#" id="ss-privacy-open" style="color:var(--sub);">Privacy</a></div>
   </section>
 
@@ -489,7 +505,8 @@ ul.clean li{margin:6px 0;}
     <div class="legend" id="report-legend"></div>
     <!-- v2.9.81: 快速模式 12s（调试用）＋标准 30s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
     <div id="band-table-wrap">
-    <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
+    <div class="h mt16" id="band-table-title" style="font-size:15px;cursor:pointer;user-select:none;" onclick="try{var b=document.getElementById('band-table-body-wrap');var a=document.getElementById('band-table-arrow');if(b.style.display==='none'){b.style.display='';a.textContent='▾';}else{b.style.display='none';a.textContent='▸';}}catch(_){}"><span id="band-table-arrow">▸</span> <span id="band-table-title-text"></span></div>
+    <div id="band-table-body-wrap" style="display:none;">
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
         <thead><tr>
@@ -502,6 +519,7 @@ ul.clean li{margin:6px 0;}
       </table>
     </div>
     <div class="small" style="color:var(--sub);margin-top:6px;">Gray bands (20/25 Hz, 16k/20 kHz) are phone-mic physics limits — not measurable, excluded from scoring. Not a device fault.</div>
+    </div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
     <!-- v2-C: diag+peq report blocks -->
@@ -4126,7 +4144,7 @@ document.addEventListener('visibilitychange', function(){
  * 首页
  * ===================================================================== */
 function initHome(){
-  setText('home-badge','home.badgeFree');
+  try{ document.getElementById('home-badge').style.display='none'; }catch(_){} // Beta 徽标已下线
   setText('home-title','home.title');
   setText('home-sub','home.subtitle');
   // v2.9.46: 首页专业模式文案已移除（元素不存在，setText 内部有保护）
@@ -7473,7 +7491,7 @@ function isDevMode(){
 function renderBandTable(){
   try{
     // v2.9.215: 内测阶段31段保持可见（Vincent 要对数据），上线前再开 gating（见 isDevMode）
-    setText('band-table-title','report.bandTableTitle');
+    setText('band-table-title-text','report.bandTableTitle');
     setText('band-th-freq','report.bandColFreq');
     setText('band-th-meas','report.bandColMeas');
     setText('band-th-target','report.bandColTarget');
@@ -8773,19 +8791,7 @@ else{ init(); }
 <script>
 (function(){
   var WORKER = 'https://soundscore-stats.lyxsam520.workers.dev';
-  /* 1. Tip jar */
-  var TIP = { kofi: 'https://ko-fi.com/soundscore' };
-  window.__SS_TIP = TIP;
-  if(TIP.kofi){
-    try{
-      var jar = document.createElement('div');
-      jar.id = 'ss-tipjar';
-      jar.className = 'card mt16 center';
-      jar.innerHTML = '<div class="small" style="margin-bottom:8px;">Enjoying SoundScore? Support independent development.</div>' +
-        '<a class="btn btn-ghost" target="_blank" rel="noopener" href="' + String(TIP.kofi).replace(/"/g,'') + '">Buy me a coffee</a>';
-      (document.querySelector('main') || document.body).appendChild(jar);
-    }catch(_){}
-  }
+  /* 1. Tip jar — now a prominent card in homepage HTML (#ss-tip-card); old bottom injection removed */
   /* 2. Usage beacon — fill EP to enable (empty = completely silent) */
   var EP = 'https://soundscore-stats.lyxsam520.workers.dev/t';
   window.__EN_BEACON_URL = EP;
@@ -8896,6 +8902,10 @@ else{ init(); }
   document.querySelectorAll('.ss-fb-open').forEach(function(a){
     a.addEventListener('click', function(e){ e.preventDefault(); fbOpen(); });
   });
+  try{
+    var _fbCard = document.getElementById('ss-feedback-card');
+    if(_fbCard) _fbCard.addEventListener('click', function(){ fbOpen(); });
+  }catch(_){}
   document.querySelectorAll('.ss-fb-type').forEach(function(b){
     b.addEventListener('click', function(){
       fbType = b.getAttribute('data-type');
