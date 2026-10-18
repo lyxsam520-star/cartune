@@ -309,7 +309,7 @@ ul.clean li{margin:6px 0;}
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
-    <div class="small center" style="margin-top:16px;color:var(--sub);">Total:  <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  cars scored</div>
+    <div class="small center" style="margin-top:16px;color:var(--sub);"><span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  measurements completed worldwide</div>
     <div class="small center" style="margin-top:6px;"><a href="#" id="ss-privacy-open" style="color:var(--sub);">Privacy</a></div>
   </section>
 
@@ -4011,6 +4011,16 @@ function show(id){
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
       if(_el) _el.textContent = _tc;
+      // SoundScore EN: 真实统计——从 Worker 拉全网完成测量数（公开 /count 接口）
+      try{
+        fetch('https://soundscore-stats.lyxsam520.workers.dev/count', {cache:'no-store'})
+          .then(function(r){ return r.ok ? r.json() : null; })
+          .then(function(d){
+            if(d && typeof d.measure_complete === 'number' && _el){
+              _el.textContent = d.measure_complete;
+            }
+          }).catch(function(){});
+      }catch(_){}
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
