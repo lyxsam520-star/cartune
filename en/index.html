@@ -293,6 +293,7 @@ ul.clean li{margin:6px 0;}
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);">Total:  <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  cars scored</div>
+    <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">Feedback — report a bug or share an idea</a></div>
   </section>
 
   <!-- ============ 3. 车型选择 ============ -->
@@ -562,6 +563,7 @@ ul.clean li{margin:6px 0;}
         <div class="mt8"><button class="btn btn-primary" id="plan-err-retry"></button></div>
       </div>
     </div>
+    <div class="small center" style="margin-top:16px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">Feedback — report a bug or share an idea</a></div>
   </section>
 
   <!-- ============ 8d. 方案库（v2.9.98：保存/调用多套方案） ============ -->
@@ -8709,10 +8711,28 @@ else{ init(); }
     <div class="small" id="beta-expired-b"></div>
   </div>
 </div>
-<!-- SoundScore EN only: tip jar + usage beacon (inert until URLs are set) -->
+<!-- SoundScore EN only: feedback modal -->
+<div id="ss-fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:420px;">
+    <div class="h" style="font-size:17px;margin-bottom:4px;">Feedback</div>
+    <div class="small" style="color:var(--sub);margin-bottom:12px;">Found a bug or have an idea? Tell us — bugs get fixed, ideas get read.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost ss-fb-type" data-type="bug" style="flex:1;border-color:var(--amber);">Bug report</button>
+      <button class="btn btn-ghost ss-fb-type" data-type="idea" style="flex:1;">Suggestion</button>
+    </div>
+    <textarea id="ss-fb-text" rows="4" style="width:100%;box-sizing:border-box;background:var(--bg2,#1c1c1e);color:var(--fg,#fff);border:1px solid #3a3a3c;border-radius:10px;padding:10px;font-size:15px;" placeholder="Describe the issue or your idea..."></textarea>
+    <div class="small" id="ss-fb-msg" style="margin:8px 0;min-height:18px;color:var(--sub);"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" id="ss-fb-cancel" style="flex:1;">Cancel</button>
+      <button class="btn btn-primary" id="ss-fb-send" style="flex:1;">Send</button>
+    </div>
+  </div>
+</div>
+<!-- SoundScore EN only: tip jar + usage beacon + feedback (inert until URLs are set) -->
 <script>
 (function(){
-  /* 1. Tip jar — fill PAYPAL to enable (card stays hidden until set) */
+  var WORKER = 'https://soundscore-stats.lyxsam520.workers.dev';
+  /* 1. Tip jar */
   var TIP = { kofi: 'https://ko-fi.com/soundscore' };
   window.__SS_TIP = TIP;
   if(TIP.kofi){
@@ -8726,7 +8746,7 @@ else{ init(); }
     }catch(_){}
   }
   /* 2. Usage beacon — fill EP to enable (empty = completely silent) */
-  var EP = ''; // e.g. 'https://soundscore-stats.<you>.workers.dev/t'
+  var EP = 'https://soundscore-stats.lyxsam520.workers.dev/t';
   window.__EN_BEACON_URL = EP;
   function send(ev){
     if(!EP) return;
@@ -8737,7 +8757,57 @@ else{ init(); }
     }catch(_){}
   }
   window.__enT = send;
-  send('page_view'); // no-op while EP is empty
+  send('page_view');
+
+  /* 3. Feedback modal */
+  var FB_URL = 'https://soundscore-stats.lyxsam520.workers.dev/feedback';
+  var fbModal = document.getElementById('ss-fb-modal');
+  var fbType = 'bug';
+  var fbMsg = document.getElementById('ss-fb-msg');
+  function fbSay(t){ if(fbMsg) fbMsg.textContent = t; }
+  function fbOpen(){
+    if(!fbModal) return;
+    fbSay('');
+    fbModal.style.display = 'flex';
+    var ta = document.getElementById('ss-fb-text');
+    if(ta) setTimeout(function(){ try{ ta.focus(); }catch(_){} }, 50);
+  }
+  function fbClose(){ if(fbModal) fbModal.style.display = 'none'; }
+  document.querySelectorAll('.ss-fb-open').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); fbOpen(); });
+  });
+  document.querySelectorAll('.ss-fb-type').forEach(function(b){
+    b.addEventListener('click', function(){
+      fbType = b.getAttribute('data-type');
+      document.querySelectorAll('.ss-fb-type').forEach(function(x){
+        x.style.borderColor = (x === b) ? 'var(--amber)' : '';
+      });
+    });
+  });
+  var fbCancel = document.getElementById('ss-fb-cancel');
+  if(fbCancel) fbCancel.addEventListener('click', fbClose);
+  if(fbModal) fbModal.addEventListener('click', function(e){ if(e.target === fbModal) fbClose(); });
+  var fbSend = document.getElementById('ss-fb-send');
+  if(fbSend) fbSend.addEventListener('click', function(){
+    var ta = document.getElementById('ss-fb-text');
+    var text = ta ? ta.value.trim() : '';
+    if(text.length < 3){ fbSay('Please describe in a few words.'); return; }
+    fbSend.disabled = true;
+    fbSay('Sending...');
+    var page = 'unknown';
+    try{
+      var vis = document.querySelector('.sec:not([style*="display:none"])');
+      page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown').slice(0, 64);
+    }catch(_){}
+    fetch(FB_URL, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ type: fbType, text: text, page: page, ua: (navigator.userAgent||'').slice(0,200) })
+    }).then(function(r){
+      fbSend.disabled = false;
+      if(r.ok){ fbSay('Thanks! We\'ll look into it.'); if(ta) ta.value=''; setTimeout(fbClose, 1500); }
+      else if(r.status === 429){ fbSay('Too many — please try again later.'); }
+      else { fbSay('Send failed — please try again.'); }
+    }).catch(function(){ fbSend.disabled = false; fbSay('Send failed — please try again.'); });
+  });
 })();
 </script>
 </body>

@@ -293,6 +293,7 @@ ul.clean li{margin:6px 0;}
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);">共 <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span> 辆车参加了跑分</div>
+    <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">问题反馈 — 报 bug 或提建议</a></div>
   </section>
 
   <!-- ============ 3. 车型选择 ============ -->
@@ -556,12 +557,13 @@ ul.clean li{margin:6px 0;}
       <div class="small" id="plan-et9b"></div>
     </div>
     <div id="plan-error" class="hidden">
-      <div class="card" style="border-color:rgba(255,77,77,.5);">
+      <div class="card" style="border-color:rgba(255,77,77,.5);;">
         <div class="h" id="plan-errt" style="color:var(--red);font-size:15px;"></div>
         <div class="small mt8" id="plan-errb"></div>
         <div class="mt8"><button class="btn btn-primary" id="plan-err-retry"></button></div>
       </div>
     </div>
+    <div class="small center" style="margin-top:16px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">问题反馈 — 报 bug 或提建议</a></div>
   </section>
 
   <!-- ============ 8d. 方案库（v2.9.98：保存/调用多套方案） ============ -->
@@ -8705,6 +8707,71 @@ else{ init(); }
     <div class="h" id="beta-expired-t" style="margin-bottom:8px;"></div>
     <div class="small" id="beta-expired-b"></div>
   </div>
+<!-- 国内版反馈弹窗（数据不出境：走邮件，云开发上线后切正式库） -->
+<div id="ss-fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:420px;">
+    <div class="h" style="font-size:17px;margin-bottom:4px;">问题反馈</div>
+    <div class="small" style="color:var(--sub);margin-bottom:12px;">遇到 bug 或有想法？告诉我们。</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn btn-ghost ss-fb-type" data-type="bug" style="flex:1;border-color:var(--amber);">报 bug</button>
+      <button class="btn btn-ghost ss-fb-type" data-type="idea" style="flex:1;">提建议</button>
+    </div>
+    <textarea id="ss-fb-text" rows="4" style="width:100%;box-sizing:border-box;background:var(--bg2,#1c1c1e);color:var(--fg,#fff);border:1px solid #3a3a3c;border-radius:10px;padding:10px;font-size:15px;" placeholder="描述问题或你的想法..."></textarea>
+    <div class="small" id="ss-fb-msg" style="margin:8px 0;min-height:18px;color:var(--sub);"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost" id="ss-fb-cancel" style="flex:1;">取消</button>
+      <button class="btn btn-primary" id="ss-fb-send" style="flex:1;">发送</button>
+    </div>
+  </div>
 </div>
+<script>
+(function(){
+  // 国内版反馈邮箱（TODO: Vincent 提供后填入）
+  var CN_SUPPORT_EMAIL = '';
+  var fbModal = document.getElementById('ss-fb-modal');
+  var fbType = 'bug';
+  var fbMsg = document.getElementById('ss-fb-msg');
+  function fbSay(t){ if(fbMsg) fbMsg.textContent = t; }
+  function fbOpen(){
+    if(!fbModal) return;
+    fbSay('');
+    fbModal.style.display = 'flex';
+    var ta = document.getElementById('ss-fb-text');
+    if(ta) setTimeout(function(){ try{ ta.focus(); }catch(_){} }, 50);
+  }
+  function fbClose(){ if(fbModal) fbModal.style.display = 'none'; }
+  document.querySelectorAll('.ss-fb-open').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); fbOpen(); });
+  });
+  document.querySelectorAll('.ss-fb-type').forEach(function(b){
+    b.addEventListener('click', function(){
+      fbType = b.getAttribute('data-type');
+      document.querySelectorAll('.ss-fb-type').forEach(function(x){
+        x.style.borderColor = (x === b) ? 'var(--amber)' : '';
+      });
+    });
+  });
+  var fbCancel = document.getElementById('ss-fb-cancel');
+  if(fbCancel) fbCancel.addEventListener('click', fbClose);
+  if(fbModal) fbModal.addEventListener('click', function(e){ if(e.target === fbModal) fbClose(); });
+  var fbSend = document.getElementById('ss-fb-send');
+  if(fbSend) fbSend.addEventListener('click', function(){
+    var ta = document.getElementById('ss-fb-text');
+    var text = ta ? ta.value.trim() : '';
+    if(text.length < 3){ fbSay('请多写几个字描述一下。'); return; }
+    if(!CN_SUPPORT_EMAIL){ fbSay('反馈通道配置中，请稍后再试。'); return; }
+    var page = 'unknown';
+    try{
+      var vis = document.querySelector('.sec:not([style*="display:none"])');
+      page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown');
+    }catch(_){}
+    var subject = encodeURIComponent('【调音玩反馈】' + (fbType === 'bug' ? 'Bug' : '建议') + '（' + page + '页）');
+    var body = encodeURIComponent(text + '\n\n—— 来自调音玩 H5 反馈入口');
+    window.location.href = 'mailto:' + CN_SUPPORT_EMAIL + '?subject=' + subject + '&body=' + body;
+    fbSay('正在打开邮件客户端...');
+    setTimeout(fbClose, 1200);
+  });
+})();
+</script>
 </body>
 </html>
