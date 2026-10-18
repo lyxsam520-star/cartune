@@ -7662,9 +7662,14 @@ function showShareCard(){
   try{
     var cv = buildShareCard();
     try{ alert('DIAG: buildShareCard ok'); }catch(_){}
-    var url = cv.toDataURL('image/png');
+    var url = '';
+    try{ url = cv.toDataURL('image/png'); }catch(e){ try{ alert('DIAG: toDataURL failed: ' + (e.message||e)); }catch(_){} }
+    try{ alert('DIAG: dataURL len=' + url.length); }catch(_){}
     var img = document.getElementById('reportcard-img');
+    try{ if(!img) alert('DIAG: reportcard-img is NULL'); }catch(_){}
+    try{ alert('DIAG: img hidden before=' + img.classList.contains('hidden')); }catch(_){}
     img.src = url; img.classList.remove('hidden');
+    try{ alert('DIAG: img src set, hidden after=' + img.classList.contains('hidden')); }catch(_){}
     document.getElementById('btn-reportcard-save').classList.remove('hidden');
     setText('reportcard-hint', 'share.saveHint');
     track('share_card', { score: shareCardFlatScore(), issues: shareCardIssues(),
