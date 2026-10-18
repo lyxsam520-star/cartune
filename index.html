@@ -6837,7 +6837,7 @@ function renderReport(){
   try{ var _peq = document.getElementById('peq-toggle'); if(_peq) _peq.style.display='none'; }catch(_){}
   try{ var _peqt = document.getElementById('peq-table'); if(_peqt) _peqt.style.display='none'; }catch(_){}
   // v2.9.230: consent 页已删（H5 数据不出本机，无需单独授权），直接进方案
-  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ track('report_unlock_click'); renderPlan(); show('plan'); } }];
+  CTA.report = [{ text: tt('report.ctaUnlock'), onClick: function(){ try{ alert('DIAG: 查看完整方案 clicked'); }catch(_){} track('report_unlock_click'); try{ renderPlan(); }catch(e){ try{ alert('DIAG: renderPlan failed: ' + (e.message||e)); }catch(_){} return; } try{ alert('DIAG: renderPlan ok, showing plan'); }catch(_){} show('plan'); } }];
   // 已出方案（S().plan）后：报告页也放复测验证入口（__REMEASURE_V1__）
   if(S().plan){ CTA.report.unshift({ text: tt('remeasure.btn'), primary:false, onClick: startRemeasurePrompt }); }
   initReportShareCard(); // [v2-workerD-sharecard] 挂载分享按钮
@@ -7658,8 +7658,10 @@ function buildShareCard(){
   return cv;
 }
 function showShareCard(){
+  try{ alert('DIAG: showShareCard start'); }catch(_){}
   try{
     var cv = buildShareCard();
+    try{ alert('DIAG: buildShareCard ok'); }catch(_){}
     var url = cv.toDataURL('image/png');
     var img = document.getElementById('reportcard-img');
     img.src = url; img.classList.remove('hidden');
@@ -7667,7 +7669,7 @@ function showShareCard(){
     setText('reportcard-hint', 'share.saveHint');
     track('share_card', { score: shareCardFlatScore(), issues: shareCardIssues(),
       curve: (S() && S().curve) || 'parked', style: (S() && S().style) || 'standard' });
-  }catch(e){ /* 生成失败静默，按钮仍可重试 */ }
+  }catch(e){ try{ alert('DIAG: showShareCard error: ' + (e.message||e)); }catch(_){} }
 }
 function saveShareCardImage(){
   try{
