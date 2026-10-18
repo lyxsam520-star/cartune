@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://lyxsam520-star.github.io/cartune-v1-test/sitemap.xml
+Sitemap: https://lyxsam520-star.github.io/cartune/sitemap.xml

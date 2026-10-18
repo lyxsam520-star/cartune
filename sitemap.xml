@@ -2,16 +2,16 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://lyxsam520-star.github.io/cartune-v1-test/</loc>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://lyxsam520-star.github.io/cartune-v1-test/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lyxsam520-star.github.io/cartune-v1-test/en/"/>
+    <loc>https://lyxsam520-star.github.io/cartune/</loc>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://lyxsam520-star.github.io/cartune/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lyxsam520-star.github.io/cartune/en/"/>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://lyxsam520-star.github.io/cartune-v1-test/en/</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://lyxsam520-star.github.io/cartune-v1-test/en/"/>
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://lyxsam520-star.github.io/cartune-v1-test/"/>
+    <loc>https://lyxsam520-star.github.io/cartune/en/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://lyxsam520-star.github.io/cartune/en/"/>
+    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://lyxsam520-star.github.io/cartune/"/>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
