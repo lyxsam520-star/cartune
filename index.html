@@ -3983,22 +3983,11 @@ function show(id){
           }
         }
       }
-      // v2.9.215: 同车型跑分计数（忽略年款），选车后显示
+      // v2.9.244: 同车型跑分计数卡后端上线前彻底隐藏（两原因：①无后端时计数恒为0/1，展示减分；②卡片显隐导致首页布局跳动）。
+      // 后端上线有真实数据后，恢复 v2.9.215 逻辑（选车后显示）。
       try{
-        var _car2 = S().car;
-        var _mcWrap = document.getElementById('home-model-count');
-        var _mcNum = document.getElementById('home-model-num');
-        if(_car2 && _mcWrap && _mcNum){
-          var _model2 = _car2.brand + ' ' + _car2.series;
-          var _cnt = 0;
-          for(var _j = 0; _j < _h.length; _j++){
-            if(_h[_j].model === _model2) _cnt++;
-          }
-          _mcNum.textContent = _cnt;
-          _mcWrap.style.display = '';
-        } else if(_mcWrap){
-          _mcWrap.style.display = 'none';
-        }
+        var _mcWrap2 = document.getElementById('home-model-count');
+        if(_mcWrap2) _mcWrap2.style.display = 'none';
       }catch(_){}
     }catch(_){}
   }
@@ -4010,7 +3999,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.243 · 内测版';
+  ver.innerHTML = 'v2.9.244 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
