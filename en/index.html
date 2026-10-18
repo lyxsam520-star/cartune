@@ -294,6 +294,39 @@ ul.clean li{margin:6px 0;}
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);">Total:  <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  cars scored</div>
     <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">Feedback — report a bug or share an idea</a></div>
+    <div class="small center" style="margin-top:6px;"><a href="#" id="ss-privacy-open" style="color:var(--sub);">Privacy</a></div>
+  </section>
+
+  <!-- SoundScore EN only: privacy notice -->
+  <section class="sec" id="sec-privacy">
+    <div class="topbar"><button class="backbtn" data-back="sec-home" id="bk-privacy">← Back</button></div>
+    <div class="h" style="font-size:20px;margin-bottom:12px;">Privacy Notice</div>
+    <div class="card">
+      <div class="h" style="font-size:15px;margin-bottom:6px;">What we collect</div>
+      <div class="small" style="color:var(--sub);line-height:1.7;">
+        • <b>Anonymous usage counts</b> — page views and measurement completions. No personal data.<br>
+        • <b>Measurement data (only if you opt in)</b> — 31-band spectrum, score, car model/year, and EQ plan. Anonymous, no account needed.<br>
+        • <b>Feedback</b> — only what you type into the feedback form.
+      </div>
+    </div>
+    <div class="card mt16">
+      <div class="h" style="font-size:15px;margin-bottom:6px;">What we never collect</div>
+      <div class="small" style="color:var(--sub);line-height:1.7;">
+        Names, emails, precise location, device identifiers, or audio recordings. Measurements are processed on your device; only numbers leave it, and only with your consent.
+      </div>
+    </div>
+    <div class="card mt16">
+      <div class="h" style="font-size:15px;margin-bottom:6px;">Your rights</div>
+      <div class="small" style="color:var(--sub);line-height:1.7;">
+        You can opt out of data sharing anytime by unchecking the box on the report page. To request deletion of your data, use the Feedback form and mention "data deletion" — anonymous data that can't be linked to you will be excluded automatically.
+      </div>
+    </div>
+    <div class="card mt16">
+      <div class="h" style="font-size:15px;margin-bottom:6px;">Storage</div>
+      <div class="small" style="color:var(--sub);line-height:1.7;">
+        Data is stored on Cloudflare's network (US/EU regions). We never sell data or share it with advertisers.
+      </div>
+    </div>
   </section>
 
   <!-- ============ 3. 车型选择 ============ -->
@@ -443,6 +476,14 @@ ul.clean li{margin:6px 0;}
     </div>
     <!-- v2.9.241: 重新跑分（独立按钮，不碰CTA逻辑） -->
     <div class="mt8"><button class="btn btn-ghost" id="btn-retest" style="width:100%;" onclick="show('measure')">Score again</button></div>
+    <!-- SoundScore EN only: anonymized measurement data opt-in (GDPR) -->
+    <div class="small center" style="margin-top:12px;color:var(--sub);">
+      <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="ss-data-consent" style="width:16px;height:16px;accent-color:var(--amber);">
+        <span>Help improve SoundScore — share anonymous measurement data</span>
+      </label>
+      <div style="font-size:11px;margin-top:4px;">31-band spectrum, score, car model &amp; EQ plan only. No personal info. Opt out anytime.</div>
+    </div>
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
     <canvas class="chart" id="report-chart"></canvas>
     <div class="legend" id="report-legend"></div>
@@ -8758,6 +8799,85 @@ else{ init(); }
   }
   window.__enT = send;
   send('page_view');
+
+  /* 4. Anonymized measurement data (opt-in, GDPR) */
+  var M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
+  var consentBox = document.getElementById('ss-data-consent');
+  var mLastHash = '';
+  try{
+    if(consentBox && localStorage.getItem('ss_data_consent') === '1'){ consentBox.checked = true; }
+  }catch(_){}
+  if(consentBox) consentBox.addEventListener('change', function(){
+    try{ localStorage.setItem('ss_data_consent', consentBox.checked ? '1' : '0'); }catch(_){}
+  });
+  function mHash(a){
+    var h = 0;
+    try{
+      var s = JSON.stringify(a);
+      for(var i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    }catch(_){}
+    return (h >>> 0).toString(16);
+  }
+  function mMaybeSend(){
+    try{
+      if(!consentBox || !consentBox.checked) return;
+      var st = (typeof S === 'function') ? S() : null;
+      if(!st || !st.measL || !st.measR) return;
+      var hash = mHash([st.measL, st.measR]);
+      if(hash === mLastHash || hash === '0') return;
+      mLastHash = hash;
+      var sc = null;
+      try{ sc = (typeof calcCarScore === 'function') ? calcCarScore() : null; }catch(_){}
+      var car = st.car || {};
+      var planGains = [];
+      try{
+        var _prev = (typeof buildPlan === 'function') ? buildPlan() : null;
+        var _bands = (_prev && (_prev.bands || [])) || [];
+        for(var i = 0; i < _bands.length; i++){
+          var b = _bands[i];
+          planGains.push({ f: b.fc || b.f || b.freq || null, g: b.gainDb != null ? b.gainDb : b.g });
+        }
+      }catch(_){}
+      var device = 'Other';
+      try{
+        device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Other');
+      }catch(_){}
+      var payload = {
+        consent: true,
+        app: 'soundscore-en',
+        appVer: 'v2.9.244',
+        spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
+        score: (sc && sc.score != null) ? sc.score : null,
+        car: { brand: car.brand || '', series: car.series || '', year: car.year || '' },
+        playMethod: (typeof app !== 'undefined' && app.playMode) ? String(app.playMode) : '',
+        device: device,
+        eqBands: (st.eqSpec && st.eqSpec.bands) || 0,
+        plan: planGains
+      };
+      fetch(M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload), keepalive: true }).catch(function(){});
+    }catch(_){}
+  }
+  // hook into report view: send after a fresh measurement when consented
+  try{
+    var _origShow = window.show;
+    if(typeof _origShow === 'function'){
+      window.show = function(id){
+        var r = _origShow.apply(this, arguments);
+        try{ if(id === 'report'){ setTimeout(mMaybeSend, 800); } }catch(_){}
+        return r;
+      };
+    }
+  }catch(_){}
+
+  /* 5. Privacy page wiring */
+  try{
+    var _pvOpen = document.getElementById('ss-privacy-open');
+    if(_pvOpen) _pvOpen.addEventListener('click', function(e){
+      e.preventDefault();
+      if(typeof window.show === 'function') window.show('privacy');
+    });
+  }catch(_){}
 
   /* 3. Feedback modal */
   var FB_URL = 'https://soundscore-stats.lyxsam520.workers.dev/feedback';
