@@ -4051,7 +4051,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.249 · 内测版';
+  ver.innerHTML = 'v2.9.250 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7663,10 +7663,15 @@ function showShareCard(){
     var url = cv.toDataURL('image/png');
     var img = document.getElementById('reportcard-img');
     if(!img) return;
-    img.src = url; img.classList.remove('hidden');
-    /* iOS Safari: force repaint for data-URL images */
-    try{ void img.offsetHeight; }catch(_){}
-    try{ img.style.display='none'; void img.offsetHeight; img.style.display=''; }catch(_){}
+    /* iOS Safari: unhide first, then set src in next frame */
+    img.classList.remove('hidden');
+    img.style.display = 'block';
+    var _setSrc = function(){
+      img.src = url;
+      try{ void img.offsetHeight; }catch(_){}
+    };
+    if(window.requestAnimationFrame){ requestAnimationFrame(function(){ requestAnimationFrame(_setSrc); }); }
+    else { setTimeout(_setSrc, 50); }
     document.getElementById('btn-reportcard-save').classList.remove('hidden');
     setText('reportcard-hint', 'share.saveHint');
     track('share_card', { score: shareCardFlatScore(), issues: shareCardIssues(),
