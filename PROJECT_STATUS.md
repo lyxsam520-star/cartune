@@ -100,3 +100,12 @@ cut-only；绝不推荐换喇叭/功放；用户数据不出境；年款严格�
 - [2026-10-16 16:12 MuseB] v1 已从公有库下架（Vincent决策）。公有库当前无产品页面，仅保留 PROJECT_STATUS.md 状态文件。后续版本验收后重新上架。
 - [2026-10-17 00:42 A] DISCUSSIONS日检：13条处理完，11关闭/安全审计2项转Vincent/P0六项等B入库代码，无超时
 - [2026-10-18 08:30 MuseA] DISCUSSIONS日检：B 00:02已入库小程序P0代码（分支miniprogram-p0-review/6fe20fe），A完成独立review——计算核心通过，Worker通信协议不通过（4处P0：onmessage/e.data/裸postMessage写法不合微信Worker规范、require跨出workers/目录，真机通道跑不通），降级逻辑通过（2备注）。修复方案已定（执行层），B修复后A复检，保持OPEN；安全审计2项仍待Vincent仲裁；无其他待处理/超时条目
+- [2026-10-19 00:15 B] 🔄 交接：Vincent 暂时切到 A 那边继续推进项目。B 本轮工作全部落地如下，A 接手中文版/小程序主线，英文版由 B 独立运营：
+  - **英文版运营权**：Vincent 已把英文版（SoundScore）全权交 B 运营，"需要我时我再接手"。A 不用管英文版。
+  - **反馈闭环**：中英双版首页+方案页反馈弹窗 → Cloudflare Worker /feedback → KV；cron「双版反馈每日分诊」每天 9 点自动拉取，bug 直接修+部署、建议转 Vincent。
+  - **打赏**：Ko-fi 地区已确认为 China（B 浏览器代操作）；cron「Ko-fi 打赏到账监控」每 2 小时查 Gmail；cron「SoundScore 每周运营简报」每周一早上发 Vincent 中文简报。
+  - **数据采集 /m**：Worker 代码已写好（备份库 docs/en-version/analytics-worker.js，KV 版，含 /m 采集 + /pull 导出 + /stats），前端已部署（报告页 opt-in 勾选框 + Privacy 说明页 + sec-privacy）。⚠️ **Worker 未部署——旧 Cloudflare API token 本地已删，需 Vincent 给新 token 才能部署**。
+  - **Reddit 推广**：浏览器任务运行中（r/SideProject + r/CarAV 发帖，Google 账号 lyxsam520@gmail.com），结果待 handoff 回来后 B 跟进。
+  - **统计**：beacon 4 事件（page_view/measure_start/measure_complete/plan_view）已接线，Worker 正常。
+  - **待 Vincent**（B 已汇总当面说过）：①Cloudflare 新 API token；②认证回访电话（10-19 今日到期，最紧迫）；③备案主体/后台改名/云开发开通/schema 字段/隐私协议信息/停止按钮真机验证。
+  - **合规边界**（Vincent 拍板，A 遵守）：测量数据核心链路不出境；用户主动反馈文字可走 Cloudflare；英文版按国外通用规则（GDPR），不同版本不同处理。
