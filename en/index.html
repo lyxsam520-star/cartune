@@ -8713,15 +8713,15 @@ else{ init(); }
 <script>
 (function(){
   /* 1. Tip jar — fill PAYPAL to enable (card stays hidden until set) */
-  var TIP = { paypal: '' }; // e.g. 'https://www.paypal.me/yourname'
+  var TIP = { kofi: 'https://ko-fi.com/soundscore' };
   window.__SS_TIP = TIP;
-  if(TIP.paypal){
+  if(TIP.kofi){
     try{
       var jar = document.createElement('div');
       jar.id = 'ss-tipjar';
       jar.className = 'card mt16 center';
       jar.innerHTML = '<div class="small" style="margin-bottom:8px;">Enjoying SoundScore? Support independent development.</div>' +
-        '<a class="btn btn-ghost" target="_blank" rel="noopener" href="' + String(TIP.paypal).replace(/"/g,'') + '">Donate via PayPal</a>';
+        '<a class="btn btn-ghost" target="_blank" rel="noopener" href="' + String(TIP.kofi).replace(/"/g,'') + '">Buy me a coffee</a>';
       (document.querySelector('main') || document.body).appendChild(jar);
     }catch(_){}
   }
