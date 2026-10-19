@@ -3860,7 +3860,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.253 · Beta';
+  ver.innerHTML = 'v2.9.254 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7775,6 +7775,12 @@ function renderPlan(){
     // v2.9.225: 中心频率未验证时显示 ~预估值（比"Pending measurement"清楚）
     var centerTxt = (bd.centerHz!=null) ? ((spec.centersVerified ? '' : '~') + bd.centerHz + ' Hz') : tt('car.centersPending');
     var gv = (bd.gainDb>0?'+':'') + (bd.gainDb||0) + 'dB';
+    // v2.9.254: 行驶微调（用户 2026-10-20）：低频段路噪掩盖，少砍2dB；中高频不变
+    var _driveGain = bd.gainDb||0;
+    if(bd.centerHz && bd.centerHz < 400 && _driveGain < 0){ _driveGain = Math.min(0, _driveGain + 2); }
+    var _driveTxt = (_driveGain>0?'+':'') + _driveGain + 'dB';
+    if(_driveTxt !== gv.replace('dB','dB')){ /* always show */ }
+    gv += '<div class="small" style="font-size:11px;color:var(--sub);">行驶 ' + escapeHtml(_driveTxt) + '</div>';
     // 分频段 SNR 状态点：绿可信 / 黄轻度污染 / 灰未出方案
     var snrState = bd.snr||'ok';
     var snrDot = snrState==='warn'
