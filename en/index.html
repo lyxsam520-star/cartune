@@ -3860,7 +3860,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.254 · Beta';
+  ver.innerHTML = 'v2.9.255 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6887,6 +6887,17 @@ function calcCarScoreFrom(meas, opts){
   var iso = [], parked = [];
   try{ iso = DSP.ISO31 || []; parked = DSP.TC_PARKED || []; }catch(_){ return null; }
   if(iso.length < 31 || !parked.length) return null;
+  // v2.9.255: 怠速检测（用户 2026-10-20）— 40/50Hz 超标+8dB 判定为引擎噪音，自动切行车曲线
+  var _isIdle = false;
+  try{
+    var _driving = DSP.TC_DRIVING || [];
+    if(_driving.length >= 31 && meas[3] != null && meas[4] != null){
+      // 粗算 40/50Hz 偏差（用电平对齐前的原始值估算）
+      var _d40 = (meas[3]||0) - parked[3][1];
+      var _d50 = (meas[4]||0) - parked[4][1];
+      if(_d40 > 8 && _d50 > 8){ _isIdle = true; parked = _driving; }
+    }
+  }catch(_){}
   // 驻车目标曲线对数插值（与 DSP.targetDbAt 同算法，但固定用 TC_PARKED）
   function tAt(f){
     var n = parked.length, i;
@@ -6917,12 +6928,13 @@ function calcCarScoreFrom(meas, opts){
   var rms = Math.sqrt(sumSq/n);
   var score = Math.max(0, Math.round((1 - rms/15) * 100)); // v2.9.252: 降低灵敏度(rms/15)，取整(测量重复性±2.5分，小数无意义)
   var rmsR = Math.round(rms*10)/10;
+  // v2.9.255: 返回是否怠速模式，供 UI 显示
   // v2.9.215: 有异常只打标不拦截，无异常才清零计数
   if(_tamperReason){
     return _atTampered(_tamperReason, score, rmsR);
   }
   _atClear(); // 成功打分，清除篡改计数
-  return { score: score, rms: rmsR };
+  return { score: score, rms: rmsR, isIdle: _isIdle };
 }
 /* v2.9.215 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
 try{ _atInitFnHash(); }catch(_){}
@@ -6981,6 +6993,10 @@ function renderCarScore(){
   setText('score-title', 'report.scoreTitle');
   document.getElementById('score-value').textContent = r.score;
   try{ document.getElementById('score-desc').textContent = tt('report.scoreDesc')(r.score); }catch(_){}
+  // v2.9.255: 怠速模式提示
+  if(r.isIdle){
+    try{ document.getElementById('score-desc').textContent = 'Idle detected, scored with driving curve'; }catch(_){}
+  }
   var btn = document.getElementById('btn-score-share');
   if(btn){
     try{ btn.textContent = tt('report.scoreShareBtn'); }catch(_){}
