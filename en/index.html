@@ -863,10 +863,11 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     [1600, -0.3], [2000, -0.5], [2500, -0.8], [3150, -1.0], [4000, -1.3], [5000, -1.6],
     [6300, -1.9], [8000, -2.3], [10000, -2.7], [12500, -3.3], [16000, -4.1], [20000, -5.0]
   ];
-  // Driving v1：Parked v1 ＋ 60–80km/h 典型路噪折中补偿（75–300Hz 隆起，峰值约 +1.5dB@160Hz；高频不变）
+  // Driving v2：Parked v1 ＋ 30km/h 市区路噪补偿（75–300Hz 隆起，峰值约 +0.8dB@160Hz；高频不变）
+  // v2.9.253: 用户 2026-10-20 决策：行车曲线按 30km/h 市区调（最常用），原 60-80km/h 高速补偿过大
   var TC_DRIVING = [
     [20, 7.0], [31.5, 7.0], [40, 7.0], [50, 6.9], [63, 6.6], [80, 5.7],
-    [100, 4.8], [125, 4.0], [160, 3.2], [200, 1.9], [250, 1.4], [315, 0.9],
+    [100, 4.2], [125, 3.3], [160, 2.5], [200, 1.2], [250, 0.9], [315, 0.5],
     [400, 0.6], [500, 0.3], [630, 0.2], [800, 0.1], [1000, 0.0], [1250, -0.1],
     [1600, -0.3], [2000, -0.5], [2500, -0.8], [3150, -1.0], [4000, -1.3], [5000, -1.6],
     [6300, -1.9], [8000, -2.3], [10000, -2.7], [12500, -3.3], [16000, -4.1], [20000, -5.0]
@@ -3473,8 +3474,8 @@ window.COPY = {
     parkedSubEn: "Stationary baseline",
     drivingSub: "Road-noise compensation",
     drivingSubEn: "Road-noise compensation",
-    drivingNote: "Driving curve: a static compromise for typical 60–80 km/h road noise (75–300 Hz lift); highs untouched.",
-    drivingNoteEn: "Driving curve: a static compromise for typical 60–80 km/h road noise (75–300 Hz lift); highs untouched."
+    drivingNote: "Driving curve: a static compromise for 30 km/h city road noise (75–300 Hz lift); highs untouched.",
+    drivingNoteEn: "Driving curve: a static compromise for 30 km/h city road noise (75–300 Hz lift); highs untouched."
   },
   style: {
     label: "Style presets",
@@ -3859,7 +3860,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.252 · Beta';
+  ver.innerHTML = 'v2.9.253 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
