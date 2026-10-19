@@ -3859,7 +3859,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.251 · Beta';
+  ver.innerHTML = 'v2.9.252 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6914,7 +6914,7 @@ function calcCarScoreFrom(meas, opts){
   }
   if(n===0) return null;
   var rms = Math.sqrt(sumSq/n);
-  var score = Math.max(0, Math.round((1 - rms/12) * 1000) / 10); // v2.9.215: 保留一位小数
+  var score = Math.max(0, Math.round((1 - rms/15) * 100)); // v2.9.252: 降低灵敏度(rms/15)，取整(测量重复性±2.5分，小数无意义)
   var rmsR = Math.round(rms*10)/10;
   // v2.9.215: 有异常只打标不拦截，无异常才清零计数
   if(_tamperReason){
@@ -8119,7 +8119,7 @@ function predictCustomScore(){
   var card = document.getElementById('custom-compare-card');
   card.classList.remove('hidden');
   document.getElementById('custom-sys-score').textContent = sysScore != null ? sysScore : '--';
-  document.getElementById('custom-my-score').textContent = r.score;
+  document.getElementById('custom-my-score').textContent = r.score + '±3'; // v2.9.252: 显示不确定度(测量重复性±2.5分)
   var desc = document.getElementById('custom-compare-desc');
   if(sysScore != null){
     var dd = r.score - sysScore;

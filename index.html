@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.251 · 内测版';
+  ver.innerHTML = 'v2.9.252 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -7103,7 +7103,7 @@ function calcCarScoreFrom(meas, opts){
   }
   if(n===0) return null;
   var rms = Math.sqrt(sumSq/n);
-  var score = Math.max(0, Math.round((1 - rms/12) * 1000) / 10); // v2.9.215: 保留一位小数
+  var score = Math.max(0, Math.round((1 - rms/15) * 100)); // v2.9.252: 降低灵敏度(rms/15)，取整(测量重复性±2.5分，小数无意义)
   var rmsR = Math.round(rms*10)/10;
   // v2.9.215: 有异常只打标不拦截，无异常才清零计数
   if(_tamperReason){
@@ -8110,26 +8110,7 @@ function measArrOf(m){ return (m && m.band31) || m || []; }
 /* 复测入口：先提示按方案调好车机 EQ（用户点「开始」后才真正测量） */
 function startRemeasurePrompt(){
   if(!S().measL){ show('measure'); return; } // 无调前基线：回到测量页
-  // v2.9.42: 免费重测限 2 次（v1.2 协议 4.2），超限转客服
-  var _rc = 0;
-  try{ _rc = parseInt(localStorage.getItem('ct_remeasure_count')||'0', 10)||0; }catch(_){}
-  if(_rc >= 2){
-    try{
-      var ov = document.createElement('div');
-      ov.className = 'iso-overlay';
-      ov.innerHTML =
-        '<div class="iso-card">' +
-        '<div class="h" style="font-size:17px;">免费重测次数已用完</div>' +
-        '<div class="small mt8">您已使用 2 次免费重测。如仍有问题，请联系客服人工处理。</div>' +
-        '<button class="btn btn-primary" id="rc-ok">知道了</button>' +
-        '</div>';
-      document.body.appendChild(ov);
-      ov.querySelector('#rc-ok').onclick = function(){ try{ document.body.removeChild(ov); }catch(_){} };
-    }catch(_){}
-    trackSecurity('remeasure_limit_hit', {count:_rc});
-    return;
-  }
-  try{ localStorage.setItem('ct_remeasure_count', String(_rc+1)); }catch(_){}
+  // v2.9.252: 复测全免费，移除 2 次限制（用户 2026-10-20）
   setText('remeasure-title','remeasure.title');
   setText('remeasure-prompt-title','remeasure.promptTitle');
   setText('remeasure-prompt-body','remeasure.promptBody');
@@ -8310,7 +8291,7 @@ function predictCustomScore(){
   var card = document.getElementById('custom-compare-card');
   card.classList.remove('hidden');
   document.getElementById('custom-sys-score').textContent = sysScore != null ? sysScore : '--';
-  document.getElementById('custom-my-score').textContent = r.score;
+  document.getElementById('custom-my-score').textContent = r.score + '±3'; // v2.9.252: 显示不确定度(测量重复性±2.5分)
   var desc = document.getElementById('custom-compare-desc');
   if(sysScore != null){
     var dd = r.score - sysScore;
@@ -8318,7 +8299,7 @@ function predictCustomScore(){
     else if(dd === 0) desc.textContent = '跟系统方案打平，不错嘛。';
     else desc.textContent = '比系统方案低 ' + (-dd) + ' 分，要不要再调调？';
   }else{
-    desc.textContent = '你的方案预测 ' + r.score + ' 分';
+    desc.textContent = '你的方案预测 ' + r.score + '±3 分（实测可能有±3分波动）';
   }
   try{ DSP._customGains = gains; DSP._customScore = r.score; }catch(_){}
   try{ track('custom_predict', {score:r.score, sysScore:sysScore}); }catch(_){}
