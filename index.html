@@ -2129,10 +2129,9 @@ var MODELS_DB = {
           }
         } catch (_) {}
       }
-      try {
-        if (ctx.state !== 'suspended') return;
+      try{ if (ctx.state !== 'suspended') return;
         var p = null;
-        try { p = ctx.resume(); } catch (_) {}
+        try { p = ctx.resume(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ }
         var settled = function () { if (!done) { done = true; setTimeout(check, 300); } };
         if (p && p.then) { p.then(settled, settled); }
         setTimeout(settled, 2000); // 兜底：2 秒未落定（手势外 resume 永不 resolve）则查一次
@@ -2213,7 +2212,7 @@ var MODELS_DB = {
 
   DSP.Measurer.prototype._buildAnalyser = function () {
     if (this.analyser) {
-      try { this.analyser.disconnect(); } catch (e) {}
+      try{ this.analyser.disconnect(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ }
     }
     this.analyser = this.audioCtx.createAnalyser();
     this.analyser.fftSize = this.fftSize;
@@ -2357,10 +2356,9 @@ var MODELS_DB = {
     /* v2.2 调度诊断（2026-10-13 真机：正式测试 10s 处起播无声，试音正常）。
      * 记录 ctx.state；suspended 则 resume（iOS 在 mic 激活/静音期可能挂起 context，
      * 此时 currentTime 冻结，src.start 调度永不触发＝无声）。 */
-    try{
-      var _cs = this.audioCtx ? this.audioCtx.state : 'n/a';
+    try{ var _cs = this.audioCtx ? this.audioCtx.state : 'n/a';
       var _ct = this.audioCtx ? this.audioCtx.currentTime : -1;
-      if(this.audioCtx && _cs==='suspended'){ try{ this.audioCtx.resume(); }catch(_){} }
+      if(this.audioCtx && _cs==='suspended'){ try{ this.audioCtx.resume(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ } }
     }catch(_){}
     this.stopPink(0.12);
     // v2.9.65: 优先 SMPTE ST 2095-1 标准粉噪（已缓存），否则回退内置生成
@@ -2415,11 +2413,11 @@ var MODELS_DB = {
           catch (_) { try { g.gain.setValueAtTime(0, t); } catch (_2) {} }
         } catch (_) {}
         try { src.stop(t + fo + 0.05); } catch (e) { try { src.stop(); } catch (_) {} }
-        setTimeout(function () { try { src.disconnect(); } catch (_) {} try { g.disconnect(); } catch (_) {} }, Math.ceil((fo + 0.25) * 1000));
+        setTimeout(function () { try{ src.disconnect(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ } try{ g.disconnect(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ } }, Math.ceil((fo + 0.25) * 1000));
       } else {
         try { src.stop(); } catch (_) {}
-        try { src.disconnect(); } catch (_) {}
-        if (g) { try { g.disconnect(); } catch (_) {} }
+        try{ src.disconnect(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ }
+        if (g) { try{ g.disconnect(); }catch(_ ){ /* 忽略：音频上下文操作幂等，失败不影响主流程 */ } }
       }
     } catch (e) { try { src.stop(); } catch (_) {} }
   };
@@ -6509,7 +6507,7 @@ async function startMeasureFlow(opts){
     if (_sc) { _sc.style.filter = ''; _sc.style.opacity = ''; _sc.style.pointerEvents = ''; }
   } catch (_) {}
   /* v2.9.215: 反作弊 Layer 1 —— 记录测量开始时间戳和模式 */
-  try{ DSP._measStart = Date.now(); DSP._measQuick = (app.speedMode==='quick'); DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
+  try{ DSP._measStart = Date.now(); DSP._measQuick = (app.speedMode==='quick'); DSP._measEnd = 0; DSP._measFrames = 0; }catch(_ ){ /* 忽略：测量状态追踪为尽力而为，失败不影响测量 */ }
   stepStartUI(0);
   startRaf();
   // v2.9.43: GPS 持续监控已移除
@@ -6541,7 +6539,7 @@ async function startMeasureFlow(opts){
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
   /* v2.9.215: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数 */
-  try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
+  try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_ ){ /* 忽略：测量状态追踪为尽力而为，失败不影响测量 */ }
   // v2.9.215: 兜底 TTS（avgShown 未触发时补播，用 flag 防重复）
   try{
     if(!app._ttsEndPlayed && window.speechSynthesis){
@@ -6626,7 +6624,7 @@ async function startLrOptIn(){
     if (_sc2) { _sc2.style.filter = ''; _sc2.style.opacity = ''; _sc2.style.pointerEvents = ''; }
   } catch (_) {}
   /* v2.9.215: 反作弊 Layer 1 —— 记录测量开始时间戳和模式（声道隔离） */
-  try{ DSP._measStart = Date.now(); DSP._measQuick = false; DSP._measEnd = 0; DSP._measFrames = 0; }catch(_){}
+  try{ DSP._measStart = Date.now(); DSP._measQuick = false; DSP._measEnd = 0; DSP._measFrames = 0; }catch(_ ){ /* 忽略：测量状态追踪为尽力而为，失败不影响测量 */ }
   stepStartUI(0);
   startRaf();
   var res = null;
@@ -6649,7 +6647,7 @@ async function startLrOptIn(){
   snrGate(L31, 'L'); snrGate(R31, 'R');
   S().measL = L31; S().measR = R31;
   /* v2.9.215: 反作弊 Layer 1 —— 记录测量结束时间戳和帧数（声道隔离） */
-  try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_){}
+  try{ DSP._measEnd = Date.now(); DSP._measFrames = app.frameCount||0; }catch(_ ){ /* 忽略：测量状态追踪为尽力而为，失败不影响测量 */ }
   // v2.9.215: 测试结束语音提示（先cancel清队列，修iOS不播）
   try{
     if(window.speechSynthesis){
