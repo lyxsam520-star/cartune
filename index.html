@@ -4051,7 +4051,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.250 · 内测版';
+  ver.innerHTML = 'v2.9.251 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -6811,6 +6811,8 @@ function renderReport(){
   setText('report-title','report.title');
   setText('report-preview-title','report.previewTitle');
   setText('report-trust','report.trustNote');
+  // v2.9.251: P1 诚实标注——iPhone 修正表来自单台 iPhone 12 Pro Max 实测，非全机型通用
+  try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += '（iPhone 麦克风修正表来自单台 iPhone 12 Pro Max 实测。）'; } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
   // 发现 N 处需调整
