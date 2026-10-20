@@ -328,7 +328,14 @@ ul.clean li{margin:6px 0;}
         <div style="font-size:15px;font-weight:700;" id="home-tech-title"></div>
         <div class="small" id="home-tech-desc"></div>
       </div>
-      <div style="color:var(--sub);font-size:20px;line-height:1;">&rsaquo;</div>
+      <div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tech-arrow">&rsaquo;</div>
+    </div>
+    <div id="home-tech-body" style="display:none;margin-top:12px;text-align:left;">
+      <div class="small" style="line-height:1.7;text-align:left;">• Pink noise plays through the head unit; your phone measures a 31-band spectrum at the driver's seat</div>
+      <div class="small" style="line-height:1.7;text-align:left;">• Each band is compared with the target curve — the closer it is, the higher the score; the score is a relative index, read it as before/after change</div>
+      <div class="small" style="line-height:1.7;text-align:left;">• The plan is built for your head unit's EQ bands — cut-only, safe for stock speakers</div>
+      <div class="small" style="line-height:1.7;text-align:left;">• Two target curves — parked and driving — for the two real-world conditions</div>
+      <button class="btn btn-ghost" id="home-tech-more" style="width:100%;margin-top:10px;">See the full tech page</button>
     </div>
     <!-- v2.9.215: 测前准备（原第二页 5 项检查精简并入），点击展开 -->
     <div class="card mt16" id="home-tips-card" style="cursor:pointer;">
@@ -336,7 +343,7 @@ ul.clean li{margin:6px 0;}
         <div style="font-size:22px;line-height:1;">📋</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:700;">Before You Measure (Key to a High Score)</div>
-          <div class="small">8 items — tap to expand</div>
+          <div class="small">8 items, tap to expand</div>
         </div>
         <div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tips-arrow">&rsaquo;</div>
       </div>
@@ -3178,7 +3185,7 @@ window.COPY = {
     ctaPrimaryEn: "Next",
     ctaPro: "Pro Mode",
     linkTech: "How It Works",
-    linkTechDesc: "How your car's score is calculated",
+    linkTechDesc: "How your car's score is calculated, tap to expand",
     linkTechDescEn: "How your car's score is calculated",
     badgeFree: "Beta · All Features Unlocked",
     payHint: "",
@@ -4049,7 +4056,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.286 · Beta';
+  ver.innerHTML = 'v2.9.287 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4161,7 +4168,19 @@ function initHome(){
       trackSecurity('privacy_data_toggle', {on: !!e.target.checked});
     });
   }catch(_){}
-  document.getElementById('home-tech-link').onclick = function(){ show('tech'); };
+  // Tech card: tap to expand (summary); the full page opens from the button inside
+  var _htl = document.getElementById('home-tech-link');
+  if(_htl) _htl.onclick = function(){
+    var body = document.getElementById('home-tech-body');
+    var arrow = document.getElementById('home-tech-arrow');
+    if(body && arrow){
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.innerHTML = open ? '&rsaquo;' : '&#x25BE;';
+    }
+  };
+  var _htm = document.getElementById('home-tech-more');
+  if(_htm) _htm.onclick = function(){ show('tech'); };
   // v2.9.215: 测前三要点卡片点击展开/收起
   var _htc = document.getElementById('home-tips-card');
   if(_htc) _htc.onclick = function(){
@@ -5040,7 +5059,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.286';
+var CALIB_VER = 'v2.9.287';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9447,7 +9466,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.286',
+        appVer: 'v2.9.287',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
