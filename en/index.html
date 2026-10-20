@@ -3273,9 +3273,9 @@ window.COPY = {
     et9CarNote: "This model's head unit has no EQ adjustment — no actionable plan available.",
     centersPending: "Pending measurement",
     huNormalized: "Minor version ignored (e.g. 2.3.1 → 2.3)",
-    bountyCardTitle: "EQ bounty open for this model",
-    bountyCardBody: "Complete the calibration tasks (photo + per-band +6 dB measurement + standard pink noise) to earn a free premium tuning plan",
-    bountyCardCta: "View bounty →",
+    bountyCardTitle: "EQ calibration tasks open for this model",
+    bountyCardBody: "Complete the calibration tasks (photo + per-band +6 dB measurement + standard pink noise) to get a dedicated tuning plan",
+    bountyCardCta: "View calibration tasks →",
     lastCarK: "Last used",
     lastCarKEn: "Last used",
     lastCarUse: "Use this car",
@@ -3288,7 +3288,7 @@ window.COPY = {
     lastCarExpiredEn: "Saved car is no longer valid, please pick again",
   },
   bounty: {
-    title: "EQ Parameter Bounty",
+    title: "EQ Parameter Calibration Tasks",
     sub: "Help nail down your model's EQ parameters — every fellow owner benefits",
     intro: "This model's key EQ parameters (e.g. center frequencies) are still blank. Complete the standard calibration below and your data becomes this model's first measured record.",
     stepsTitle: "Calibration tasks",
@@ -4056,7 +4056,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.289 · Beta';
+  ver.innerHTML = 'v2.9.290 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5059,7 +5059,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.289';
+var CALIB_VER = 'v2.9.290';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9466,7 +9466,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.289',
+        appVer: 'v2.9.290',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
