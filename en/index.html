@@ -4053,7 +4053,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.273 · Beta';
+  ver.innerHTML = 'v2.9.274 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4488,6 +4488,9 @@ function initCar(){
     // v2.9.215: 清除选车时恢复手动输入入口
     var _mw3 = document.getElementById('car-manual-wrap');
     if(_mw3) _mw3.style.display = '';
+    // Restore HU version / spec panel hidden by just-exploring mode
+    var _huf = document.getElementById('car-hu'); if(_huf && _huf.closest('.field')) _huf.closest('.field').style.display = '';
+    var _ep2 = document.getElementById('eqspec-panel'); if(_ep2) _ep2.style.display = '';
     bandPicker.classList.add('hidden');
     searchWrap.classList.remove('hidden');
     qInput.value = '';
@@ -4832,7 +4835,11 @@ function initCar(){
     document.getElementById('car-selected-text').textContent = 'Just exploring (not uploaded)';
     document.getElementById('car-selected').classList.remove('hidden');
     var _mw2 = document.getElementById('car-manual-wrap'); if(_mw2) _mw2.style.display = 'none';
-    showBandPicker('unknown');
+    // Just exploring has no head unit: default to the 7-band preset, hide band picker / HU version / spec panel
+    try{ S().eqSpec = resolvePreset(7); }catch(_){}
+    var _bp = document.getElementById('band-picker'); if(_bp) _bp.classList.add('hidden');
+    var _ep = document.getElementById('eqspec-panel'); if(_ep) _ep.style.display = 'none';
+    var _hu = document.getElementById('car-hu'); if(_hu && _hu.closest('.field')) _hu.closest('.field').style.display = 'none';
     track('car_casual', {});
   });
 
@@ -5037,7 +5044,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.273';
+var CALIB_VER = 'v2.9.274';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9443,7 +9450,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.273',
+        appVer: 'v2.9.274',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
