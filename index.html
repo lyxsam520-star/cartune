@@ -3545,7 +3545,7 @@ var MODELS_DB = {
 window.COPY = {
   home: {
     title: "给汽车音响跑个分",
-    subtitle: "简单三步，就能测出汽车的音响素质，拿到正确的均衡器调整方法：选车型 → 播粉噪测 30 秒 → 照方案调 EQ，再复测。",
+    subtitle: "简单三步：连接车机蓝牙 → 手机底部话筒朝向前档 → 播粉噪测 30 秒。就能测出汽车的音响素质，并拿到正确的车机均衡器调整方案。",
     ctaPrimary: "下一步",
     ctaPrimaryEn: "Next",
     ctaPro: "专业模式",
@@ -4414,7 +4414,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.330 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.331 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5431,7 +5431,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.330';
+var CALIB_VER = 'v2.9.331';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5859,7 +5859,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.330';
+var CN_DATA_VER = 'v2.9.331';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
