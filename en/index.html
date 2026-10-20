@@ -564,7 +564,7 @@ ul.clean li{margin:6px 0;}
     <!-- v2.9.241: 重新跑分（独立按钮，不碰CTA逻辑） -->
     <div class="mt8"><button class="btn btn-ghost" id="btn-retest" style="width:100%;" onclick="show('measure')">Score again</button></div>
     <!-- SoundScore EN: getting a plan records anonymous measurement data (notice only, no opt-in gate) -->
-    <div class="small center" style="margin-top:12px;color:var(--amber);font-size:13.5px;line-height:1.6;">
+    <div class="small center" style="margin-top:12px;color:#FFD9A0;font-size:13.5px;line-height:1.6;">
       <div>Measurements are fully anonymous, no login needed (spectrum and score only — no audio, no personal info), and are used to build per-model acoustic data and improve tuning plans. Optimization plans are completely free for individual users.</div>
     </div>
     <div class="h mt16" id="report-preview-title" style="font-size:15px;"></div>
@@ -4070,7 +4070,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.298 · Beta';
+  ver.innerHTML = 'v2.9.299 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5073,7 +5073,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.298';
+var CALIB_VER = 'v2.9.299';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9480,7 +9480,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.298',
+        appVer: 'v2.9.299',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
