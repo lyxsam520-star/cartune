@@ -365,8 +365,6 @@ ul.clean li{margin:6px 0;}
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 12</span><span class="small" style="text-align:left;">Kickoff: built on a professional phone-tuning methodology — cut-only EQ, one car, one tune</span></div>
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 13</span><span class="small" style="text-align:left;">First release: measure right in the browser; the first real car completes the full measure-to-tune flow</span></div>
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 16</span><span class="small" style="text-align:left;">Accuracy verified: within ±3 dB of a professional acoustic analyzer across 100 Hz–12.5 kHz</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 18</span><span class="small" style="text-align:left;">English edition launches; the car database expands to 16 international brands</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 19</span><span class="small" style="text-align:left;">Fully free: scores and tuning plans all free, unlimited re-measures</span></div>
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Dual-mode scoring: parked / driving — chase the score parked, tune for the road</span></div>
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Calibration quest opens: owners crowd-measure the true EQ center frequencies of each model</span></div>
         <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">WeChat mini program certified — same name, same data as the web app</span></div>
@@ -4072,7 +4070,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.277 · Beta';
+  ver.innerHTML = 'v2.9.278 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5074,7 +5072,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.277';
+var CALIB_VER = 'v2.9.278';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9480,7 +9478,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.277',
+        appVer: 'v2.9.278',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
