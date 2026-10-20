@@ -109,7 +109,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.301 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.302 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -117,6 +117,10 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .wm-lines i:nth-child(1){width:26px;background:var(--amber);}
 .wm-lines i:nth-child(2){width:18px;}
 .wm-lines i:nth-child(3){width:10px;background:var(--amber);}
+.wm-svg{display:inline-block;width:auto;vertical-align:middle;}
+.wm-main{height:36px;}
+.wm-mini{height:20px;}
+
 /* 卡片 */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:12px 0;}
 .card.dim{opacity:.55;}
@@ -287,6 +291,8 @@ ul.clean li{margin:6px 0;}
 
 <div id="wx-banner"></div>
 <div id="app">
+<!-- 字标定版 2026-10-20：思源黑体 Bold(SIL OFL 1.1)轮廓改造——音点画→琥珀方块/EN 方块句点，前倾7°+双色+速度线；构建脚本存 backup 仓库 docs/wordmark/ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="wmGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FF9F1C"/><stop offset="1" stop-color="#FFB84D"/></linearGradient><clipPath id="wmClipCN"><path d="M-200 -300 H4193.0 V1100 H-200 Z M374.0 713.0649895178198 h234.0 v234.0 h-234.0 Z" clip-rule="evenodd"/></clipPath></defs><symbol id="wmMain" viewBox="-140 -190 4363.0 1180"><g transform="translate(0,890) scale(1,-1) skewX(7)"><g clip-path="url(#wmClipCN)"><g fill="#E8EDF3"><path d="M652 663C642 625 624 577 608 540H401C393 575 373 625 350 663ZM413 841C424 820 436 794 444 769H106V663H327L229 644C246 613 261 573 270 540H50V433H951V540H738L788 643L692 663H905V769H581C571 799 555 834 538 861ZM295 114H711V43H295ZM295 205V272H711V205ZM174 371V-91H295V-57H711V-90H837V371Z"/><path d="M1542.0 42C1635.0 6 1754.0 -50 1820.0 -89L1905.0 -9C1835.0 25 1718.0 78 1625.0 112ZM1475.0 319V243C1475.0 177 1455.0 73 1149.0 3C1178.0 -21 1215.0 -64 1231.0 -89C1556.0 2 1601.0 140 1601.0 240V319ZM1234.0 463V112H1354.0V353H1712.0V104H1839.0V463H1564.0L1574.0 534H1898.0V639H1584.0L1590.0 719C1681.0 730 1766.0 744 1841.0 760L1747.0 856C1584.0 818 1307.0 794 1065.0 785V500C1065.0 347 1058.0 130 963.0 -18C992.0 -29 1045.0 -59 1068.0 -78C1168.0 81 1183.0 332 1183.0 500V534H1454.0L1448.0 463ZM1460.0 639H1183.0V686C1274.0 690 1369.0 696 1462.0 705Z"/></g><g fill="url(#wmGrad)"><path d="M2052.0 710H2178.0V581H2052.0ZM2409.0 848C2383.0 761 2340.0 676 2286.0 613V812H1951.0V480H2079.0V100L2041.0 90V407H1945.0V67L1901.0 57L1929.0 -55C2035.0 -25 2175.0 15 2304.0 53L2289.0 156L2184.0 128V270H2279.0V373H2184.0V480H2286.0V557C2304.0 537 2323.0 514 2333.0 500V76C2333.0 -44 2369.0 -77 2498.0 -77C2526.0 -77 2673.0 -77 2702.0 -77C2810.0 -77 2841.0 -38 2856.0 93C2826.0 99 2782.0 116 2758.0 132C2752.0 40 2743.0 22 2694.0 22C2661.0 22 2534.0 22 2507.0 22C2448.0 22 2439.0 29 2439.0 76V236H2563.0C2575.0 210 2582.0 178 2584.0 155C2630.0 154 2673.0 154 2702.0 158C2733.0 164 2755.0 174 2775.0 204C2798.0 241 2800.0 359 2800.0 693C2800.0 707 2800.0 741 2800.0 741H2484.0C2495.0 767 2505.0 794 2514.0 820ZM2689.0 638C2688.0 385 2687.0 292 2674.0 272C2666.0 260 2657.0 256 2643.0 256H2629.0V559H2384.0C2401.0 583 2418.0 610 2434.0 638ZM2439.0 463H2529.0V332H2439.0Z"/><path d="M3508.0 839 3396.0 795C3449.0 688 3522.0 575 3599.0 482H3068.0C3143.0 573 3210.0 684 3257.0 800L3127.0 837C3071.0 686 2969.0 545 2852.0 461C2881.0 440 2932.0 391 2954.0 366C2975.0 383 2995.0 402 3015.0 423V364H3176.0C3155.0 219 3101.0 87 2877.0 14C2905.0 -12 2939.0 -61 2953.0 -92C3211.0 3 3277.0 174 3303.0 364H3512.0C3504.0 160 3494.0 73 3473.0 51C3462.0 41 3451.0 38 3433.0 38C3408.0 38 3356.0 38 3301.0 43C3322.0 9 3338.0 -42 3340.0 -78C3399.0 -80 3457.0 -80 3492.0 -75C3530.0 -71 3558.0 -60 3583.0 -28C3618.0 14 3630.0 132 3640.0 430V433C3659.0 412 3678.0 393 3696.0 375C3718.0 407 3763.0 454 3793.0 477C3689.0 563 3569.0 711 3508.0 839Z"/></g></g><g fill="#FF9F1C"><rect x="413" y="674" width="156" height="156"/></g><g><rect x="3853.0" y="470" width="150" height="26" rx="13" fill="#FF9F1C"/><rect x="3853.0" y="380" width="105" height="26" rx="13" fill="#22D3EE"/><rect x="3853.0" y="290" width="60" height="26" rx="13" fill="#FF9F1C"/></g></g></symbol><symbol id="wmMini" viewBox="-140 -190 4133.0 1180"><g transform="translate(0,890) scale(1,-1) skewX(7)"><g clip-path="url(#wmClipCN)"><g fill="#E8EDF3"><path d="M652 663C642 625 624 577 608 540H401C393 575 373 625 350 663ZM413 841C424 820 436 794 444 769H106V663H327L229 644C246 613 261 573 270 540H50V433H951V540H738L788 643L692 663H905V769H581C571 799 555 834 538 861ZM295 114H711V43H295ZM295 205V272H711V205ZM174 371V-91H295V-57H711V-90H837V371Z"/><path d="M1542.0 42C1635.0 6 1754.0 -50 1820.0 -89L1905.0 -9C1835.0 25 1718.0 78 1625.0 112ZM1475.0 319V243C1475.0 177 1455.0 73 1149.0 3C1178.0 -21 1215.0 -64 1231.0 -89C1556.0 2 1601.0 140 1601.0 240V319ZM1234.0 463V112H1354.0V353H1712.0V104H1839.0V463H1564.0L1574.0 534H1898.0V639H1584.0L1590.0 719C1681.0 730 1766.0 744 1841.0 760L1747.0 856C1584.0 818 1307.0 794 1065.0 785V500C1065.0 347 1058.0 130 963.0 -18C992.0 -29 1045.0 -59 1068.0 -78C1168.0 81 1183.0 332 1183.0 500V534H1454.0L1448.0 463ZM1460.0 639H1183.0V686C1274.0 690 1369.0 696 1462.0 705Z"/></g><g fill="url(#wmGrad)"><path d="M2052.0 710H2178.0V581H2052.0ZM2409.0 848C2383.0 761 2340.0 676 2286.0 613V812H1951.0V480H2079.0V100L2041.0 90V407H1945.0V67L1901.0 57L1929.0 -55C2035.0 -25 2175.0 15 2304.0 53L2289.0 156L2184.0 128V270H2279.0V373H2184.0V480H2286.0V557C2304.0 537 2323.0 514 2333.0 500V76C2333.0 -44 2369.0 -77 2498.0 -77C2526.0 -77 2673.0 -77 2702.0 -77C2810.0 -77 2841.0 -38 2856.0 93C2826.0 99 2782.0 116 2758.0 132C2752.0 40 2743.0 22 2694.0 22C2661.0 22 2534.0 22 2507.0 22C2448.0 22 2439.0 29 2439.0 76V236H2563.0C2575.0 210 2582.0 178 2584.0 155C2630.0 154 2673.0 154 2702.0 158C2733.0 164 2755.0 174 2775.0 204C2798.0 241 2800.0 359 2800.0 693C2800.0 707 2800.0 741 2800.0 741H2484.0C2495.0 767 2505.0 794 2514.0 820ZM2689.0 638C2688.0 385 2687.0 292 2674.0 272C2666.0 260 2657.0 256 2643.0 256H2629.0V559H2384.0C2401.0 583 2418.0 610 2434.0 638ZM2439.0 463H2529.0V332H2439.0Z"/><path d="M3508.0 839 3396.0 795C3449.0 688 3522.0 575 3599.0 482H3068.0C3143.0 573 3210.0 684 3257.0 800L3127.0 837C3071.0 686 2969.0 545 2852.0 461C2881.0 440 2932.0 391 2954.0 366C2975.0 383 2995.0 402 3015.0 423V364H3176.0C3155.0 219 3101.0 87 2877.0 14C2905.0 -12 2939.0 -61 2953.0 -92C3211.0 3 3277.0 174 3303.0 364H3512.0C3504.0 160 3494.0 73 3473.0 51C3462.0 41 3451.0 38 3433.0 38C3408.0 38 3356.0 38 3301.0 43C3322.0 9 3338.0 -42 3340.0 -78C3399.0 -80 3457.0 -80 3492.0 -75C3530.0 -71 3558.0 -60 3583.0 -28C3618.0 14 3630.0 132 3640.0 430V433C3659.0 412 3678.0 393 3696.0 375C3718.0 407 3763.0 454 3793.0 477C3689.0 563 3569.0 711 3508.0 839Z"/></g></g><g fill="#FF9F1C"><rect x="413" y="674" width="156" height="156"/></g></g></symbol></svg>
 
   <!-- ============ 1. 首页 ============ -->
   <section class="sec" id="sec-home">
@@ -294,7 +300,7 @@ ul.clean li{margin:6px 0;}
     <div style="display:flex;align-items:center;gap:14px;padding:20px 4px 6px;">
       <img src="logo.png" alt="音质跑分" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
-        <div class="wordmark" style="font-size:24px;">音质<span class="wm-hot">跑分</span><span class="wm-lines"><i></i><i></i><i></i></span></div>
+        <svg class="wm-svg wm-main" role="img" aria-label="音质跑分"><use href="#wmMain"/></svg>
         <div style="font-size:13px;color:#FFD9A0;margin-top:2px;">看着好玩，用着专业</div>
       </div>
     </div>
@@ -4282,7 +4288,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.301: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.302: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4332,7 +4338,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.301 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.302 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5347,7 +5353,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.301';
+var CALIB_VER = 'v2.9.302';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5765,7 +5771,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.301';
+var CN_DATA_VER = 'v2.9.302';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -9786,7 +9792,7 @@ function init(){
     var bannerHTML =
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
       '<div style="text-align:right;">' +
-      '<div class="wordmark" style="font-size:16px;">音质<span class="wm-hot">跑分</span></div>' +
+      '<svg class="wm-svg wm-mini" role="img" aria-label="音质跑分"><use href="#wmMini"/></svg>' +
       '<div style="font-size:11px;color:#FFD9A0;">看着好玩，用着专业</div>' +
       '</div>' +
       '<img src="logo.png" alt="音质跑分" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;">' +
