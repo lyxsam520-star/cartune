@@ -3538,9 +3538,9 @@ window.COPY = {
     et9CarNote: "该车型车机未开放 EQ 调节，无法给出可执行的调整动作。",
     centersPending: "待实测",
     huNormalized: "已忽略小版本更新（如 2.3.1→2.3）",
-    bountyCardTitle: "该车型 EQ 参数悬赏中",
+    bountyCardTitle: "该车型开放 EQ 参数校准任务",
     bountyCardBody: "完成校准任务（拍照＋逐段+6dB 测量＋标准粉噪），可获得一次专属调音方案",
-    bountyCardCta: "查看悬赏计划 →",
+    bountyCardCta: "查看校准任务 →",
     lastCarK: "上次使用",
     lastCarKEn: "Last used",
     lastCarUse: "直接使用",
@@ -4259,7 +4259,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.288: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.289: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4309,7 +4309,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.288 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.289 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5324,7 +5324,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.288';
+var CALIB_VER = 'v2.9.289';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5742,7 +5742,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.288';
+var CN_DATA_VER = 'v2.9.289';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
