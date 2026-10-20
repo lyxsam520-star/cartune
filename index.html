@@ -91,7 +91,7 @@ body{
 /* 系统字体放大时不撑破布局 */
 input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 /* 顶部微信提示条 */
-#wx-banner{display:none;background:#1a2230;color:var(--sub);font-size:12px;text-align:center;padding:8px 16px;border-bottom:1px solid var(--border);}
+#wx-banner{display:none;background:#1a2230;color:var(--sub);font-size:13px;text-align:center;padding:8px 16px;border-bottom:1px solid var(--border);}
 #wx-banner.show{display:block;}
 /* 版块 */
 .sec{display:none;padding-top:20px;animation:fadein .25s ease;}
@@ -101,13 +101,13 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;}
 .h{font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.5;}
 .body14{font-size:14px;color:var(--text);}
-.small{font-size:12px;color:var(--sub);}
+.small{font-size:13px;color:var(--sub);}
 .num{font-variant-numeric:tabular-nums;}
 /* 卡片 */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:12px 0;}
 .card.dim{opacity:.55;}
 /* 徽章 */
-.badge{display:inline-block;font-size:12px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--sub);vertical-align:middle;}
+.badge{display:inline-block;font-size:13px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);color:var(--sub);vertical-align:middle;}
 .badge.amber{color:var(--amber);border-color:rgba(255,159,28,.4);background:rgba(255,159,28,.08);}
 .badge.cyan{color:var(--cyan);border-color:rgba(34,211,238,.4);background:rgba(34,211,238,.08);}
 .badge.red{color:var(--red);border-color:rgba(255,77,77,.45);background:rgba(255,77,77,.08);}
@@ -119,7 +119,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
   padding:18px 16px calc(12px + var(--sat));
 }
 #cta-bar .inner{max-width:480px;margin:0 auto;display:flex;gap:10px;flex-wrap:wrap;}
-.cta-sub{flex:0 0 100%;text-align:center;font-size:12px;color:var(--sub);}
+.cta-sub{flex:0 0 100%;text-align:center;font-size:13px;color:var(--sub);}
 .btn{
   flex:1;display:block;width:100%;border:none;border-radius:14px;
   font-size:18px;font-weight:700;padding:15px 12px;cursor:pointer;
@@ -146,15 +146,15 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .switch input:checked + .knob::after{left:25px;background:var(--amber);}
 /* 表单 */
 .field{margin:12px 0;}
-.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:6px;}
+.field label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px;}
 .input,select.input{
   width:100%;background:#0f141c;border:1px solid var(--border);border-radius:12px;
   color:var(--text);font-size:15px;padding:13px 12px;font-family:inherit;outline:none;
 }
 .input:focus{border-color:var(--amber);}
 .input.err{border-color:var(--red);}
-.hint{font-size:12px;color:var(--sub);margin-top:6px;}
-.errtext{font-size:12px;color:var(--red);margin-top:6px;display:none;}
+.hint{font-size:13px;color:var(--sub);margin-top:6px;}
+.errtext{font-size:13px;color:var(--red);margin-top:6px;display:none;}
 .errtext.show{display:block;}
 /* 车型下拉 */
 /* 三级联选 */
@@ -169,7 +169,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 /* 步骤条 */
 .step{display:flex;gap:10px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--border);}
 .step:last-child{border-bottom:none;}
-.stepdot{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--border);color:var(--sub);font-size:12px;display:flex;align-items:center;justify-content:center;margin-top:2px;}
+.stepdot{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:1px solid var(--border);color:var(--sub);font-size:13px;display:flex;align-items:center;justify-content:center;margin-top:2px;}
 .step.active .stepdot{border-color:var(--cyan);color:var(--cyan);}
 .step.done .stepdot{border-color:var(--green);color:var(--green);}
 .prog{height:6px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;}
@@ -182,7 +182,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .tabs{display:flex;gap:10px;margin:12px 0;}
 .tab{flex:1;border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;background:var(--card);}
 .tab .t{font-size:15px;font-weight:700;}
-.tab .n{font-size:12px;color:var(--sub);margin-top:4px;text-align:left;}
+.tab .n{font-size:13px;color:var(--sub);margin-top:4px;text-align:left;}
 .tab.sel{border-color:var(--amber);background:rgba(255,159,28,.07);}
 .tab.sel .t{color:var(--amber);}
 /* v2-PATCH-01 (V2P01-CSS)：风格 chip（微信字阶 13px，系统字体继承 body） */
@@ -192,13 +192,13 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 #bars-wrap{margin:8px 0;}
 #bars{width:100%;height:190px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;}
 #bar-labels{display:flex;margin-top:6px;}
-#bar-labels span{flex:1;text-align:center;font-size:10px;color:var(--sub);line-height:1.5;padding:0 2px;}
+#bar-labels span{flex:1;text-align:center;font-size:11px;color:var(--sub);line-height:1.5;padding:0 2px;}
 #bars31{width:100%;height:64px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:10px;margin-top:8px;}
 /* 电平条 */
 .levelrow{display:flex;align-items:center;gap:10px;margin-top:10px;}
 #levelbar{flex:1;height:10px;background:#232b38;border-radius:999px;overflow:hidden;}
 #levelfill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--amber));}
-#leveldb{font-size:12px;color:var(--sub);min-width:76px;text-align:right;}
+#leveldb{font-size:13px;color:var(--sub);min-width:76px;text-align:right;}
 /* 报警 */
 .alert{display:none;border-radius:12px;padding:12px 14px;font-size:14px;margin:10px 0;}
 .alert.show{display:block;}
@@ -211,20 +211,20 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .gaincard{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;margin:10px 0;display:flex;align-items:center;gap:12px;}
 .gaincard .gl{flex:1;}
 .gaincard .gt{font-size:15px;font-weight:700;}
-.gaincard .gc{font-size:12px;color:var(--sub);margin-top:2px;}
+.gaincard .gc{font-size:13px;color:var(--sub);margin-top:2px;}
 .gaincard .gv{font-size:20px;font-weight:800;color:var(--cyan);}
 .gaincard.comb{border-color:rgba(255,77,77,.5);background:rgba(255,77,77,.05);}
 .gaincard.comb .gv{color:var(--red);}
-.gaincard .tag{font-size:10px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
+.gaincard .tag{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);color:var(--sub);}
 /* v2-C: peqtable css */
 /* DSP PEQ 参数表，微信字阶：表头12px/正文14px */
 .peqtable{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;}
 .peqtable th,.peqtable td{border-bottom:1px solid var(--border);padding:8px 6px;text-align:left;}
-.peqtable th{color:var(--sub);font-size:12px;font-weight:600;}
+.peqtable th{color:var(--sub);font-size:13px;font-weight:600;}
 .peqtable td.num{font-variant-numeric:tabular-nums;}
 .snrdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:6px;vertical-align:1px;}
 /* 图例 */
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:8px;}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--sub);margin-top:8px;}
 .legend i{display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;}
 canvas.chart{width:100%;height:220px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;}
 /* 分享卡 */
@@ -287,7 +287,7 @@ ul.clean li{margin:6px 0;}
         <div style="flex:1;min-width:0;">
           <div style="font-size:18px;font-weight:800;">本车音响得分：<span id="home-car-score" style="color:var(--amber);">--</span><span id="home-score-delta" class="small" style="font-weight:400;"></span></div>
           <div class="small" id="home-score-device" style="color:var(--sub);margin-top:4px;"></div>
-          <div class="small" style="text-align:right;color:var(--sub);font-size:10px;margin-top:2px;">算法 v1.3</div>
+          <div class="small" style="text-align:right;color:var(--sub);font-size:11px;margin-top:2px;">算法 v1.3</div>
         </div>
       </div>
       <div class="small" style="line-height:1.7;margin-top:10px;text-align:left;">
@@ -375,7 +375,7 @@ ul.clean li{margin:6px 0;}
     <div class="small" id="car-sub"></div>
     <div style="margin:10px 0 2px;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;background:rgba(255,255,255,.03);">
       <button class="btn btn-ghost" id="car-casual-btn" style="width:100%;padding:6px 10px;font-size:13px;">随便测测 · 不选车型</button>
-      <div style="font-size:11px;color:var(--sub);margin-top:3px;text-align:center;">家里的音响也能测着玩——只看跑分，数据不入库</div>
+      <div style="font-size:12px;color:var(--sub);margin-top:3px;text-align:center;">家里的音响也能测着玩——只看跑分，数据不入库</div>
     </div>
     <!-- 车型：单一搜索框 → 车系列表 → 年款列表（三步走） -->
     <div class="field" id="car-search-wrap">
@@ -4259,7 +4259,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.292: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.293: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4308,8 +4308,8 @@ function renderCTA(btns, sub){
   box.innerHTML = '';
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
-  ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.292 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:12px;padding-bottom:2px;';
+  ver.innerHTML = 'v2.9.293 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5324,7 +5324,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.292';
+var CALIB_VER = 'v2.9.293';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5443,7 +5443,7 @@ function renderCalibCard(box, spec){
   card.style.cursor = 'pointer';
   card.innerHTML =
     '<div class="h" style="font-size:15px;">🧭 ' + escapeHtml(tt('calib.cardTitle')) + '</div>' +
-    '<div style="position:relative;height:14px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;"><i style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:var(--cyan);border-radius:999px;"></i><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#dbe7f5;line-height:1;">' + pct + '%</span></div>' +
+    '<div style="position:relative;height:14px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;"><i style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:var(--cyan);border-radius:999px;"></i><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#dbe7f5;line-height:1;">' + pct + '%</span></div>' +
     '<div class="small mt8">' + statusLine + '</div>' + mineLine +
     '<div class="small mt8" style="color:var(--sub);">' + escapeHtml(tt('calib.cardWhy')) + '</div>' +
     '<div class="small mt8" style="color:var(--amber);">' +
@@ -5742,7 +5742,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.292';
+var CN_DATA_VER = 'v2.9.293';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
