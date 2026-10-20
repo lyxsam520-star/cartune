@@ -116,7 +116,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.317 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.318 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -370,7 +370,7 @@ ul.clean li{margin:6px 0;}
       <button class="btn btn-ghost" id="home-tech-more" style="width:100%;margin-top:10px;">See the full tech page</button>
     </div>
     <!-- v2.9.215: 测前准备（原第二页 5 项检查精简并入），点击展开 -->
-    <div class="card mt16" id="home-tips-card" style="cursor:pointer;"><div style="display:flex;align-items:center;gap:12px;"><div style="font-size:22px;line-height:1;">📋</div><div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;">How Scoring Works</div><div class="small">7 steps, tap to expand</div></div><div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tips-arrow">&rsaquo;</div></div><div id="home-tips-body" style="display:none;margin-top:12px;text-align:left;"><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">1</span><span>Pick your car — tap Start, choose your brand and series, and confirm how many EQ bands your head unit has. No match? “Just exploring” works too (nothing is stored).</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">2</span><span>Prep the environment — follow the High-Score Guide: engine off, somewhere quiet, head-unit EQ zeroed, surround and player effects off.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">3</span><span>Connect to the head unit — for Bluetooth playback, pair your phone with the car first and make sure it connects as “Media audio”, not call audio. For USB playback, copy the pink noise file to a USB drive and plug it in.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">4</span><span>Play pink noise — USB is most accurate, Bluetooth works too. Use your normal listening volume.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">5</span><span>Measure — take the case off, put the phone on the driver headrest, and tap start and measure 30 seconds straight. Don’t move the phone.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">6</span><span>Get your score and plan — an instant score, a 31-band spectrum, and a cut-only EQ plan matched to your band count.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">7</span><span>Adjust, then re-measure — set each EQ band as advised, measure again from the driver seat, and watch the score move. A separate plan covers driving conditions.</span></div><button class="btn btn-ghost" id="home-tips-more" style="width:100%;margin-top:2px;">See the high-score guide</button></div></div>
+    <div class="card mt16" id="home-tips-card" style="cursor:pointer;"><div style="display:flex;align-items:center;gap:12px;"><div style="font-size:22px;line-height:1;">📋</div><div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;">How Scoring Works</div><div class="small">7 steps, tap to expand</div></div><div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tips-arrow">&rsaquo;</div></div><div id="home-tips-body" style="display:none;margin-top:12px;text-align:left;"><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">1</span><span>Pick your car — tap Start, choose your brand and series, and confirm how many EQ bands your head unit has. No match? “Just exploring” works too (nothing is stored).</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">2</span><span>Prep the environment — follow the High-Score Guide: engine off, somewhere quiet, head-unit EQ zeroed, surround and player effects off.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">3</span><span>Connect to the head unit — for Bluetooth playback, pair your phone with the car first and make sure it connects as “Media audio”, not call audio. For USB playback, copy the pink noise file to a USB drive and plug it in.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">4</span><span>Play pink noise — USB is most accurate, Bluetooth works too. Use your normal listening volume.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">5</span><span>Measure — take the case off, put the phone on the driver headrest, and tap start: 5 quiet seconds measure the ambient noise floor first, then 25 seconds of spectrum. Don’t move the phone.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">6</span><span>Get your score and plan — an instant score, a 31-band spectrum, and a cut-only EQ plan matched to your band count.</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">7</span><span>Adjust, then re-measure — set each EQ band as advised, measure again from the driver seat, and watch the score move. A separate plan covers driving conditions.</span></div><button class="btn btn-ghost" id="home-tips-more" style="width:100%;margin-top:2px;">See the high-score guide</button></div></div>
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
@@ -588,7 +588,7 @@ ul.clean li{margin:6px 0;}
     </div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <!-- v2.9.317: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
+    <!-- v2.9.318: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: measured-calibration badge (unlocked models only) -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
@@ -1043,7 +1043,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     return d0 + t * (d1 - d0);
   };
 
-  /* 精度修复 D2/D5（v2.9.317）：统一电平对齐工具——与打分同式：
+  /* 精度修复 D2/D5（v2.9.318）：统一电平对齐工具——与打分同式：
    * 500Hz–2kHz（ISO31 idx 14–20）偏差中位数。复测残差、simulate 贴合度、
    * 诊断偏差、分享卡贴合分共用一处，避免各处自造未对齐口径（恒 ~87dB 假象）。 */
   DSP.alignMedOffset31 = function (meas, tgt) {
@@ -1929,7 +1929,7 @@ var MODELS_DB = {
    *    - RMS 归一不在此处做：对比阶段用"相对比较"（测量-目标）自然消去绝对电平
    * ============================================================ */
 
-  // v2.9.317: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
+  // v2.9.318: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
   window.__uaPlatform = function(){ try{ var ua = navigator.userAgent || ''; if(/OpenHarmony|HarmonyOS|ArkWeb/.test(ua)) return 'harmony'; if(/iPhone|iPad|iPod/.test(ua)) return 'ios'; if(/Android/.test(ua)) return 'android'; return 'other'; }catch(_){ return 'other'; } };
   window.__uaContainer = function(){ try{ var ua = navigator.userAgent || ''; if(/MicroMessenger/.test(ua)) return 'wechat'; if(/ArkWeb|TBS\/|X5|MQQBrowser/.test(ua)) return 'webview-other'; return 'browser'; }catch(_){ return 'other'; } };
   // getUserMedia 兼容：标准 API 优先，webkit 前缀兜底
@@ -2067,7 +2067,7 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.317: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
+      // v2.9.318: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
         var _trk = stream.getAudioTracks && stream.getAudioTracks()[0];
         if (_trk && _trk.getSettings) {
@@ -2349,11 +2349,11 @@ var MODELS_DB = {
    * 一次起播一次收尾，中间不重建 AudioContext、不启停 source——从根上消灭
    * step1→step2 交接爆音（交接逻辑是爆音的第一嫌疑人，直接删掉交接）。
    *
-   * 10s/40s 分配原理（v2.4 进阶版；v1 标准版为 5s/25s＝30s）：
-   * - 信号 40s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；40s 时 20Hz ±0.63dB、
-   *   50Hz 以上全 <0.5dB；车机 EQ 步进 1dB，精度余量充足；
-   * - 底噪 10s 足够：底噪只用于分频段 SNR 门控（阈值 10/15dB）；10s 时 20Hz
-   *   波动 ±1.2dB，远小于阈值间距（5dB），不影响"出/不出增益"判断。
+   * 时长分配（v2.9.318 D4 起与标准流程统一：底噪 5s＋信号 25s＝30s；进阶 L/R 为 10s＋20s＋20s）：
+   * - 信号 25s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；25s 时 20Hz σ≈±0.80dB
+   *   （30s 为 ±0.73dB，仅差 0.07dB），50Hz 以上 <0.5dB；车机 EQ 步进 1dB，精度余量充足；
+   * - 底噪 5s：底噪只用于分频段 SNR 门控（阈值 10/15dB）；5s 时 20Hz σ≈±1.7dB，
+   *   为阈值间距（5dB）的 1/3，阈值附近段少量误判属"供参考"语义带，可接受。
    *
    * 无信号 live 熔断：进入首个信号相位 5s 后，若 500Hz–4kHz 相对底噪平均抬升
    * <3dB，说明粉噪根本没播出来（蓝牙链路问题/用户没按播放），直接熔断，
@@ -2390,8 +2390,8 @@ var MODELS_DB = {
     var self = this;
     opts = opts || {};
     var phases = opts.phases || [
-      { key: 'floor', dur: 10, side: 'off' },
-      { key: 'sig', dur: 30, side: null }
+      { key: 'floor', dur: 5, side: 'off' },
+      { key: 'sig', dur: 25, side: null }
     ];
     var btPlay = !!opts.btPlay;
     var onFrame = opts.onFrame, onPhase = opts.onPhase;
@@ -2908,7 +2908,7 @@ var MODELS_DB = {
       }
       sim31[i] = meas31[i] + bands[best].gainDb;
     }
-    // D5（v2.9.317）：先中位数电平对齐再算 MAE，与复测残差同基准（原未对齐恒为假象量级）
+    // D5（v2.9.318）：先中位数电平对齐再算 MAE，与复测残差同基准（原未对齐恒为假象量级）
     var _med = DSP.alignMedOffset31(sim31, target31);
     var sum = 0;
     for (i = 0; i < 31; i++) sum += Math.abs((sim31[i] - _med) - target31[i]);
@@ -3392,10 +3392,8 @@ window.COPY = {
     btNote: "Convenient but slightly less accurate: test tone via phone Bluetooth.",
     usbTab: "External playback",
     usbNote: "Play pink noise from USB or a music app; the phone only measures.",
-    stepFloor: "Step 1: Ambient noise floor (30 s)",
-    stepFloorTip: "Windows closed, A/C off, stay quiet for ~30 seconds.",
-    stepL: "Step 2: Left channel (30 s)",
-    stepR: "Step 3: Right channel (30 s)",
+    stepFloor: "Step 1: Ambient noise floor (5 s)",
+    stepFloorTip: "Windows closed, A/C off, stay quiet for ~5 seconds.",
     measuringTip: "Playing test audio and measuring… stay quiet, don't touch the phone.",
     snrWarn: "Signal too weak — turn up the head-unit volume and retry",
     clipAlert: "Mic clipping detected — stopped. Turn down the volume and retry.",
@@ -3475,7 +3473,6 @@ window.COPY = {
     isoYesEn: "Yes, left only",
     isoNo: "Both sides played",
     isoNoEn: "Both sides played",
-    stepStereo: "Step 2: Stereo combined measurement (30s)",
     stepStereoEn: "Step 2: Stereo combined measurement (30s)",
     objFloor: "Ambient noise floor",
     objFloorEn: "Ambient noise floor",
@@ -3490,6 +3487,7 @@ window.COPY = {
     listeningDone: function (n) { return "Listening complete: " + n; },
     listeningDoneEn: function (n) { return "Listening complete: " + n; },
     detectingFloor: "Detecting ambient sound, preparing for the formal test…",
+    detectingFloorUsb: "Pause playback for 5 seconds: detecting the ambient noise floor — resume playback when it finishes…",
     detectingFloorEn: "Detecting ambient sound, preparing for the formal test…",
     playingStereo: "Playing test tone, please stay quiet…",
     playingStereoEn: "Playing test tone, please stay quiet…",
@@ -3519,12 +3517,11 @@ window.COPY = {
     ctaReport: "Generate Tuning Report",
     ctaReportEn: "Generate Tuning Report",
     stepMerged: "30 s total",
-    stepMergedNoFloor: "30 s total",
     stepMergedEn: "30s total, one pass",
     stepMergedLr: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
     stepMergedLrEn: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
-    stepMergedTip: "One pass with no pauses: pink noise fades in automatically and fades out at 30s.",
-    stepMergedTipNoFloor: "Pink noise keeps playing; auto-stops at 30 s.",
+    stepMergedTip: "First 5 quiet seconds measure the noise floor, then the pink noise fades in — done at 30 s.",
+    stepMergedTipUsb: "Pause playback first: 5 quiet seconds for the noise floor, then resume the pink noise — done in 30 s.",
     stepMergedTipEn: "One pass with no pauses: pink noise fades in automatically and fades out at 30s.",
     progressMerged: "Listening progress: 30s",
     progressMergedEn: "Listening progress: 30s",
@@ -3858,7 +3855,7 @@ window.COPY = {
     promptTitleEn: "EQ set on the head unit?",
     promptBody: "Set each head-unit EQ band per the plan and save it, then put the phone back where it was and tap Start.",
     promptBodyEn: "Set each head-unit EQ band per the plan and save it, then put the phone back where it was and tap Start.",
-    startBtn: "Start re-measure (~60s)",
+    startBtn: "Start re-measure (~30s)",
     startBtnEn: "Start re-measure (~60s)",
     fitTitle: "Before vs after",
     fitTitleEn: "Before vs after",
@@ -3993,7 +3990,7 @@ function trackSecurity(ev, data){
 
 /* ---------- 全局状态机 ---------- */
 var app = {
-  state: { pro:false, car:null, eqSpec:null, floor31:null, measL:null, measR:null, plan:null, paid:false, remeasure:null, micSettings:null },
+  state: { pro:false, car:null, eqSpec:null, floor31:null, floorMode:null, measL:null, measR:null, plan:null, paid:false, remeasure:null, micSettings:null },
   playMode: 'bt',           // v2.9.215: 默认蓝牙；'bt' | 'usb'
   measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
@@ -4110,7 +4107,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.317 · Beta';
+  ver.innerHTML = 'v2.9.318 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5115,7 +5112,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.317';
+var CALIB_VER = 'v2.9.318';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5543,8 +5540,10 @@ function initCalib(){
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
 /* v2.2 30s 合并流程：单步 UI，内部多相位一次跑完，中间无停顿。
- * 时长原理（v2.4 进阶版）：底噪 10s（分频段 SNR 门控只需"大概多吵"，10s 在 20Hz 处 ±1.2dB << 5dB 阈值间距）；
- * 立体声 40s（20Hz ±0.63dB，60Hz 以上 <0.5dB，车机 EQ 步进 1dB 下有冗余；低频平均更充分——进阶版档位差异）。
+ * 现行口径（v2.9.318 精度修复 D4）：标准流程 = 底噪 5s + 立体声 25s = 30s；
+ * 进阶 L/R = 底噪 10s + 左 20s + 右 20s = 50s（PHASES_LR）。
+ * 底噪 5s 在 20Hz 处 σ≈±1.7dB（门控阈值间距 5dB 的 1/3，可接受）；立体声 25s 在 20Hz 处
+ * σ≈±0.80dB（vs 30s 的 ±0.73dB，仅差 0.07dB），换回全套逐段 SNR 门控的真实输入。
  * 从根上消灭 step1→step2 交接爆音（2026-10-13 真机问题：交接逻辑是第一嫌疑人）。 */
 var STEP_DEFS_LR = [
   {key:'merged_lr', dur:50, merged:true, copy:'measure.stepMergedLr', obj:'measure.objFloor'}
@@ -5557,8 +5556,9 @@ var STEP_DEFS_STEREO_QUICK = [
 ];
 /* 合并相位表：side='off'＝该相位不播放；side=null＝双声道粉噪；'L'/'R'＝单声道 */
 var PHASES_STEREO = [
-  {key:'sig',   dur:30, side:null,  obj:'measure.objStereo'}
-]; /* v2.9.215: 底噪已砍，统一30秒 */
+  {key:'floor', dur:5,  side:'off', obj:'measure.objFloor'},
+  {key:'sig',   dur:25, side:null,  obj:'measure.objStereo'}
+]; /* v2.9.318 D4: 恢复底噪段（5s+25s=30s）；v2.9.215 砍 floor 后门控恒以 -100 假值通过，现恢复真实门控输入 */ /* v2.9.215: 底噪已砍，统一30秒 */
 /* v2.9.81: 快速模式 12s（调试用）——底噪 4s（2.5s 静置＋1.5s 平均）＋立体声 8s（≈47 独立帧，中高频 ±1dB；低频方差大，仅调试，验收用标准模式） */
 var PHASES_QUICK = [
   {key:'floor', dur:4, side:'off', obj:'measure.objFloor'},
@@ -5574,11 +5574,7 @@ var PHASES_LR = [
 ];
 function stepDefs(){
   if(app.measureMode==='lr') return STEP_DEFS_LR;
-  // v2.9.215: USB/App 模式用无底噪文案
-  if(app.playMode !== 'bt' && app.speedMode !== 'quick'){
-    return [{key:'merged', dur:30, merged:true, copy:'measure.stepMergedNoFloor', obj:'measure.objStereo'}];
-  }
-  // v2.9.81: 调试直达——直接测粉噪，跳过底噪
+  // v2.9.318 D4: 全模式统一含底噪段，不再有 NoFloor 分支（原 v2.9.215 USB/App 无底噪文案退役）
   return app.speedMode==='quick' ? STEP_DEFS_STEREO_QUICK : STEP_DEFS_STEREO; // v2.9.81
 }
 function initMeasure(){
@@ -5684,10 +5680,10 @@ function buildStepsUI(){
     box.appendChild(d);
   });
   var _d0 = (typeof stepDefs==='function') ? stepDefs()[0] : null;
-  // v2.9.215: USB/App 模式用无底噪 tip
+  // v2.9.318 D4: 全模式含底噪段；USB/App 外播用暂停/恢复指引 tip，BT 用自动流程 tip
   var tip;
   if(_d0 && _d0.merged && app.playMode !== 'bt' && app.speedMode !== 'quick'){
-    tip = t('measure.stepMergedTipNoFloor');
+    tip = t('measure.stepMergedTipUsb');
   }else{
     tip = t(_d0 && _d0.merged ? (app.speedMode==='quick' ? 'measure.stepMergedTipQuick' : 'measure.stepMergedTip') : 'measure.stepFloorTip');
   }
@@ -5989,6 +5985,7 @@ function setOverallText(s){ var el=document.getElementById('overall-text'); if(e
 function setOverallObj(s){ var el=document.getElementById('overall-obj'); if(el) el.textContent=s; }
 /* 人性化状态文案：说人话、讲为什么、预告下一步（2026-10-13 用户要求提示人性化） */
 function liveStatusFor(objKey){
+  if(objKey==='measure.objFloorUsb') return tt('measure.detectingFloorUsb');
   if(objKey==='measure.objFloor') return tt('measure.detectingFloor');
   if(objKey==='measure.objStereo') return tt('measure.playingStereo');
   if(objKey==='measure.objL') return tt('measure.playingL');
@@ -6983,7 +6980,7 @@ async function startMeasureFlow(opts){
     try { alert('Mic failed to start — check permission and retry.'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.317: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
+    // v2.9.318: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -7052,11 +7049,14 @@ async function startMeasureFlow(opts){
   var res = null;
   // v2.9.215: 开始播报已去掉（用户要求）
   try{
-    // v2.9.215: USB/App 模式跳过 4 秒底噪——用户连续播粉噪，不掐表
+    // v2.9.318 D4: 全模式恢复底噪段（floor 5s + sig 25s，总时长仍 30s）。
+    // USB/App 外播靠阶段文案引导用户先暂停播放 5 秒（底噪相位换暂停指引文案）；
+    // 没暂停会被底噪异常熔断诚实中止，不产假数据（floorAnomaly 保持）。
     var _phases = (app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO);
-    if(app.playMode !== 'bt'){
-      // 用户外播模式：只测 30 秒信号，用默认底噪
-      _phases = [{key:'sig', dur:30, side:null, obj:'measure.objStereo'}];
+    if(app.playMode !== 'bt' && app.speedMode !== 'quick'){
+      _phases = _phases.map(function(p){
+        return p.key==='floor' ? {key:p.key, dur:p.dur, side:p.side, obj:'measure.objFloorUsb'} : p;
+      });
     }
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
@@ -7073,6 +7073,12 @@ async function startMeasureFlow(opts){
   var floor31 = res.floor31, meas = res.seg31.sig;
   // v2.9.81: 调试跳过底噪时，用 -120dB 占位，避免下游空指针
   S().floor31 = floor31;
+  // v2.9.318 D4: 底噪口径标记——服务端据此区分真实 5s 实测底噪与合成假值（仅标准 5s 底噪段打标）
+  try{
+    var _hadFloor5 = false, _pi;
+    for(_pi=0; _pi<_phases.length; _pi++){ if(_phases[_pi].key==='floor' && _phases[_pi].dur===5) _hadFloor5 = true; }
+    S().floorMode = _hadFloor5 ? 'measured5s' : null;
+  }catch(_){}
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
@@ -7179,6 +7185,7 @@ async function startLrOptIn(){
   if(res && res.noSignal){ return failNoSignal(token); }
   if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
   S().floor31 = res.floor31;
+  try{ S().floorMode = null; }catch(_){} // D4: LR 底噪为 10s，不在 floorMode 枚举内，不打标
   var L31 = res.seg31.L, R31 = res.seg31.R;
   if(!validityGate(L31, 'L')) return;
   if(!validityGate(R31, 'R')) return;
@@ -7349,7 +7356,7 @@ function renderReport(){
   setText('report-trust','report.trustNote');
   // v2.9.251: P1 honesty label — iPhone correction table measured from a single iPhone 12 Pro Max unit, not universal to all iPhones
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += ' (iPhone mic correction table measured from a single iPhone 12 Pro Max unit.)'; } } }catch(_){}
-  // v2.9.317: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
+  // v2.9.318: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = 'Audio processing on this phone was not fully off during this measurement, so treat the result as slightly less reliable.'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
@@ -7616,7 +7623,7 @@ function calcCarScoreFrom(meas, opts){
   try{ iso = DSP.ISO31 || []; parked = DSP.TC_PARKED || []; }catch(_){ return null; }
   if(iso.length < 31 || !parked.length) return null;
   // v2.9.255: 怠速检测（用户 2026-10-20）— 40/50Hz 超标+8dB 判定为引擎噪音，自动切行车曲线
-  // 精度修复 D3（v2.9.317）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
+  // 精度修复 D3（v2.9.318）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
   // ②直读 parked[3]/[4] 与 ISO31 的 40/50Hz 错位一格；③守卫要求行车表 ≥31 点（实为 30 点）。
   // 改为对齐后判定（见下方 medOf 之后）：先按驻车曲线算对齐中位数，再比对齐后偏差；本块只取行车表。
   var _isIdle = false;
@@ -7792,7 +7799,7 @@ function diagDeviation(){
     try{ t = DSP.targetDbAt(f); }catch(_){}
     tgt.push(t);
   }
-  // D5（v2.9.317）：统一对齐工具（中位数偏移，与打分/复测残差同式）。
+  // D5（v2.9.318）：统一对齐工具（中位数偏移，与打分/复测残差同式）。
   // 原未对齐偏差恒为 ~-87dB 量级，诊断阈值与 PEQ 输入语义全失，现恢复。
   var _med = 0;
   try{ _med = DSP.alignMedOffset31(meas, tgt); }catch(_){}
@@ -8096,7 +8103,7 @@ function renderBandTable(){
 function shareCardFlatScore(){
   try{
     var iso = DSP.ISO31 || [], m = avg31(), sum = 0, n = 0;
-    // D5（v2.9.317）：中位数电平对齐后再算 MAE，与主分同基准（原未对齐恒为假象量级）
+    // D5（v2.9.318）：中位数电平对齐后再算 MAE，与主分同基准（原未对齐恒为假象量级）
     var _tgt = [], _med = 0;
     for(var i = 0; i < iso.length && i < m.length; i++){ try{ _tgt.push(DSP.targetDbAt(iso[i])); }catch(_){ _tgt.push(0); } }
     try{ _med = DSP.alignMedOffset31(m, _tgt); }catch(_){}
@@ -8658,13 +8665,13 @@ function initTech(){
 /* =====================================================================
  * 复测验证闭环（v2）：方案应用后 → 复测（完整两步：底噪+立体声）→ 残差/贴合度对比
  * 规则铁律沿用 v1：cut-only / 梳状禁补偿 / 防烧喇叭 / 不推荐硬件升级。
- * 残差 R（v2.9.317 精度修复 D2，与打分同式）：中位数电平对齐后 idx 2–28 的 RMS 残差；
+ * 残差 R（v2.9.318 精度修复 D2，与打分同式）：中位数电平对齐后 idx 2–28 的 RMS 残差；
  * 贴合度 fit = max(0, 1 − R/15) × 100%，满量程 15dB 与打分 rms/15 同源（见 REMEASURE_FULLSCALE_DB）。
  * 残差下降率 dropRate = (R1−R2)/R1 × 100%（北极星指标本体，随条目落盘）。
  * 条目 target 如实记录实际所用目标（base+style+curveVer），不再写死驻车。
  * __REMEASURE_V1__
  * ===================================================================== */
-var REMEASURE_FULLSCALE_DB = 15;                // 贴合度满量程参考：15dB（v2.9.317 起与打分同源；原 12dB 独立口径废止）
+var REMEASURE_FULLSCALE_DB = 15;                // 贴合度满量程参考：15dB（v2.9.318 起与打分同源；原 12dB 独立口径废止）
 /* 条目 target 标识：如实记录本次残差实际所用目标（基准+风格+curveVer），不再写死驻车（原 REMEASURE_TARGET 常量退役） */
 function remeasureTargetId(){
   var base = 'Parked', style = '';
@@ -8682,7 +8689,7 @@ function target31(){
   return out;
 }
 function residual31(measArr, tgtArr){
-  // D2（v2.9.317）：与打分同式——中位数电平对齐（DSP.alignMedOffset31）+ idx 2–28 RMS。
+  // D2（v2.9.318）：与打分同式——中位数电平对齐（DSP.alignMedOffset31）+ idx 2–28 RMS。
   // 原未对齐全 31 段 MAE 被两次测量绝对电平差主导，fit 恒 ≈0、北极星不可测，现修复。
   var med = 0;
   try{ med = DSP.alignMedOffset31(measArr, tgtArr); }catch(_){}
@@ -9566,7 +9573,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.317',
+        appVer: 'v2.9.318',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9580,6 +9587,7 @@ else{ init(); }
         remeasure: remeasure,
         targetCurve: (typeof DSP !== 'undefined' && DSP.targetBase) ? String(DSP.targetBase) : '',
         floor31: (st.floor31 && st.floor31.length === 31) ? st.floor31.slice(0, 31) : null,
+        floorMode: st.floorMode || null,
         specCenters: (st.eqSpec && st.eqSpec.centers) ? st.eqSpec.centers.slice(0, 16) : null,
         calibrated: !!(st.eqSpec && st.eqSpec.calibrated),
         calibVer: (st.eqSpec && st.eqSpec.calibrated) ? 'crowd-v1' : 'base-v1',
@@ -9593,7 +9601,7 @@ else{ init(); }
     }catch(_){}
   }
   // TD-004: error digest reporting (once per page, silent failure)
-  // TD-004 strengthened (v2.9.317): batched error reports (<=6 batches/page, buffer cleared on send);
+  // TD-004 strengthened (v2.9.318): batched error reports (<=6 batches/page, buffer cleared on send);
   // triggers: 4s after first error / every 20s / on hide or pagehide (keepalive); <=2 per fingerprint per page, with stack head.
   var __errBatches = 0, __errTimer = null;
   function mFlushErrors(){
