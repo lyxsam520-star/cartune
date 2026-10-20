@@ -116,7 +116,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.316 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.317 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -588,7 +588,7 @@ ul.clean li{margin:6px 0;}
     </div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <!-- v2.9.316: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
+    <!-- v2.9.317: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: measured-calibration badge (unlocked models only) -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
@@ -1041,6 +1041,20 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     var f1 = TARGET_PAIRS[i + 1][0], d1 = TARGET_PAIRS[i + 1][1];
     var t = (Math.log(f) - Math.log(f0)) / (Math.log(f1) - Math.log(f0));
     return d0 + t * (d1 - d0);
+  };
+
+  /* 精度修复 D2/D5（v2.9.317）：统一电平对齐工具——与打分同式：
+   * 500Hz–2kHz（ISO31 idx 14–20）偏差中位数。复测残差、simulate 贴合度、
+   * 诊断偏差、分享卡贴合分共用一处，避免各处自造未对齐口径（恒 ~87dB 假象）。 */
+  DSP.alignMedOffset31 = function (meas, tgt) {
+    var d = [], i, m, g;
+    for (i = 14; i <= 20; i++) {
+      m = meas && meas[i]; g = tgt && tgt[i];
+      if (typeof m === 'number' && typeof g === 'number' && isFinite(m) && isFinite(g)) d.push(m - g);
+    }
+    if (!d.length) return 0;
+    d.sort(function (a, b) { return a - b; });
+    return d[Math.floor(d.length / 2)];
   };
 
   /* ============================================================
@@ -1915,7 +1929,7 @@ var MODELS_DB = {
    *    - RMS 归一不在此处做：对比阶段用"相对比较"（测量-目标）自然消去绝对电平
    * ============================================================ */
 
-  // v2.9.316: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
+  // v2.9.317: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
   window.__uaPlatform = function(){ try{ var ua = navigator.userAgent || ''; if(/OpenHarmony|HarmonyOS|ArkWeb/.test(ua)) return 'harmony'; if(/iPhone|iPad|iPod/.test(ua)) return 'ios'; if(/Android/.test(ua)) return 'android'; return 'other'; }catch(_){ return 'other'; } };
   window.__uaContainer = function(){ try{ var ua = navigator.userAgent || ''; if(/MicroMessenger/.test(ua)) return 'wechat'; if(/ArkWeb|TBS\/|X5|MQQBrowser/.test(ua)) return 'webview-other'; return 'browser'; }catch(_){ return 'other'; } };
   // getUserMedia 兼容：标准 API 优先，webkit 前缀兜底
@@ -2053,7 +2067,7 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.316: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
+      // v2.9.317: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
         var _trk = stream.getAudioTracks && stream.getAudioTracks()[0];
         if (_trk && _trk.getSettings) {
@@ -2894,8 +2908,10 @@ var MODELS_DB = {
       }
       sim31[i] = meas31[i] + bands[best].gainDb;
     }
+    // D5（v2.9.317）：先中位数电平对齐再算 MAE，与复测残差同基准（原未对齐恒为假象量级）
+    var _med = DSP.alignMedOffset31(sim31, target31);
     var sum = 0;
-    for (i = 0; i < 31; i++) sum += Math.abs(sim31[i] - target31[i]);
+    for (i = 0; i < 31; i++) sum += Math.abs((sim31[i] - _med) - target31[i]);
     return { sim31: sim31, flatness: sum / 31 };
   }
 
@@ -4094,7 +4110,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.316 · Beta';
+  ver.innerHTML = 'v2.9.317 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5099,7 +5115,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.316';
+var CALIB_VER = 'v2.9.317';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6967,7 +6983,7 @@ async function startMeasureFlow(opts){
     try { alert('Mic failed to start — check permission and retry.'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.316: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
+    // v2.9.317: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -7333,7 +7349,7 @@ function renderReport(){
   setText('report-trust','report.trustNote');
   // v2.9.251: P1 honesty label — iPhone correction table measured from a single iPhone 12 Pro Max unit, not universal to all iPhones
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += ' (iPhone mic correction table measured from a single iPhone 12 Pro Max unit.)'; } } }catch(_){}
-  // v2.9.316: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
+  // v2.9.317: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = 'Audio processing on this phone was not fully off during this measurement, so treat the result as slightly less reliable.'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
@@ -7600,7 +7616,7 @@ function calcCarScoreFrom(meas, opts){
   try{ iso = DSP.ISO31 || []; parked = DSP.TC_PARKED || []; }catch(_){ return null; }
   if(iso.length < 31 || !parked.length) return null;
   // v2.9.255: 怠速检测（用户 2026-10-20）— 40/50Hz 超标+8dB 判定为引擎噪音，自动切行车曲线
-  // 精度修复 D3（v2.9.316）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
+  // 精度修复 D3（v2.9.317）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
   // ②直读 parked[3]/[4] 与 ISO31 的 40/50Hz 错位一格；③守卫要求行车表 ≥31 点（实为 30 点）。
   // 改为对齐后判定（见下方 medOf 之后）：先按驻车曲线算对齐中位数，再比对齐后偏差；本块只取行车表。
   var _isIdle = false;
@@ -7775,8 +7791,12 @@ function diagDeviation(){
     var t = 0;
     try{ t = DSP.targetDbAt(f); }catch(_){}
     tgt.push(t);
-    dev.push((meas[i]||0) - t);
   }
+  // D5（v2.9.317）：统一对齐工具（中位数偏移，与打分/复测残差同式）。
+  // 原未对齐偏差恒为 ~-87dB 量级，诊断阈值与 PEQ 输入语义全失，现恢复。
+  var _med = 0;
+  try{ _med = DSP.alignMedOffset31(meas, tgt); }catch(_){}
+  for(i=0;i<31;i++){ dev.push(((meas[i]||0) - _med) - tgt[i]); }
   return { iso: iso, meas: meas, tgt: tgt, dev: dev };
 }
 /* 确定性诊断规则集，返回 [{title, cause}]（文案走 COPY） */
@@ -8076,9 +8096,13 @@ function renderBandTable(){
 function shareCardFlatScore(){
   try{
     var iso = DSP.ISO31 || [], m = avg31(), sum = 0, n = 0;
+    // D5（v2.9.317）：中位数电平对齐后再算 MAE，与主分同基准（原未对齐恒为假象量级）
+    var _tgt = [], _med = 0;
+    for(var i = 0; i < iso.length && i < m.length; i++){ try{ _tgt.push(DSP.targetDbAt(iso[i])); }catch(_){ _tgt.push(0); } }
+    try{ _med = DSP.alignMedOffset31(m, _tgt); }catch(_){}
     for(var i = 0; i < iso.length && i < m.length; i++){
-      var tg = DSP.targetDbAt(iso[i]);
-      if(isFinite(tg) && isFinite(m[i])){ sum += Math.abs(m[i] - tg); n++; }
+      var tg = _tgt[i];
+      if(isFinite(tg) && isFinite(m[i])){ sum += Math.abs((m[i] - _med) - tg); n++; }
     }
     if(!n) return 0;
     return Math.max(0, Math.min(100, Math.round(100 - (sum / n) * 10)));
@@ -8634,12 +8658,22 @@ function initTech(){
 /* =====================================================================
  * 复测验证闭环（v2）：方案应用后 → 复测（完整两步：底噪+立体声）→ 残差/贴合度对比
  * 规则铁律沿用 v1：cut-only / 梳状禁补偿 / 防烧喇叭 / 不推荐硬件升级。
- * 残差 R = mean(|meas31 − target31|)；贴合度 fit = max(0, 1 − R/12) × 100%，
- * 其中 12dB 为满量程参考（口径固定，见 REMEASURE_FULLSCALE_DB）。
+ * 残差 R（v2.9.317 精度修复 D2，与打分同式）：中位数电平对齐后 idx 2–28 的 RMS 残差；
+ * 贴合度 fit = max(0, 1 − R/15) × 100%，满量程 15dB 与打分 rms/15 同源（见 REMEASURE_FULLSCALE_DB）。
+ * 残差下降率 dropRate = (R1−R2)/R1 × 100%（北极星指标本体，随条目落盘）。
+ * 条目 target 如实记录实际所用目标（base+style+curveVer），不再写死驻车。
  * __REMEASURE_V1__
  * ===================================================================== */
-var REMEASURE_TARGET = 'CarAudio-TC-Parked-v1'; // 所用目标曲线版本（与 DSP.TARGET 一致）
-var REMEASURE_FULLSCALE_DB = 12;                // 贴合度满量程参考：12dB
+var REMEASURE_FULLSCALE_DB = 15;                // 贴合度满量程参考：15dB（v2.9.317 起与打分同源；原 12dB 独立口径废止）
+/* 条目 target 标识：如实记录本次残差实际所用目标（基准+风格+curveVer），不再写死驻车（原 REMEASURE_TARGET 常量退役） */
+function remeasureTargetId(){
+  var base = 'Parked', style = '';
+  try{
+    if(DSP.targetBase === 'driving') base = 'Driving';
+    if(DSP.targetStyle) style = '+' + DSP.targetStyle;
+  }catch(_){}
+  return 'CarAudio-TC-' + base + '-v1' + style;
+}
 var REMEASURE_MAX_KEEP = 3;                     // S().remeasure 最多保留最近 3 次
 
 function target31(){
@@ -8648,13 +8682,18 @@ function target31(){
   return out;
 }
 function residual31(measArr, tgtArr){
-  var n = Math.min(measArr.length, tgtArr.length), s = 0, c = 0, i;
-  for(i=0;i<n;i++){
+  // D2（v2.9.317）：与打分同式——中位数电平对齐（DSP.alignMedOffset31）+ idx 2–28 RMS。
+  // 原未对齐全 31 段 MAE 被两次测量绝对电平差主导，fit 恒 ≈0、北极星不可测，现修复。
+  var med = 0;
+  try{ med = DSP.alignMedOffset31(measArr, tgtArr); }catch(_){}
+  var s = 0, c = 0, i;
+  for(i=2;i<=28;i++){
     var m = measArr[i], g = tgtArr[i];
     if(typeof m!=='number' || typeof g!=='number') continue;
-    s += Math.abs(m - g); c++;
+    var d = (m - med) - g;
+    s += d*d; c++;
   }
-  return c ? s/c : NaN;
+  return c ? Math.sqrt(s/c) : NaN;
 }
 function fitOf(residualDb){
   if(!(residualDb>=0)) return 0;
@@ -8703,7 +8742,8 @@ function finishRemeasure(meas){
     ts: Date.now(),
     r1: +r1.toFixed(2), r2: +r2.toFixed(2),
     fit1: +f1.toFixed(1), fit2: +f2.toFixed(1),
-    target: REMEASURE_TARGET,                 // 所用目标曲线版本
+    dropRate: (isFinite(r1) && r1 > 0 && isFinite(r2)) ? +(((r1 - r2) / r1) * 100).toFixed(1) : null, // 残差下降率 %（北极星）
+    target: remeasureTargetId(),              // 实际所用目标（base+style+curveVer）
     dsp: (window.DSP && DSP.version) || '',   // 算法层版本
     playMode: app.playMode,
     snr: (meas && typeof meas.snrDb==='number') ? +meas.snrDb.toFixed(1) : null
@@ -9507,7 +9547,7 @@ else{ init(); }
           var rm = rmList[rmList.length - 1];
           remeasure = {
             r1: rm.r1, r2: rm.r2,
-            fit1: rm.fit1, fit2: rm.fit2,
+            fit1: rm.fit1, fit2: rm.fit2, dropRate: (rm.dropRate != null ? rm.dropRate : null),
             score1: rm.score1, score2: rm.score2, delta: rm.delta,
             target: rm.target || '',
             dspVer: rm.dsp || '',
@@ -9526,7 +9566,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.316',
+        appVer: 'v2.9.317',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9543,7 +9583,7 @@ else{ init(); }
         specCenters: (st.eqSpec && st.eqSpec.centers) ? st.eqSpec.centers.slice(0, 16) : null,
         calibrated: !!(st.eqSpec && st.eqSpec.calibrated),
         calibVer: (st.eqSpec && st.eqSpec.calibrated) ? 'crowd-v1' : 'base-v1',
-        curveVer: 'v1', algoVer: 'rule-v1', scoreVer: 'rms15-v1',
+        curveVer: 'v1', algoVer: 'rule-v2', scoreVer: 'rms15-v2',
         platform: (function(){ try{ return window.__uaPlatform(); }catch(_){ return 'other'; } })(),
         container: (function(){ try{ return window.__uaContainer(); }catch(_){ return 'other'; } })()
       };
@@ -9553,7 +9593,7 @@ else{ init(); }
     }catch(_){}
   }
   // TD-004: error digest reporting (once per page, silent failure)
-  // TD-004 strengthened (v2.9.316): batched error reports (<=6 batches/page, buffer cleared on send);
+  // TD-004 strengthened (v2.9.317): batched error reports (<=6 batches/page, buffer cleared on send);
   // triggers: 4s after first error / every 20s / on hide or pagehide (keepalive); <=2 per fingerprint per page, with stack head.
   var __errBatches = 0, __errTimer = null;
   function mFlushErrors(){
