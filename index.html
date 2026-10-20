@@ -128,6 +128,15 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 }
 .btn-primary{background:var(--amber);color:#231400;}
 .btn-primary:disabled{background:#3a3f4a;color:#7a828f;cursor:not-allowed;}
+.btn-primary:active:not(:disabled){filter:brightness(.92);}
+.btn-ghost:active{background:rgba(255,255,255,.05);}
+.tab:active{border-color:rgba(255,255,255,.18);}
+.chip:active{background:#1a2230;}
+@media (prefers-reduced-motion: reduce){
+  .sec{animation:none;}
+  .prog > i.averaging{animation:none;}
+  .spin{animation-duration:1.6s;}
+}
 .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);flex:0 0 auto;padding:15px 18px;}
 /* 声道隔离自检弹窗 */
 .iso-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;}
@@ -135,9 +144,9 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .iso-card .btn{margin-top:12px;}
 /* 顶部返回 */
 .topbar{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-.backbtn{background:none;border:none;color:var(--sub);font-size:14px;padding:8px 4px;cursor:pointer;font-family:inherit;}
+.backbtn{background:none;border:none;color:var(--sub);font-size:14px;padding:12px 8px;margin-left:-8px;cursor:pointer;font-family:inherit;}
 .backbtn::before{content:"‹ ";font-size:18px;line-height:1;}
-.linklike{background:none;border:none;color:var(--cyan);font-size:14px;padding:10px 4px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
+.linklike{background:none;border:none;color:var(--cyan);font-size:14px;padding:12px 6px;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px;}
 /* 开关 */
 .switch{position:relative;width:52px;height:30px;flex:0 0 auto;}
 .switch input{opacity:0;width:100%;height:100%;position:absolute;margin:0;cursor:pointer;z-index:2;}
@@ -187,7 +196,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .tab.sel{border-color:var(--amber);background:rgba(255,159,28,.07);}
 .tab.sel .t{color:var(--amber);}
 /* v2-PATCH-01 (V2P01-CSS)：风格 chip（微信字阶 13px，系统字体继承 body） */
-.chip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;font-size:13px;color:var(--text);background:var(--card);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
+.chip{border:1px solid var(--border);border-radius:999px;padding:8px 16px;min-height:40px;display:inline-flex;align-items:center;font-size:13px;color:var(--text);background:var(--card);cursor:pointer;font-family:inherit;-webkit-tap-highlight-color:transparent;}
 .chip.on{border-color:var(--cyan);color:var(--cyan);background:rgba(34,211,238,.08);}
 /* 实时柱 */
 #bars-wrap{margin:8px 0;}
@@ -4260,7 +4269,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.295: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.296: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4310,7 +4319,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.295 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.296 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5325,7 +5334,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.295';
+var CALIB_VER = 'v2.9.296';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5743,7 +5752,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.295';
+var CN_DATA_VER = 'v2.9.296';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
