@@ -538,6 +538,7 @@ ul.clean li{margin:6px 0;}
     <!-- v2.9.81: 快速模式 12s（调试用）＋标准 30s（验收用）可切换；异常弹窗诊断；iOS 手势同步创建 AudioContext -->
     <div id="band-table-wrap">
     <div class="h mt16" id="band-table-title" style="font-size:15px;"></div>
+    <div class="small" id="band-table-hint" style="color:var(--sub);margin-top:4px;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
         <thead><tr>
@@ -3879,8 +3880,8 @@ window.COPY = {
     levelCheckHintEn: "Checking playback level, auto-continues in 3s",
     levelAdjustTitle: "电平调节",
     levelAdjustTitleEn: "Level Adjustment",
-    levelAdjustHint: "拖动滑杆调音量，指针进绿区即可，调好点开始",
-    levelAdjustHintEn: "Drag slider to adjust volume, needle in green zone, then start",
+    levelAdjustHint: "拖动滑杆调音量，指针进绿区即可，调好点开始。先把手机反过来放好：底部（话筒）对着前挡风玻璃。",
+    levelAdjustHintEn: "Drag slider to adjust volume, needle in green zone, then start. Have the phone flipped around first: bottom edge (mic) facing the windshield.",
     levelSliderLabel: "音量",
     levelSliderLabelEn: "Volume",
     levelTooLoud: "音量偏大，注意",
@@ -3959,6 +3960,8 @@ window.COPY = {
     ctaUnlock: "查看完整方案",
     priceLine: "",
     bandTableTitle: "实测读数",
+    bandTableHint: "每一行是一个频段：实测值、目标值、差多少，一眼看清。看不懂也没关系，方案页会直接告诉你每段调多少。",
+    bandTableHintEn: "Each row is one frequency band: what your car measured, the target, and the gap. Don't worry if it looks technical — the plan page tells you exactly how much to set each band.",
     bandColFreq: "频段",
     bandColMeas: "实测 dB",
     bandColTarget: "目标 dB",
@@ -4169,8 +4172,8 @@ window.COPY = {
     btnEn: "Re-measure",
     promptTitle: "调好车机 EQ 了吗？",
     promptTitleEn: "EQ set on the head unit?",
-    promptBody: "请按方案把车机 EQ 逐段调好并保存，然后到驾驶位把手机放回原来的位置，点击开始。",
-    promptBodyEn: "Set each head-unit EQ band per the plan and save it, then put the phone back where it was and tap Start.",
+    promptBody: "请按方案把车机 EQ 逐段调好并保存，然后回到驾驶位，把手机放回第一次测量的位置（头枕处、反过来放：底部朝前挡），点击开始。",
+    promptBodyEn: "Set each head-unit EQ band per the plan and save it, then put the phone back exactly where it was for the first measurement (headrest, flipped around: bottom edge toward the windshield) and tap Start.",
     startBtn: "开始复测（约 30 秒）",
     startBtnEn: "Start re-measure (~60s)",
     fitTitle: "调前 vs 调后",
@@ -4411,7 +4414,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.329 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.330 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5428,7 +5431,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.329';
+var CALIB_VER = 'v2.9.330';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5856,7 +5859,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.329';
+var CN_DATA_VER = 'v2.9.330';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -8685,6 +8688,7 @@ function renderBandTable(){
   try{
     // v2.9.215: 内测阶段31段保持可见（Vincent 要对数据），上线前再开 gating（见 isDevMode）
     setText('band-table-title','report.bandTableTitle');
+    setText('band-table-hint','report.bandTableHint');
     setText('band-th-freq','report.bandColFreq');
     setText('band-th-meas','report.bandColMeas');
     setText('band-th-target','report.bandColTarget');

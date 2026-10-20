@@ -573,6 +573,7 @@ ul.clean li{margin:6px 0;}
     <div id="band-table-wrap">
     <div class="h mt16" id="band-table-title" style="font-size:15px;cursor:pointer;user-select:none;" onclick="try{var b=document.getElementById('band-table-body-wrap');var a=document.getElementById('band-table-arrow');if(b.style.display==='none'){b.style.display='';a.textContent='▾';}else{b.style.display='none';a.textContent='▸';}}catch(_){}"><span id="band-table-arrow">▸</span> <span id="band-table-title-text"></span></div>
     <div id="band-table-body-wrap" style="display:none;">
+    <div class="small" id="band-table-hint" style="color:var(--sub);margin:6px 0;"></div>
     <div style="overflow-x:auto;">
       <table id="band-table" style="width:100%;border-collapse:collapse;font-size:13px;margin:8px 0;">
         <thead><tr>
@@ -3612,7 +3613,7 @@ window.COPY = {
     levelCheckHintEn: "Checking playback level, auto-continues in 3s",
     levelAdjustTitle: "Level Adjustment",
     levelAdjustTitleEn: "Level Adjustment",
-    levelAdjustHint: "Drag slider to adjust volume, needle in green zone, then start",
+    levelAdjustHint: "Drag slider to adjust volume, needle in green zone, then start. Have the phone flipped around first: bottom edge (mic) facing the windshield.",
     levelAdjustHintEn: "Drag slider to adjust volume, needle in green zone, then start",
     levelSliderLabel: "Volume",
     levelSliderLabelEn: "Volume",
@@ -3692,6 +3693,7 @@ window.COPY = {
     ctaUnlock: "View Full Plan",
     priceLine: "",
     bandTableTitle: "Measured values",
+    bandTableHint: "Each row is one frequency band: what your car measured, the target, and the gap. Don't worry if it looks technical — the plan page tells you exactly how much to set each band.",
     bandColFreq: "Band",
     bandColMeas: "Measured dB",
     bandColTarget: "Target dB",
@@ -3902,7 +3904,7 @@ window.COPY = {
     btnEn: "Re-measure",
     promptTitle: "EQ set on the head unit?",
     promptTitleEn: "EQ set on the head unit?",
-    promptBody: "Set each head-unit EQ band per the plan and save it, then put the phone back where it was and tap Start.",
+    promptBody: "Set each head-unit EQ band per the plan and save it, then put the phone back exactly where it was for the first measurement (headrest, flipped around: bottom edge toward the windshield) and tap Start.",
     promptBodyEn: "Set each head-unit EQ band per the plan and save it, then put the phone back where it was and tap Start.",
     startBtn: "Start re-measure (~30s)",
     startBtnEn: "Start re-measure (~60s)",
@@ -4156,7 +4158,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.329 · Beta';
+  ver.innerHTML = 'v2.9.330 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5161,7 +5163,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.329';
+var CALIB_VER = 'v2.9.330';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -8132,6 +8134,7 @@ function renderBandTable(){
   try{
     // v2.9.215: 内测阶段31段保持可见（Vincent 要对数据），上线前再开 gating（见 isDevMode）
     setText('band-table-title-text','report.bandTableTitle');
+    setText('band-table-hint','report.bandTableHint');
     setText('band-th-freq','report.bandColFreq');
     setText('band-th-meas','report.bandColMeas');
     setText('band-th-target','report.bandColTarget');
@@ -9650,7 +9653,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.329',
+        appVer: 'v2.9.330',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
