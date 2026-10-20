@@ -351,27 +351,6 @@ ul.clean li{margin:6px 0;}
         <div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;">🏆</span><span>For top scores use USB — Bluetooth compresses audio; USB is the most accurate.<a href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="color:var(--accent);">Download pink noise file (Baidu Netdisk)</a></span></div>
       </div>
     </div>
-    <!-- Milestones: the core journey from 0 to now -->
-    <div class="card mt16" id="home-ms-card" style="cursor:pointer;">
-      <div style="display:flex;align-items:center;gap:12px;">
-        <div style="font-size:22px;line-height:1;">🏁</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:15px;font-weight:700;">Milestones</div>
-          <div class="small">Major updates from day 0 to now — tap to expand</div>
-        </div>
-        <div style="color:var(--sub);font-size:20px;line-height:1;" id="home-ms-arrow">&rsaquo;</div>
-      </div>
-      <div id="home-ms-body" style="display:none;margin-top:12px;text-align:left;">
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 12</span><span class="small" style="text-align:left;">Kickoff: built on a professional phone-tuning methodology — cut-only EQ, one car, one tune</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 13</span><span class="small" style="text-align:left;">First release: measure right in the browser; the first real car completes the full measure-to-tune flow</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 16</span><span class="small" style="text-align:left;">Accuracy verified: within ±3 dB of a professional acoustic analyzer across 100 Hz–12.5 kHz</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Dual-mode scoring: parked / driving — chase the score parked, tune for the road</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Calibration quest opens: owners crowd-measure the true EQ center frequencies of each model</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">WeChat mini program certified — same name, same data as the web app</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Data home base lands on Tencent Cloud; live score ticker on the home page</span></div>
-        <div style="display:flex;gap:10px;line-height:1.55;"><span style="flex:0 0 44px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">Oct 20</span><span class="small" style="text-align:left;">Error sentinel live: user feedback is auto-tracked — bugs get fixed and answered</span></div>
-      </div>
-    </div>
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
@@ -4070,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.278 · Beta';
+  ver.innerHTML = 'v2.9.279 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4188,17 +4167,6 @@ function initHome(){
   if(_htc) _htc.onclick = function(){
     var body = document.getElementById('home-tips-body');
     var arrow = document.getElementById('home-tips-arrow');
-    if(body && arrow){
-      var open = body.style.display !== 'none';
-      body.style.display = open ? 'none' : 'block';
-      arrow.innerHTML = open ? '&rsaquo;' : '&#x25BE;';
-    }
-  };
-  // Milestones card expand/collapse (same pattern as the prep card)
-  var _hmc = document.getElementById('home-ms-card');
-  if(_hmc) _hmc.onclick = function(){
-    var body = document.getElementById('home-ms-body');
-    var arrow = document.getElementById('home-ms-arrow');
     if(body && arrow){
       var open = body.style.display !== 'none';
       body.style.display = open ? 'none' : 'block';
@@ -5072,7 +5040,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.278';
+var CALIB_VER = 'v2.9.279';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9478,7 +9446,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.278',
+        appVer: 'v2.9.279',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
