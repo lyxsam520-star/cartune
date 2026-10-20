@@ -99,7 +99,11 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .sec.active{display:block;}
 @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 /* 字号层级 */
-.hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;}
+.hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;text-wrap:balance;}
+.h{text-wrap:balance;}
+@supports (text-wrap: pretty){
+  .sec p, .card .small{text-wrap:pretty;}
+}
 .h{font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.5;}
 .body14{font-size:14px;color:var(--text);}
 .small{font-size:13px;color:var(--sub);}
@@ -325,7 +329,7 @@ ul.clean li{margin:6px 0;}
     </div>
     <div id="home-tech-body" style="display:none;margin-top:12px;text-align:left;">
       <div class="small" style="line-height:1.7;text-align:left;">• 车机播放粉噪，手机在驾驶位测出 31 段频谱</div>
-      <div class="small" style="line-height:1.7;text-align:left;">• 逐段与目标曲线比对：偏离越小分数越高；分数是相对指数，看调前调后的变化</div>
+      <div class="small" style="line-height:1.7;text-align:left;">• 逐段与目标曲线比对：偏离越小，分数越高；看调前调后的变化</div>
       <div class="small" style="line-height:1.7;text-align:left;">• 方案按你这台车的 EQ 段数生成，只削不增，保护原车喇叭</div>
       <div class="small" style="line-height:1.7;text-align:left;">• 驻车、行车两套目标曲线，对应两种使用工况</div>
       <button class="btn btn-ghost" id="home-tech-more" style="width:100%;margin-top:10px;">查看完整技术原理</button>
@@ -3455,7 +3459,7 @@ var MODELS_DB = {
 window.COPY = {
   home: {
     title: "给汽车音响跑个分",
-    subtitle: "30 秒测出你车内音响的真实水平，打个分。分数不满意？按你的车机段数给 EQ 调整方案，调完再测，看分数涨了多少。",
+    subtitle: "30 秒测出车内音响的真实水平。分数不满意？按车机段数给 EQ 方案，调完再测，看涨多少分。",
     ctaPrimary: "下一步",
     ctaPrimaryEn: "Next",
     ctaPro: "专业模式",
@@ -4269,7 +4273,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.296: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.297: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4319,7 +4323,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.296 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.297 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5334,7 +5338,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.296';
+var CALIB_VER = 'v2.9.297';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5752,7 +5756,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.296';
+var CN_DATA_VER = 'v2.9.297';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';

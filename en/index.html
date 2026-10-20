@@ -103,7 +103,11 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .sec.active{display:block;}
 @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 /* 字号层级 */
-.hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;}
+.hero{font-size:20px;font-weight:600;line-height:1.5;margin:12px 0 8px;letter-spacing:.5px;text-wrap:balance;}
+.h{text-wrap:balance;}
+@supports (text-wrap: pretty){
+  .sec p, .card .small{text-wrap:pretty;}
+}
 .h{font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.5;}
 .body14{font-size:14px;color:var(--text);}
 .small{font-size:13px;color:var(--sub);}
@@ -342,7 +346,7 @@ ul.clean li{margin:6px 0;}
     </div>
     <div id="home-tech-body" style="display:none;margin-top:12px;text-align:left;">
       <div class="small" style="line-height:1.7;text-align:left;">• Pink noise plays through the head unit; your phone measures a 31-band spectrum at the driver's seat</div>
-      <div class="small" style="line-height:1.7;text-align:left;">• Each band is compared with the target curve — the closer it is, the higher the score; the score is a relative index, read it as before/after change</div>
+      <div class="small" style="line-height:1.7;text-align:left;">• Each band is compared with the target curve — the closer, the higher the score; read the before/after change</div>
       <div class="small" style="line-height:1.7;text-align:left;">• The plan is built for your head unit's EQ bands — cut-only, safe for stock speakers</div>
       <div class="small" style="line-height:1.7;text-align:left;">• Two target curves — parked and driving — for the two real-world conditions</div>
       <button class="btn btn-ghost" id="home-tech-more" style="width:100%;margin-top:10px;">See the full tech page</button>
@@ -3190,7 +3194,7 @@ var MODELS_DB = {
 window.COPY = {
   home: {
     title: "Score Your Car Audio",
-    subtitle: "Measure your car audio's true performance in 30 seconds and get a score. Not happy with it? Get an EQ plan matched to your head unit's band count, apply it, re-measure, and watch the score climb.",
+    subtitle: "Measure your car's true sound in 30 seconds. Not happy with the score? Get an EQ plan for your head unit's bands, apply it, re-measure, and watch it climb.",
     ctaPrimary: "Next",
     ctaPrimaryEn: "Next",
     ctaPro: "Pro Mode",
@@ -4066,7 +4070,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.296 · Beta';
+  ver.innerHTML = 'v2.9.297 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5069,7 +5073,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.296';
+var CALIB_VER = 'v2.9.297';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9476,7 +9480,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.296',
+        appVer: 'v2.9.297',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
