@@ -112,7 +112,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.318 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.319 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -360,7 +360,7 @@ ul.clean li{margin:6px 0;}
         <div style="font-size:22px;line-height:1;">🏁</div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:15px;font-weight:700;">里程碑</div>
-          <div class="small">从 0 到现在的重要更新，点击展开</div>
+          <div class="small">从立项至今的重要更新，点击展开</div>
         </div>
         <div style="color:var(--sub);font-size:20px;line-height:1;" id="home-ms-arrow">&rsaquo;</div>
       </div>
@@ -552,7 +552,7 @@ ul.clean li{margin:6px 0;}
     <div class="small" style="color:var(--sub);margin-top:6px;">灰色频段（20/25Hz、16k/20kHz）为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。</div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <!-- v2.9.318: 麦克风处理未完全关闭时的事实提示（默认隐藏，renderReport 按本次 micSettings 显示） -->
+    <!-- v2.9.319: 麦克风处理未完全关闭时的事实提示（默认隐藏，renderReport 按本次 micSettings 显示） -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: 实测校准参数标注（已解锁车型才显示） -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
@@ -1010,7 +1010,7 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     return d0 + t * (d1 - d0);
   };
 
-  /* 精度修复 D2/D5（v2.9.318）：统一电平对齐工具——与打分同式：
+  /* 精度修复 D2/D5（v2.9.319）：统一电平对齐工具——与打分同式：
    * 500Hz–2kHz（ISO31 idx 14–20）偏差中位数。复测残差、simulate 贴合度、
    * 诊断偏差、分享卡贴合分共用一处，避免各处自造未对齐口径（恒 ~87dB 假象）。 */
   DSP.alignMedOffset31 = function (meas, tgt) {
@@ -2174,7 +2174,7 @@ var MODELS_DB = {
    *    - RMS 归一不在此处做：对比阶段用"相对比较"（测量-目标）自然消去绝对电平
    * ============================================================ */
 
-  // v2.9.318: UA 平台/容器解析（判定顺序：鸿蒙→iOS→安卓；失败一律 'other'，静默降级）
+  // v2.9.319: UA 平台/容器解析（判定顺序：鸿蒙→iOS→安卓；失败一律 'other'，静默降级）
   window.__uaPlatform = function(){ try{ var ua = navigator.userAgent || ''; if(/OpenHarmony|HarmonyOS|ArkWeb/.test(ua)) return 'harmony'; if(/iPhone|iPad|iPod/.test(ua)) return 'ios'; if(/Android/.test(ua)) return 'android'; return 'other'; }catch(_){ return 'other'; } };
   window.__uaContainer = function(){ try{ var ua = navigator.userAgent || ''; if(/MicroMessenger/.test(ua)) return 'wechat'; if(/ArkWeb|TBS\/|X5|MQQBrowser/.test(ua)) return 'webview-other'; return 'browser'; }catch(_){ return 'other'; } };
   // getUserMedia 兼容：标准 API 优先，webkit 前缀兜底
@@ -2311,7 +2311,7 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.318: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
+      // v2.9.319: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
         var _trk = stream.getAudioTracks && stream.getAudioTracks()[0];
         if (_trk && _trk.getSettings) {
@@ -2592,7 +2592,7 @@ var MODELS_DB = {
    * 一次起播一次收尾，中间不重建 AudioContext、不启停 source——从根上消灭
    * step1→step2 交接爆音（交接逻辑是爆音的第一嫌疑人，直接删掉交接）。
    *
-   * 时长分配（v2.9.318 D4 起与标准流程统一：底噪 5s＋信号 25s＝30s；进阶 L/R 为 10s＋20s＋20s）：
+   * 时长分配（v2.9.319 D4 起与标准流程统一：底噪 5s＋信号 25s＝30s；进阶 L/R 为 10s＋20s＋20s）：
    * - 信号 25s 保精度：粉噪 1/3 倍频程波动 ε≈1/√(B·T)；25s 时 20Hz σ≈±0.80dB
    *   （30s 为 ±0.73dB，仅差 0.07dB），50Hz 以上 <0.5dB；车机 EQ 步进 1dB，精度余量充足；
    * - 底噪 5s：底噪只用于分频段 SNR 门控（阈值 10/15dB）；5s 时 20Hz σ≈±1.7dB，
@@ -3173,7 +3173,7 @@ var MODELS_DB = {
       }
       sim31[i] = meas31[i] + bands[best].gainDb;
     }
-    // D5（v2.9.318）：先中位数电平对齐再算 MAE，与复测残差同基准（原未对齐恒为假象量级）
+    // D5（v2.9.319）：先中位数电平对齐再算 MAE，与复测残差同基准（原未对齐恒为假象量级）
     var _med = DSP.alignMedOffset31(sim31, target31);
     var sum = 0;
     for (i = 0; i < 31; i++) sum += Math.abs((sim31[i] - _med) - target31[i]);
@@ -4311,7 +4311,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.318: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.319: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4361,7 +4361,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.318 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.319 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5378,7 +5378,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.318';
+var CALIB_VER = 'v2.9.319';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5806,7 +5806,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.318';
+var CN_DATA_VER = 'v2.9.319';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5929,7 +5929,7 @@ var CN_DATA_VER = 'v2.9.318';
     }catch(_){}
   }
   window.__cnMSend = cnMaybeSend;
-  // TD-004 补强（v2.9.318）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
+  // TD-004 补强（v2.9.319）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
   // 触发：首错后 4 秒 / 每 20 秒巡检 / 切后台或关页（keepalive）；同指纹每页≤2 条，附堆栈前 300 字。
   var __errBatches = 0, __errTimer = null;
   function cnFlushErrors(){
@@ -6054,7 +6054,7 @@ var CN_DATA_VER = 'v2.9.318';
 /* 原理备注：车机 DSP 会对蓝牙/USB 输入做混音/上混，单声道信号无法隔离到单侧喇叭——
    这是硬件链路限制，不是 app bug。makeStereoPink 的单声道生成保留给 DSP/外接播放器场景。 */
 /* v2.2 30s 合并流程：单步 UI，内部多相位一次跑完，中间无停顿。
- * 现行口径（v2.9.318 精度修复 D4）：标准流程 = 底噪 5s + 立体声 25s = 30s；
+ * 现行口径（v2.9.319 精度修复 D4）：标准流程 = 底噪 5s + 立体声 25s = 30s；
  * 进阶 L/R = 底噪 10s + 左 20s + 右 20s = 50s（PHASES_LR）。
  * 底噪 5s 在 20Hz 处 σ≈±1.7dB（门控阈值间距 5dB 的 1/3，可接受）；立体声 25s 在 20Hz 处
  * σ≈±0.80dB（vs 30s 的 ±0.73dB，仅差 0.07dB），换回全套逐段 SNR 门控的真实输入。
@@ -6072,7 +6072,7 @@ var STEP_DEFS_STEREO_QUICK = [
 var PHASES_STEREO = [
   {key:'floor', dur:5,  side:'off', obj:'measure.objFloor'},
   {key:'sig',   dur:25, side:null,  obj:'measure.objStereo'}
-]; /* v2.9.318 D4: 恢复底噪段（5s+25s=30s）；v2.9.215 砍 floor 后门控恒以 -100 假值通过，现恢复真实门控输入 */
+]; /* v2.9.319 D4: 恢复底噪段（5s+25s=30s）；v2.9.215 砍 floor 后门控恒以 -100 假值通过，现恢复真实门控输入 */
 /* v2.9.81: 快速模式 12s（调试用）——底噪 4s（2.5s 静置＋1.5s 平均）＋立体声 8s（≈47 独立帧，中高频 ±1dB；低频方差大，仅调试，验收用标准模式） */
 var PHASES_QUICK = [
   {key:'floor', dur:4, side:'off', obj:'measure.objFloor'},
@@ -6088,7 +6088,7 @@ var PHASES_LR = [
 ];
 function stepDefs(){
   if(app.measureMode==='lr') return STEP_DEFS_LR;
-  // v2.9.318 D4: 全模式统一含底噪段，不再有 NoFloor 分支（原 v2.9.215 USB/App 无底噪文案退役）
+  // v2.9.319 D4: 全模式统一含底噪段，不再有 NoFloor 分支（原 v2.9.215 USB/App 无底噪文案退役）
   return app.speedMode==='quick' ? STEP_DEFS_STEREO_QUICK : STEP_DEFS_STEREO; // v2.9.81
 }
 function initMeasure(){
@@ -6194,7 +6194,7 @@ function buildStepsUI(){
     box.appendChild(d);
   });
   var _d0 = (typeof stepDefs==='function') ? stepDefs()[0] : null;
-  // v2.9.318 D4: 全模式含底噪段；USB/App 外播用暂停/恢复指引 tip，BT 用自动流程 tip
+  // v2.9.319 D4: 全模式含底噪段；USB/App 外播用暂停/恢复指引 tip，BT 用自动流程 tip
   var tip;
   if(_d0 && _d0.merged && app.playMode !== 'bt' && app.speedMode !== 'quick'){
     tip = t('measure.stepMergedTipUsb');
@@ -7493,7 +7493,7 @@ async function startMeasureFlow(opts){
     try { alert('麦克风启动失败，请检查权限后重试。'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.318: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
+    // v2.9.319: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -7562,7 +7562,7 @@ async function startMeasureFlow(opts){
   var res = null;
   // v2.9.215: 开始播报已去掉（用户要求）
   try{
-    // v2.9.318 D4: 全模式恢复底噪段（floor 5s + sig 25s，总时长仍 30s）。
+    // v2.9.319 D4: 全模式恢复底噪段（floor 5s + sig 25s，总时长仍 30s）。
     // USB/App 外播靠阶段文案引导用户先暂停播放 5 秒（底噪相位换暂停指引文案）；
     // 没暂停会被底噪异常熔断诚实中止，不产假数据（floorAnomaly 保持）。
     var _phases = (app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO);
@@ -7586,7 +7586,7 @@ async function startMeasureFlow(opts){
   var floor31 = res.floor31, meas = res.seg31.sig;
   // v2.9.81: 调试跳过底噪时，用 -120dB 占位，避免下游空指针
   S().floor31 = floor31;
-  // v2.9.318 D4: 底噪口径标记——服务端据此区分真实 5s 实测底噪与合成假值（仅标准 5s 底噪段打标）
+  // v2.9.319 D4: 底噪口径标记——服务端据此区分真实 5s 实测底噪与合成假值（仅标准 5s 底噪段打标）
   try{
     var _hadFloor5 = false, _pi;
     for(_pi=0; _pi<_phases.length; _pi++){ if(_phases[_pi].key==='floor' && _phases[_pi].dur===5) _hadFloor5 = true; }
@@ -7869,7 +7869,7 @@ function renderReport(){
   setText('report-trust','report.trustNote');
   // v2.9.251: P1 诚实标注——iPhone 修正表来自单台 iPhone 12 Pro Max 实测，非全机型通用
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += '（iPhone 麦克风修正表来自单台 iPhone 12 Pro Max 实测。）'; } } }catch(_){}
-  // v2.9.318: 本次 micSettings 中 ec/ns/agc 任一为 true 时显示事实提示（会话内存状态，不依赖服务器回读）
+  // v2.9.319: 本次 micSettings 中 ec/ns/agc 任一为 true 时显示事实提示（会话内存状态，不依赖服务器回读）
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = '本次测量检测到手机音频处理未完全关闭，结果可信度略降'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
@@ -8136,7 +8136,7 @@ function calcCarScoreFrom(meas, opts){
   try{ iso = DSP.ISO31 || []; parked = DSP.TC_PARKED || []; }catch(_){ return null; }
   if(iso.length < 31 || !parked.length) return null;
   // v2.9.255: 怠速检测（用户 2026-10-20）— 40/50Hz 超标+8dB 判定为引擎噪音，自动切行车曲线
-  // 精度修复 D3（v2.9.318）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
+  // 精度修复 D3（v2.9.319）：原判定三重失效——①未对齐绝对值减相对目标，差恒为负，>8 不可达；
   // ②直读 parked[3]/[4] 与 ISO31 的 40/50Hz 错位一格；③守卫要求行车表 ≥31 点（实为 30 点）。
   // 改为对齐后判定（见下方 medOf 之后）：先按驻车曲线算对齐中位数，再比对齐后偏差；本块只取行车表。
   var _isIdle = false;
@@ -8312,7 +8312,7 @@ function diagDeviation(){
     try{ t = DSP.targetDbAt(f); }catch(_){}
     tgt.push(t);
   }
-  // D5（v2.9.318）：统一对齐工具（中位数偏移，与打分/复测残差同式）。
+  // D5（v2.9.319）：统一对齐工具（中位数偏移，与打分/复测残差同式）。
   // 原未对齐偏差恒为 ~-87dB 量级，诊断阈值与 PEQ 输入语义全失，现恢复。
   var _med = 0;
   try{ _med = DSP.alignMedOffset31(meas, tgt); }catch(_){}
@@ -8616,7 +8616,7 @@ function renderBandTable(){
 function shareCardFlatScore(){
   try{
     var iso = DSP.ISO31 || [], m = avg31(), sum = 0, n = 0;
-    // D5（v2.9.318）：中位数电平对齐后再算 MAE，与主分同基准（原未对齐恒为假象量级）
+    // D5（v2.9.319）：中位数电平对齐后再算 MAE，与主分同基准（原未对齐恒为假象量级）
     var _tgt = [], _med = 0;
     for(var i = 0; i < iso.length && i < m.length; i++){ try{ _tgt.push(DSP.targetDbAt(iso[i])); }catch(_){ _tgt.push(0); } }
     try{ _med = DSP.alignMedOffset31(m, _tgt); }catch(_){}
@@ -9182,13 +9182,13 @@ function initTech(){
 /* =====================================================================
  * 复测验证闭环（v2）：方案应用后 → 复测（完整两步：底噪+立体声）→ 残差/贴合度对比
  * 规则铁律沿用 v1：cut-only / 梳状禁补偿 / 防烧喇叭 / 不推荐硬件升级。
- * 残差 R（v2.9.318 精度修复 D2，与打分同式）：中位数电平对齐后 idx 2–28 的 RMS 残差；
+ * 残差 R（v2.9.319 精度修复 D2，与打分同式）：中位数电平对齐后 idx 2–28 的 RMS 残差；
  * 贴合度 fit = max(0, 1 − R/15) × 100%，满量程 15dB 与打分 rms/15 同源（见 REMEASURE_FULLSCALE_DB）。
  * 残差下降率 dropRate = (R1−R2)/R1 × 100%（北极星指标本体，随条目落盘）。
  * 条目 target 如实记录实际所用目标（base+style+curveVer），不再写死驻车。
  * __REMEASURE_V1__
  * ===================================================================== */
-var REMEASURE_FULLSCALE_DB = 15;                // 贴合度满量程参考：15dB（v2.9.318 起与打分同源；原 12dB 独立口径废止）
+var REMEASURE_FULLSCALE_DB = 15;                // 贴合度满量程参考：15dB（v2.9.319 起与打分同源；原 12dB 独立口径废止）
 /* 条目 target 标识：如实记录本次残差实际所用目标（基准+风格+curveVer），不再写死驻车（原 REMEASURE_TARGET 常量退役） */
 function remeasureTargetId(){
   var base = 'Parked', style = '';
@@ -9206,7 +9206,7 @@ function target31(){
   return out;
 }
 function residual31(measArr, tgtArr){
-  // D2（v2.9.318）：与打分同式——中位数电平对齐（DSP.alignMedOffset31）+ idx 2–28 RMS。
+  // D2（v2.9.319）：与打分同式——中位数电平对齐（DSP.alignMedOffset31）+ idx 2–28 RMS。
   // 原未对齐全 31 段 MAE 被两次测量绝对电平差主导，fit 恒 ≈0、北极星不可测，现修复。
   var med = 0;
   try{ med = DSP.alignMedOffset31(measArr, tgtArr); }catch(_){}
