@@ -3779,7 +3779,7 @@ window.COPY = {
     micErrTitle: "麦克风启动失败",
     micErrBody: "请检查浏览器麦克风权限后重试；也可以先去看看技术原理页",
     levelLow: '收到的声音偏小：请调大车机音量；如用蓝牙，检查手机蓝牙是否连了电话音频（会抢麦克风），只保留媒体音频',
-    usbPlayingTip: "粉噪一直播着就行，点开始直接测 30 秒，无需掐表。",
+    usbPlayingTip: "先把车机暂停好，再点开始：前 5 秒测底噪，测完按屏幕提示恢复播放。",
     tipCase: "📱 取下手机壳再测——手机壳会闷住麦克风孔，高频拾音更干净，测得更准",
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipPosition: "📍 手机放在驾驶位头枕处——两步测量全程不要移动手机。环境底噪和立体声整体测量都在驾驶位完成：调音目标就是你开车时实际听到的声音。推荐用支架固定，至少保证手不抖、位置不动。",
@@ -3807,9 +3807,9 @@ window.COPY = {
     listeningDone: function (n) { return "已完成监听：" + n; },
     listeningDoneEn: function (n) { return "Listening complete: " + n; },
     detectingFloor: "正在侦测环境声，为后面正式测试做准备…",
-    detectingFloorUsb: "先暂停播放 5 秒：正在侦测环境底噪，测完请恢复播放…",
+    detectingFloorUsb: "保持暂停：正在侦测环境底噪，测完请恢复播放…",
     detectingFloorEn: "Detecting ambient sound, preparing for the formal test…",
-    detectingFloorUsbEn: "Pause playback for 5 seconds: detecting the ambient noise floor — resume playback when it finishes…",
+    detectingFloorUsbEn: "Stay paused: detecting the ambient noise floor — resume playback when it finishes…",
     playingStereo: "正在播放测试音，请保持安静…",
     playingStereoEn: "Playing test tone, please stay quiet…",
     playingL: "正在播放左声道测试音，请保持安静…",
@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.333 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.334 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.333';
+var CALIB_VER = 'v2.9.334';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5864,7 +5864,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.333';
+var CN_DATA_VER = 'v2.9.334';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';

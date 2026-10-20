@@ -3540,7 +3540,7 @@ window.COPY = {
     listeningDone: function (n) { return "Listening complete: " + n; },
     listeningDoneEn: function (n) { return "Listening complete: " + n; },
     detectingFloor: "Detecting ambient sound, preparing for the formal test…",
-    detectingFloorUsb: "Pause playback for 5 seconds: detecting the ambient noise floor — resume playback when it finishes…",
+    detectingFloorUsb: "Stay paused: detecting the ambient noise floor — resume playback when it finishes…",
     detectingFloorEn: "Detecting ambient sound, preparing for the formal test…",
     playingStereo: "Playing test tone, please stay quiet…",
     playingStereoEn: "Playing test tone, please stay quiet…",
@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.333 · Beta';
+  ver.innerHTML = 'v2.9.334 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.333';
+var CALIB_VER = 'v2.9.334';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9656,7 +9656,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.333',
+        appVer: 'v2.9.334',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
