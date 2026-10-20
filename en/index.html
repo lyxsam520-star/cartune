@@ -590,6 +590,8 @@ ul.clean li{margin:6px 0;}
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
     <!-- v2.9.320: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
+    <!-- v2.9.320 M5: 信号段削顶帧占比 >5% 时的事实提示（默认隐藏，renderReport 按本次 clip 数据显示） -->
+    <div class="card mt16 hidden" id="report-clip-card"><div class="small" id="report-clip-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: measured-calibration badge (unlocked models only) -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
       <div class="small" id="report-calib-note" style="color:var(--green);"></div>
@@ -903,6 +905,21 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     -1.4, -1.9, -1.4, 0.8, 0.8, 1.7, 2.5,
     2.2, 4.6, 1.5, -1.3, -0.5, -3.6, -0.3, 1.5,
     0, 0];
+  // S3（v2.9.320）：麦克风补偿表版本戳——表值变更必须同步升此戳，历史数据按戳切分/重算；
+  // mic-v4 对应现行表世代（iPad 表 v2.9.89 重推、iPhone 表 v2.9.88 精修，此后未再改值）。
+  DSP.MIC_CORR_VER = 'mic-v4';
+  /* S8（v2.9.320）：实时显示补偿——返回叠加麦克风补偿的新数组（不改入参，存储/计算不受影响）；
+   * 选表与 measureMerged.avg31 完全一致（iPad/iPhone 互斥，无表机型返回 null）。 */
+  DSP.micCorr31 = function (arr) {
+    if (!arr || arr.length < 31) return null;
+    var corr = null;
+    if (DSP.isIPad && DSP.isIPad() && DSP.IPAD_MIC_CORR) corr = DSP.IPAD_MIC_CORR;
+    else if (DSP.isIPhone && DSP.isIPhone() && DSP.IPHONE_MIC_CORR) corr = DSP.IPHONE_MIC_CORR;
+    if (!corr) return null;
+    var out = new Array(31), i;
+    for (i = 0; i < 31; i++) out[i] = (typeof arr[i] === 'number' ? arr[i] : -120) + (corr[i] || 0);
+    return out;
+  };
   // v2.9.83: iPad 判定（含 iPadOS 13+ UA 报 MacIntel 的情况）
   DSP.isIPad = function () {
     try {
@@ -2057,15 +2074,23 @@ var MODELS_DB = {
     // noiseSuppression/autoGainControl/channelCount/sampleRate 在 iOS 被直接忽略，传了只会制造"已关闭"假象。
     var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    // D8（v2.9.320）：非 iOS 约束改 ideal 形式——严格实现（部分 Android WebView）无法满足 exact 时
+    // 不再整单 OverconstrainedError 拒绝；万一仍被拒，放宽 {audio:true} 重试一次。
+    // 放宽后的实际生效状态由 getSettings 回读（v2.9.309 micSettings）如实记录，不无声放宽。
     var constraints = {
       audio: _isIOS ? { echoCancellation: false } : {
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false,
-        channelCount: 1
+        echoCancellation: { ideal: false },
+        noiseSuppression: { ideal: false },
+        autoGainControl: { ideal: false },
+        channelCount: { ideal: 1 }
       }
     };
-    return getUserMediaCompat(constraints).then(function (stream) {
+    return getUserMediaCompat(constraints).catch(function (err) {
+      if (!_isIOS && err && err.name === 'OverconstrainedError') {
+        return getUserMediaCompat({ audio: true });
+      }
+      throw err;
+    }).then(function (stream) {
       self.stream = stream;
       // v2.9.320: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
@@ -2128,6 +2153,9 @@ var MODELS_DB = {
     this.analyser = this.audioCtx.createAnalyser();
     this.analyser.fftSize = this.fftSize;
     this.analyser.smoothingTimeConstant = 0; // 不做时域平滑，平均在功率域做
+    // M6（v2.9.320）：显式声明 dB 窗——规范上 min/maxDecibels 只影响 Byte 域缩放，本项目只用 Float 域
+    // 读取应为零影响；此二行是防个别实现把 Float 输出钳制到默认窗（-100/-30）的保险丝，不改任何数值路径。
+    try{ this.analyser.minDecibels = -120; this.analyser.maxDecibels = 0; }catch(_){}
     this.source.connect(this.analyser);
     // v2.9.58: iOS Safari 必须让音频图"活"起来——analyser 接零增益到 destination，
     // 否则 mic 数据不流动（时域有削顶但频域 -89dB 的根因）
@@ -2219,6 +2247,7 @@ var MODELS_DB = {
         for (b = 0; b < 31; b++) {
           out[b] = frames > 0 ? powerToDb(sumPower[b] / frames) : -120;
         }
+        try { out.nsFrames = frames; } catch (_) {} // M2（v2.9.320）：帧数挂数组属性，消费方不受影响
         resolve(out);
       }
       tick();
@@ -2397,11 +2426,14 @@ var MODELS_DB = {
     var onFrame = opts.onFrame, onPhase = opts.onPhase;
     var i, b, k;
     var sums = {}, ns = {};
+    var clipNs = {}; // M5（v2.9.320）：逐相位削顶帧计数（纯元数据，不参与任何计算）
     for (i = 0; i < phases.length; i++) {
       sums[phases[i].key] = new Array(31);
       ns[phases[i].key] = 0;
+      clipNs[phases[i].key] = 0;
       for (b = 0; b < 31; b++) sums[phases[i].key][b] = 0;
     }
+    var _tickPrev = 0, _tickDeltas = []; // M2（v2.9.320）：帧节拍采样（tick 间隔，中位数在 finish 算）
     var bounds = [], acc = 0;
     for (i = 0; i < phases.length; i++) { bounds.push(acc); acc += phases[i].dur; }
     bounds.push(acc);
@@ -2460,6 +2492,7 @@ var MODELS_DB = {
         if (self._stop) { finish(false); return; }
         if (self._paused) { setTimeout(tickGuarded, 120); return; } // v2.2 暂停中：时钟冻结，不累积
         _wdFrames++; // v2.9.81: 看门狗计数
+        var _tnow = now(); if (_tickPrev > 0) _tickDeltas.push(_tnow - _tickPrev); _tickPrev = _tnow; // M2
         var el = (now() - t0 - (self._pauseTotal || 0)) / 1000;
         if (el >= TOTAL) { finish(false); return; }
         var pi = phaseAt(el), ph = phases[pi];
@@ -2524,6 +2557,7 @@ var MODELS_DB = {
         var peak = 0;
         for (k = 0; k < time.length; k++) { var a = time[k] < 0 ? -time[k] : time[k]; if (a > peak) peak = a; }
         var clipped = peak >= 0.99;
+        if (clipped) clipNs[ph.key]++; // M5（v2.9.320）：逐相位削顶帧计数
         // v2.9.81: 异常弹窗——时域连续全零（输入链已死；真实麦克风噪声不可能精确为 0）
         if (peak === 0) { self._zeroStreak = (self._zeroStreak || 0) + 1; } else { self._zeroStreak = 0; }
         if (self._zeroStreak === 300 && !self._zeroAlerted) {
@@ -2577,7 +2611,19 @@ var MODELS_DB = {
           _floor = [];
           for(var _fi=0; _fi<31; _fi++) _floor.push(-100);
         }
-        resolve({ floor31: _floor, seg31: seg31, noSignal: !!noSignal, floorAnomaly: !!floorAnomaly });
+        // M2/M5（v2.9.320）：纯加法元数据——各相位帧数 ns、帧节拍中位数 tickMs、逐相位削顶帧占比 clip。
+        // 只落盘/标注，不改变任何既有返回值与计算（M5 第二步"削顶帧剔除"属测量数学，另行评审）。
+        var _clip = {}, _kk3;
+        for (_kk3 = 0; _kk3 < phases.length; _kk3++) {
+          var _pk = phases[_kk3].key;
+          _clip[_pk] = ns[_pk] > 0 ? Math.round((clipNs[_pk] / ns[_pk]) * 1000) / 1000 : 0;
+        }
+        var _tickMs = null;
+        if (_tickDeltas.length) {
+          var _td = _tickDeltas.slice().sort(function (a, b2) { return a - b2; });
+          _tickMs = Math.round(_td[Math.floor(_td.length / 2)] * 10) / 10;
+        }
+        resolve({ floor31: _floor, seg31: seg31, noSignal: !!noSignal, floorAnomaly: !!floorAnomaly, ns: ns, tickMs: _tickMs, clip: _clip });
       }
       tickGuarded();
     });
@@ -3030,7 +3076,7 @@ var MODELS_DB = {
 
   /**
    * 宽带信噪比（功率比）：10*log10(信号功率/底噪功率)，31 段全频带
-   * @returns {{db:number, pass:boolean}} pass = db ≥ 15
+   * @returns {{db:number, pass:boolean}} pass = db ≥ 9（v2.9.54 临时值，原 15）
    */
   DSP.snr = function (floor31, sig31) {
     var ps = 0, pf = 0;
@@ -3045,7 +3091,7 @@ var MODELS_DB = {
 
   /**
    * 测量有效性检查；任一不过，UI 必须阻止进入下一步（调音方案生成）
-   * ① SNR ≥ 15dB；② 100Hz–8kHz 内低于 floor+3dB 的段 ≤5 个；
+   * ① SNR ≥ 9dB（v2.9.54 临时值，原 15）；② 100Hz–8kHz 内低于 floor+3dB 的段 ≤5 个；
    * ③ 无纯音干扰（相邻段跳变 <18dB）
    */
   DSP.validityCheck = function (meas31, floor31) {
@@ -3129,6 +3175,8 @@ var MODELS_DB = {
       channelIsolated: (typeof obj.channelIsolated === 'boolean') ? obj.channelIsolated : null,
       snrDb: (typeof obj.snrDb === 'number') ? obj.snrDb : null,
       sampleRate: obj.sampleRate || null,
+      micCorrVer: obj.micCorrVer || null,
+      fftSize: (typeof obj.fftSize === 'number') ? obj.fftSize : null,
       ua: obj.ua || (typeof navigator !== 'undefined' ? navigator.userAgent : '')
     };
     store.measurements.push(m);
@@ -3990,7 +4038,7 @@ function trackSecurity(ev, data){
 
 /* ---------- 全局状态机 ---------- */
 var app = {
-  state: { pro:false, car:null, eqSpec:null, floor31:null, floorMode:null, measL:null, measR:null, plan:null, paid:false, remeasure:null, micSettings:null },
+  state: { pro:false, car:null, eqSpec:null, floor31:null, floorMode:null, fftSize:null, phaseFrames:null, tickMs:null, clip:null, measL:null, measR:null, plan:null, paid:false, remeasure:null, micSettings:null },
   playMode: 'bt',           // v2.9.215: 默认蓝牙；'bt' | 'usb'
   measureMode: 'stereo',      // 'stereo'（默认）| 'lr'（进阶可选项）
   checklist: {},             // key -> 'skip'
@@ -7003,7 +7051,9 @@ async function startMeasureFlow(opts){
 
   // v2.9.215: HFP 模式检测——采样率掉到 16k/8k 说明蓝牙切到电话模式
   try{
-    var _sr = M.audioCtx ? M.audioCtx.sampleRate : 0;
+    // S7（v2.9.320）：判据改用麦克风 track 实际采样率（v2.9.309 回读的 micSettings.sr）；
+    // ctx.sampleRate 被构造参数写死 48000，旧判据恒不触发（哨兵已死）；读不到 track 值才回退 ctx 值。仍只警告不拦截。
+    var _sr = (M.micSettings && typeof M.micSettings.sr === 'number') ? M.micSettings.sr : (M.audioCtx ? M.audioCtx.sampleRate : 0);
     if(_sr > 0 && _sr <= 16000){
       // HFP 模式：弹窗警告
       var _hfpMsg = 'Bluetooth entered call mode (sample rate ' + _sr + 'Hz) — audio and mic will misbehave.\n\nPlease:\n1. Reconnect Bluetooth\n2. Use media audio only\n3. Or use two devices (separate playback/measurement)';
@@ -7061,7 +7111,17 @@ async function startMeasureFlow(opts){
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
       phases: _phases,
-      onFrame: function(ph, info){ onFrame(info); },
+      onFrame: function(ph, info){
+        // S8（v2.9.320）：实时显示与报告同口径——仅显示层：band31 叠加麦克风补偿后给 UI，
+        // eqLevels 置空由 UI 按补偿后 band31 重算；info 本体（存储/计算路径）一字不改。
+        try{
+          if(info && info.band31 && typeof DSP.micCorr31 === 'function'){
+            var _disp = DSP.micCorr31(info.band31);
+            if(_disp) info = Object.assign({}, info, { band31: _disp, eqLevels: null });
+          }
+        }catch(_){}
+        onFrame(info);
+      },
       onPhase: function(phKey, ph){ setOverallObj(liveStatusFor(ph.obj)); }
     });
   }catch(e){ return failMeasure(token, e); }
@@ -7079,6 +7139,8 @@ async function startMeasureFlow(opts){
     for(_pi=0; _pi<_phases.length; _pi++){ if(_phases[_pi].key==='floor' && _phases[_pi].dur===5) _hadFloor5 = true; }
     S().floorMode = _hadFloor5 ? 'measured5s' : null;
   }catch(_){}
+  // v2.9.320（S4/M2/M5）：测量元数据落会话状态，供 payload 与报告标注
+  try{ S().fftSize = (typeof M.fftSize === 'number') ? M.fftSize : null; S().phaseFrames = res.ns || null; S().tickMs = (typeof res.tickMs === 'number') ? res.tickMs : null; S().clip = res.clip || null; }catch(_){}
   if(!validityGate(meas, 'stereo')) return;
   snrGate(meas, 'stereo');
   S().measL = meas; S().measR = meas;
@@ -7113,7 +7175,7 @@ async function startMeasureFlow(opts){
   // 持久化（经 DSP）
   // v2.9.3: 先亮"正在生成"防假死；saveMeasurement/renderCTA 都在 try/catch，任何一步抛异常都不白屏
   setStatusSpin(tt('measure.generatingPlan'));
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, ts:Date.now() }); }catch(e){ }
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:floor31, measL:meas, measR:meas, channelIsolated:false, mode:app.playMode, sampleRate:M.sampleRate, fftSize:(typeof M.fftSize==='number'?M.fftSize:null), micCorrVer:(DSP.MIC_CORR_VER||null), ts:Date.now() }); }catch(e){ }
   setStatus('');
   try{ renderCTA(CTA['measure_done']); }catch(e){
     // 兜底：直接进报告页，不让用户卡在 100%
@@ -7176,7 +7238,17 @@ async function startLrOptIn(){
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
       phases: PHASES_LR,
-      onFrame: function(ph, info){ onFrame(info); },
+      onFrame: function(ph, info){
+        // S8（v2.9.320）：实时显示与报告同口径——仅显示层：band31 叠加麦克风补偿后给 UI，
+        // eqLevels 置空由 UI 按补偿后 band31 重算；info 本体（存储/计算路径）一字不改。
+        try{
+          if(info && info.band31 && typeof DSP.micCorr31 === 'function'){
+            var _disp = DSP.micCorr31(info.band31);
+            if(_disp) info = Object.assign({}, info, { band31: _disp, eqLevels: null });
+          }
+        }catch(_){}
+        onFrame(info);
+      },
       onPhase: function(phKey, ph){ setOverallObj(liveStatusFor(ph.obj)); }
     });
   }catch(e){ return failMeasure(token, e); }
@@ -7186,6 +7258,7 @@ async function startLrOptIn(){
   if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
   S().floor31 = res.floor31;
   try{ S().floorMode = null; }catch(_){} // D4: LR 底噪为 10s，不在 floorMode 枚举内，不打标
+  try{ S().fftSize = (typeof M.fftSize === 'number') ? M.fftSize : null; S().phaseFrames = res.ns || null; S().tickMs = (typeof res.tickMs === 'number') ? res.tickMs : null; S().clip = res.clip || null; }catch(_){} // v2.9.320 元数据同标准流程
   var L31 = res.seg31.L, R31 = res.seg31.R;
   if(!validityGate(L31, 'L')) return;
   if(!validityGate(R31, 'R')) return;
@@ -7205,7 +7278,7 @@ async function startLrOptIn(){
   S().channelIsolated = true;
   // v2.9.3: 先亮"正在生成"防假死
   setStatusSpin(tt('measure.generatingPlan'));
-  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:res.floor31, measL:L31, measR:R31, channelIsolated:true, mode:app.playMode, ts:Date.now() }); }catch(e){ }
+  try{ DSP.saveMeasurement({ car:S().car, eqSpec:S().eqSpec, floor31:res.floor31, measL:L31, measR:R31, channelIsolated:true, mode:app.playMode, sampleRate:M.sampleRate, fftSize:(typeof M.fftSize==='number'?M.fftSize:null), micCorrVer:(DSP.MIC_CORR_VER||null), ts:Date.now() }); }catch(e){ }
   setStepState(0,'done');
   setStatus(tt('measure.listenDone'));
   setOverallObj(tt('measure.listenDone'));
@@ -7358,6 +7431,8 @@ function renderReport(){
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += ' (iPhone mic correction table measured from a single iPhone 12 Pro Max unit.)'; } } }catch(_){}
   // v2.9.320: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = 'Audio processing on this phone was not fully off during this measurement, so treat the result as slightly less reliable.'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
+  // v2.9.320 M5: sig-phase clipped frames >5% -> factual note on report (clipped frames still count in the average)
+  try{ var _cl320 = S().clip; var _cc320 = document.getElementById('report-clip-card'); if(_cc320){ if(_cl320 && typeof _cl320.sig === 'number' && _cl320.sig > 0.05){ _cc320.classList.remove('hidden'); var _cn320 = document.getElementById('report-clip-note'); if(_cn320) _cn320.textContent = Math.round(_cl320.sig*100) + '% of frames clipped during this measurement (volume too high, waveform truncated), so results may read low. Lower the volume and re-measure for a cleaner result.'; } else { _cc320.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
   // 发现 N 处需调整
@@ -7394,7 +7469,7 @@ function renderReport(){
 
 /* =====================================================================
  * 单车打分：原车音响得分（驻车目标曲线为标准）
- *   score = max(0, 1 - RMS(偏差)/12) * 100，四舍五入取整
+ *   score = max(0, 1 - RMS(偏差)/15) * 100，四舍五入取整（v2.9.252 起 /15，原 /12）
  *   只用权重>0 的频段（排除 20/25Hz、16k/20kHz 不可测）
  *   电平对齐：500Hz–2kHz 中频段中位数（与算法 v1.3 一致）
  * ===================================================================== */
@@ -9596,6 +9671,15 @@ else{ init(); }
         container: (function(){ try{ return window.__uaContainer(); }catch(_){ return 'other'; } })()
       };
       try{ var _msUp = st.micSettings || window.__micSettings || null; if(_msUp) payload.micSettings = _msUp; }catch(_){}
+      // v2.9.320 精度线 S3/S4/M2/M5：麦表版本戳 / 最终 fftSize / 各相位帧数 / 帧节拍中位数 / 削顶帧占比（纯加法元数据）
+      try{
+        payload.micCorrVer = (typeof DSP !== 'undefined' && DSP.MIC_CORR_VER) ? DSP.MIC_CORR_VER : null;
+        payload.fftSize = (typeof st.fftSize === 'number') ? st.fftSize : null;
+        payload.phaseFrames = st.phaseFrames || null;
+        payload.tickMs = (typeof st.tickMs === 'number') ? st.tickMs : null;
+        payload.clipSig = (st.clip && typeof st.clip.sig === 'number') ? st.clip.sig : null;
+        payload.clipFloor = (st.clip && typeof st.clip.floor === 'number') ? st.clip.floor : null;
+      }catch(_){}
       fetch(M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload), keepalive: true }).catch(function(){ try{ window.__errCap && window.__errCap('upload-fail: measurement', 'ingest', 0); }catch(_){} });
     }catch(_){}
