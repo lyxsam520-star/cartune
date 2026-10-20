@@ -112,6 +112,16 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .body14{font-size:14px;color:var(--text);}
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
+
+/* 品牌字标（v2.9.300 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+.wordmark{font-weight:900;letter-spacing:3px;}
+.wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.wm-eq{display:inline-flex;align-items:flex-end;gap:2px;margin-left:8px;}
+.wm-eq i{display:block;width:3px;border-radius:2px;background:var(--cyan);}
+.wm-eq i:nth-child(1){height:6px;background:var(--amber);}
+.wm-eq i:nth-child(2){height:12px;}
+.wm-eq i:nth-child(3){height:8px;background:var(--amber);}
+.wm-eq i:nth-child(4){height:15px;}
 /* 卡片 */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:12px 0;}
 .card.dim{opacity:.55;}
@@ -289,8 +299,8 @@ ul.clean li{margin:6px 0;}
     <div style="display:flex;align-items:center;gap:14px;padding:20px 4px 6px;">
       <img src="logo.png" alt="SoundScore" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:1px;">SoundScore</div>
-        <div style="font-size:13px;color:var(--amber);margin-top:2px;">Serious measurement, playful experience.</div>
+        <div class="wordmark" style="font-size:24px;">Sound<span class="wm-hot">Score</span><span class="wm-eq"><i></i><i></i><i></i><i></i></span></div>
+        <div style="font-size:13px;color:#FFD9A0;margin-top:2px;">Serious measurement, playful experience.</div>
       </div>
     </div>
     <div class="center" style="padding-top:12px;">
@@ -4070,7 +4080,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.299 · Beta';
+  ver.innerHTML = 'v2.9.300 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5073,7 +5083,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.299';
+var CALIB_VER = 'v2.9.300';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9291,8 +9301,8 @@ function init(){
     var bannerHTML =
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
       '<div style="text-align:right;">' +
-      '<div style="font-size:16px;font-weight:800;letter-spacing:1px;">SoundScore</div>' +
-      '<div style="font-size:11px;color:var(--amber);">Serious measurement, playful experience.</div>' +
+      '<div class="wordmark" style="font-size:16px;">Sound<span class="wm-hot">Score</span></div>' +
+      '<div style="font-size:11px;color:#FFD9A0;">Serious measurement, playful experience.</div>' +
       '</div>' +
       '<img src="logo.png" alt="SoundScore" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;">' +
       '</div>';
@@ -9480,7 +9490,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.299',
+        appVer: 'v2.9.300',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
