@@ -113,15 +113,14 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.300 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
-.wordmark{font-weight:900;letter-spacing:3px;}
+/* 品牌字标（v2.9.301 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+.wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
-.wm-eq{display:inline-flex;align-items:flex-end;gap:2px;margin-left:8px;}
-.wm-eq i{display:block;width:3px;border-radius:2px;background:var(--cyan);}
-.wm-eq i:nth-child(1){height:6px;background:var(--amber);}
-.wm-eq i:nth-child(2){height:12px;}
-.wm-eq i:nth-child(3){height:8px;background:var(--amber);}
-.wm-eq i:nth-child(4){height:15px;}
+.wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
+.wm-lines i{display:block;height:3px;border-radius:2px;background:var(--cyan);margin:3px 0;}
+.wm-lines i:nth-child(1){width:26px;background:var(--amber);}
+.wm-lines i:nth-child(2){width:18px;}
+.wm-lines i:nth-child(3){width:10px;background:var(--amber);}
 /* 卡片 */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:12px 0;}
 .card.dim{opacity:.55;}
@@ -299,7 +298,7 @@ ul.clean li{margin:6px 0;}
     <div style="display:flex;align-items:center;gap:14px;padding:20px 4px 6px;">
       <img src="logo.png" alt="SoundScore" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
-        <div class="wordmark" style="font-size:24px;">Sound<span class="wm-hot">Score</span><span class="wm-eq"><i></i><i></i><i></i><i></i></span></div>
+        <div class="wordmark" style="font-size:24px;">Sound<span class="wm-hot">Score</span><span class="wm-lines"><i></i><i></i><i></i></span></div>
         <div style="font-size:13px;color:#FFD9A0;margin-top:2px;">Serious measurement, playful experience.</div>
       </div>
     </div>
@@ -4080,7 +4079,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.300 · Beta';
+  ver.innerHTML = 'v2.9.301 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5083,7 +5082,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.300';
+var CALIB_VER = 'v2.9.301';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9490,7 +9489,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.300',
+        appVer: 'v2.9.301',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
