@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.282 · Beta';
+  ver.innerHTML = 'v2.9.283 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5040,7 +5040,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.282';
+var CALIB_VER = 'v2.9.283';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9447,7 +9447,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.282',
+        appVer: 'v2.9.283',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9583,7 +9583,9 @@ else{ init(); }
     fetch(INGEST_URL + '?kind=feedback&view=myfeedback&session=' + encodeURIComponent(sid)).then(function(r){ return r.json(); }).then(function(j){
       if(!j || !j.ok || !j.items || !j.items.length){ box.innerHTML = ''; return; }
       var badge = { 'new': 'Received', 'fixing': 'In progress', 'fixed': 'Fixed', 'noted': 'Noted' };
-      box.innerHTML = '<div class="small" style="color:var(--sub);margin-bottom:6px;">My feedback</div>' + j.items.map(function(it){
+      var fixedCount = j.items.filter(function(x){ return x.status === 'fixed'; }).length;
+      var head0 = fixedCount ? 'My feedback (you have helped fix ' + fixedCount + ' issue' + (fixedCount > 1 ? 's' : '') + ' 🙌)' : 'My feedback';
+      box.innerHTML = '<div class="small" style="color:var(--sub);margin-bottom:6px;">' + head0 + '</div>' + j.items.map(function(it){
         var st = badge[it.status] || 'Received';
         var color = it.status === 'fixed' ? '#34c759' : 'var(--amber)';
         var head = '<span style="color:' + color + ';font-weight:600;">' + st + (it.fixedVer ? ' · ' + fbEsc(it.fixedVer) : '') + '</span>';
