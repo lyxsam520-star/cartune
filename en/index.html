@@ -398,7 +398,7 @@ ul.clean li{margin:6px 0;}
     <div class="small" id="car-sub"></div>
     <div style="margin:10px 0 2px;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 12px;background:rgba(255,255,255,.03);">
       <button class="btn btn-ghost" id="car-casual-btn" style="width:100%;padding:6px 10px;font-size:13px;">Just exploring · no car</button>
-      <div style="font-size:11px;color:var(--sub);margin-top:3px;text-align:center;">Measure home audio or headphones — scores only, nothing is uploaded</div>
+      <div style="font-size:11px;color:var(--sub);margin-top:3px;text-align:center;">Home speakers work too — scores only, nothing is uploaded</div>
     </div>
     <!-- 车型：单一搜索框 → 车系列表 → 年款列表（三步走） -->
     <div class="field" id="car-search-wrap">
@@ -4053,7 +4053,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.272 · Beta';
+  ver.innerHTML = 'v2.9.273 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5037,7 +5037,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.272';
+var CALIB_VER = 'v2.9.273';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9443,7 +9443,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.272',
+        appVer: 'v2.9.273',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
