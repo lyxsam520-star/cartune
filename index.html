@@ -4233,7 +4233,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.275: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.276: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4283,7 +4283,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.275 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.276 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5275,7 +5275,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.275';
+var CALIB_VER = 'v2.9.276';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5692,7 +5692,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.275';
+var CN_DATA_VER = 'v2.9.276';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -9758,9 +9758,9 @@ else{ init(); }
   </div>
 <!-- 国内版反馈弹窗（数据不出境：走邮件，云开发上线后切正式库） -->
 <div id="ss-fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
-  <div class="card" style="width:100%;max-width:420px;">
+  <div class="card" style="width:100%;max-width:420px;max-height:86vh;overflow-y:auto;">
     <div class="h" style="font-size:17px;margin-bottom:4px;">问题反馈</div>
-    <div class="small" style="color:var(--sub);margin-bottom:12px;">遇到 bug 或有想法？告诉我们。</div>
+    <div class="small" style="color:var(--sub);margin-bottom:12px;">遇到 bug 就告诉我们——修好后会在下方「我的反馈」里回复你，欢迎多找 bug。</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost ss-fb-type" data-type="bug" style="flex:1;border-color:var(--amber);">报 bug</button>
       <button class="btn btn-ghost ss-fb-type" data-type="idea" style="flex:1;">提建议</button>
@@ -9771,6 +9771,7 @@ else{ init(); }
       <button class="btn btn-ghost" id="ss-fb-cancel" style="flex:1;">取消</button>
       <button class="btn btn-primary" id="ss-fb-send" style="flex:1;">发送</button>
     </div>
+    <div id="ss-fb-mine" style="margin-top:14px;"></div>
   </div>
 </div>
 <script>
@@ -9778,6 +9779,24 @@ else{ init(); }
   // 国内版反馈：直连 Cloudflare Worker（与英文版同一套 /feedback 接口）
   // 合规边界：仅用户主动提交的反馈文字走该通道；测量数据（核心链路）不出境
   var FB_URL = 'https://soundscore-stats.lyxsam520.workers.dev/feedback';
+  var INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
+  function fbSession(){ try{ return localStorage.getItem('ct_session_id') || ''; }catch(_){ return ''; } }
+  function fbEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function fbLoadMine(){
+    var box = document.getElementById('ss-fb-mine'); if(!box) return;
+    var sid = fbSession(); if(!sid){ box.innerHTML = ''; return; }
+    fetch(INGEST_URL + '?kind=feedback&view=myfeedback&session=' + encodeURIComponent(sid)).then(function(r){ return r.json(); }).then(function(j){
+      if(!j || !j.ok || !j.items || !j.items.length){ box.innerHTML = ''; return; }
+      var badge = { 'new': '已收到', 'fixing': '处理中', 'fixed': '已修复', 'noted': '已记录' };
+      box.innerHTML = '<div class="small" style="color:var(--sub);margin-bottom:6px;">我的反馈</div>' + j.items.map(function(it){
+        var st = badge[it.status] || '已收到';
+        var color = it.status === 'fixed' ? '#34c759' : 'var(--amber)';
+        var head = '<span style="color:' + color + ';font-weight:600;">' + st + (it.fixedVer ? ' · ' + fbEsc(it.fixedVer) : '') + '</span>';
+        var rep = it.reply ? '<div class="small" style="margin-top:4px;">回复：' + fbEsc(it.reply) + '</div>' : '';
+        return '<div style="border:1px solid #3a3a3c;border-radius:10px;padding:8px 10px;margin-bottom:6px;"><div class="small">' + head + '</div><div class="small" style="margin-top:2px;color:var(--sub);">' + fbEsc(it.text) + '</div>' + rep + '</div>';
+      }).join('');
+    }).catch(function(){});
+  }
   var fbModal = document.getElementById('ss-fb-modal');
   var fbType = 'bug';
   var fbMsg = document.getElementById('ss-fb-msg');
@@ -9786,6 +9805,7 @@ else{ init(); }
     if(!fbModal) return;
     fbSay('');
     fbModal.style.display = 'flex';
+    fbLoadMine();
     var ta = document.getElementById('ss-fb-text');
     if(ta) setTimeout(function(){ try{ ta.focus(); }catch(_){} }, 50);
   }
@@ -9816,11 +9836,13 @@ else{ init(); }
       var vis = document.querySelector('.sec:not([style*="display:none"])');
       page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown').slice(0, 64);
     }catch(_){}
+    // 双写腾讯大本营：反馈同步入库，状态/回复可回查（失败静默，不影响原通道）
+    try{ fetch(INGEST_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ product:'soundscore', kind:'feedback', schemaVer:1, app:'soundscore-cn', appVer:'h5-cn', type: fbType, text: text, page: page, session: fbSession(), ua: (navigator.userAgent||'').slice(0,200) }) }).catch(function(){}); }catch(_){}
     fetch(FB_URL, { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type: fbType, text: text, page: page, ua: (navigator.userAgent||'').slice(0,200) })
     }).then(function(r){
       fbSend.disabled = false;
-      if(r.ok){ fbSay('感谢反馈，我们会跟进！'); if(ta) ta.value=''; setTimeout(fbClose, 1500); }
+      if(r.ok){ fbSay('感谢反馈！处理进度和回复会出现在下方「我的反馈」里。'); if(ta) ta.value=''; setTimeout(fbLoadMine, 1200); setTimeout(fbClose, 2600); }
       else if(r.status === 429){ fbSay('提交太频繁，请稍后再试。'); }
       else { fbSay('发送失败，请重试。'); }
     }).catch(function(){ fbSend.disabled = false; fbSay('发送失败，请重试。'); });

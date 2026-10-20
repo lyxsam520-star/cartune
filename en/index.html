@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.275 · Beta';
+  ver.innerHTML = 'v2.9.276 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5040,7 +5040,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.275';
+var CALIB_VER = 'v2.9.276';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9303,9 +9303,9 @@ else{ init(); }
 </div>
 <!-- SoundScore EN only: feedback modal -->
 <div id="ss-fb-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
-  <div class="card" style="width:100%;max-width:420px;">
+  <div class="card" style="width:100%;max-width:420px;max-height:86vh;overflow-y:auto;">
     <div class="h" style="font-size:17px;margin-bottom:4px;">Feedback</div>
-    <div class="small" style="color:var(--sub);margin-bottom:12px;">Found a bug or have an idea? Tell us — bugs get fixed, ideas get read.</div>
+    <div class="small" style="color:var(--sub);margin-bottom:12px;">Found a bug? Tell us — once it's fixed, you'll see the reply under "My feedback" below. The more bugs you find, the better SoundScore gets.</div>
     <div style="display:flex;gap:8px;margin-bottom:12px;">
       <button class="btn btn-ghost ss-fb-type" data-type="bug" style="flex:1;border-color:var(--amber);">Bug report</button>
       <button class="btn btn-ghost ss-fb-type" data-type="idea" style="flex:1;">Suggestion</button>
@@ -9316,6 +9316,7 @@ else{ init(); }
       <button class="btn btn-ghost" id="ss-fb-cancel" style="flex:1;">Cancel</button>
       <button class="btn btn-primary" id="ss-fb-send" style="flex:1;">Send</button>
     </div>
+    <div id="ss-fb-mine" style="margin-top:14px;"></div>
   </div>
 </div>
 <!-- SoundScore EN only: tip jar + usage beacon + feedback (inert until URLs are set) -->
@@ -9445,7 +9446,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.275',
+        appVer: 'v2.9.276',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9572,6 +9573,24 @@ else{ init(); }
 
   /* 3. Feedback modal */
   var FB_URL = 'https://soundscore-stats.lyxsam520.workers.dev/feedback';
+  var INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
+  function fbSession(){ try{ return localStorage.getItem('ss_session_id') || ''; }catch(_){ return ''; } }
+  function fbEsc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function fbLoadMine(){
+    var box = document.getElementById('ss-fb-mine'); if(!box) return;
+    var sid = fbSession(); if(!sid){ box.innerHTML = ''; return; }
+    fetch(INGEST_URL + '?kind=feedback&view=myfeedback&session=' + encodeURIComponent(sid)).then(function(r){ return r.json(); }).then(function(j){
+      if(!j || !j.ok || !j.items || !j.items.length){ box.innerHTML = ''; return; }
+      var badge = { 'new': 'Received', 'fixing': 'In progress', 'fixed': 'Fixed', 'noted': 'Noted' };
+      box.innerHTML = '<div class="small" style="color:var(--sub);margin-bottom:6px;">My feedback</div>' + j.items.map(function(it){
+        var st = badge[it.status] || 'Received';
+        var color = it.status === 'fixed' ? '#34c759' : 'var(--amber)';
+        var head = '<span style="color:' + color + ';font-weight:600;">' + st + (it.fixedVer ? ' · ' + fbEsc(it.fixedVer) : '') + '</span>';
+        var rep = it.reply ? '<div class="small" style="margin-top:4px;">Reply: ' + fbEsc(it.reply) + '</div>' : '';
+        return '<div style="border:1px solid #3a3a3c;border-radius:10px;padding:8px 10px;margin-bottom:6px;"><div class="small">' + head + '</div><div class="small" style="margin-top:2px;color:var(--sub);">' + fbEsc(it.text) + '</div>' + rep + '</div>';
+      }).join('');
+    }).catch(function(){});
+  }
   var fbModal = document.getElementById('ss-fb-modal');
   var fbType = 'bug';
   var fbMsg = document.getElementById('ss-fb-msg');
@@ -9580,6 +9599,7 @@ else{ init(); }
     if(!fbModal) return;
     fbSay('');
     fbModal.style.display = 'flex';
+    fbLoadMine();
     var ta = document.getElementById('ss-fb-text');
     if(ta) setTimeout(function(){ try{ ta.focus(); }catch(_){} }, 50);
   }
@@ -9614,11 +9634,13 @@ else{ init(); }
       var vis = document.querySelector('.sec:not([style*="display:none"])');
       page = (vis && vis.id ? vis.id.replace('sec-','') : 'unknown').slice(0, 64);
     }catch(_){}
+    // Mirror into the Tencent store so status/replies can be shown back (silent on failure)
+    try{ fetch(INGEST_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ product:'soundscore', kind:'feedback', schemaVer:1, app:'soundscore-en', appVer:'h5-en', type: fbType, text: text, page: page, session: fbSession(), ua: (navigator.userAgent||'').slice(0,200) }) }).catch(function(){}); }catch(_){}
     fetch(FB_URL, { method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ type: fbType, text: text, page: page, ua: (navigator.userAgent||'').slice(0,200) })
     }).then(function(r){
       fbSend.disabled = false;
-      if(r.ok){ fbSay('Thanks! We\'ll look into it.'); if(ta) ta.value=''; setTimeout(fbClose, 1500); }
+      if(r.ok){ fbSay('Thanks! Progress and replies will appear under "My feedback" below.'); if(ta) ta.value=''; setTimeout(fbLoadMine, 1200); setTimeout(fbClose, 2600); }
       else if(r.status === 429){ fbSay('Too many — please try again later.'); }
       else { fbSay('Send failed — please try again.'); }
     }).catch(function(){ fbSend.disabled = false; fbSay('Send failed — please try again.'); });
