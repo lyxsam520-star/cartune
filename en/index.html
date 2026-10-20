@@ -116,7 +116,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.314 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.315 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -588,7 +588,7 @@ ul.clean li{margin:6px 0;}
     </div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <!-- v2.9.314: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
+    <!-- v2.9.315: factual note when mic processing was not fully off (hidden by default; renderReport shows it from this session micSettings) -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: measured-calibration badge (unlocked models only) -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
@@ -1915,7 +1915,7 @@ var MODELS_DB = {
    *    - RMS 归一不在此处做：对比阶段用"相对比较"（测量-目标）自然消去绝对电平
    * ============================================================ */
 
-  // v2.9.314: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
+  // v2.9.315: UA platform/container parsing (order: HarmonyOS -> iOS -> Android; any failure -> 'other', silent)
   window.__uaPlatform = function(){ try{ var ua = navigator.userAgent || ''; if(/OpenHarmony|HarmonyOS|ArkWeb/.test(ua)) return 'harmony'; if(/iPhone|iPad|iPod/.test(ua)) return 'ios'; if(/Android/.test(ua)) return 'android'; return 'other'; }catch(_){ return 'other'; } };
   window.__uaContainer = function(){ try{ var ua = navigator.userAgent || ''; if(/MicroMessenger/.test(ua)) return 'wechat'; if(/ArkWeb|TBS\/|X5|MQQBrowser/.test(ua)) return 'webview-other'; return 'browser'; }catch(_){ return 'other'; } };
   // getUserMedia 兼容：标准 API 优先，webkit 前缀兜底
@@ -2053,7 +2053,7 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.314: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
+      // v2.9.315: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
         var _trk = stream.getAudioTracks && stream.getAudioTracks()[0];
         if (_trk && _trk.getSettings) {
@@ -4094,7 +4094,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.314 · Beta';
+  ver.innerHTML = 'v2.9.315 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5099,7 +5099,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.314';
+var CALIB_VER = 'v2.9.315';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6967,7 +6967,7 @@ async function startMeasureFlow(opts){
     try { alert('Mic failed to start — check permission and retry.'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.314: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
+    // v2.9.315: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -7333,7 +7333,7 @@ function renderReport(){
   setText('report-trust','report.trustNote');
   // v2.9.251: P1 honesty label — iPhone correction table measured from a single iPhone 12 Pro Max unit, not universal to all iPhones
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += ' (iPhone mic correction table measured from a single iPhone 12 Pro Max unit.)'; } } }catch(_){}
-  // v2.9.314: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
+  // v2.9.315: show factual note when this session micSettings has ec/ns/agc === true (in-memory state, no server readback)
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = 'Audio processing on this phone was not fully off during this measurement, so treat the result as slightly less reliable.'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
@@ -9518,7 +9518,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.314',
+        appVer: 'v2.9.315',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9545,7 +9545,7 @@ else{ init(); }
     }catch(_){}
   }
   // TD-004: error digest reporting (once per page, silent failure)
-  // TD-004 strengthened (v2.9.314): batched error reports (<=6 batches/page, buffer cleared on send);
+  // TD-004 strengthened (v2.9.315): batched error reports (<=6 batches/page, buffer cleared on send);
   // triggers: 4s after first error / every 20s / on hide or pagehide (keepalive); <=2 per fingerprint per page, with stack head.
   var __errBatches = 0, __errTimer = null;
   function mFlushErrors(){
