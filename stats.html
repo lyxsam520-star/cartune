@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>音质跑分 · 数据看板</title>
+<style>
+  :root{ --bg:#0b0b0f; --card:#17171d; --line:rgba(255,255,255,.08); --tx:#f2f2f5; --sub:#9a9aa3; --amber:#f5a623; --green:#34c759; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--tx); font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; padding:20px 16px 40px; max-width:640px; margin:0 auto; }
+  .hd{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+  .hd h1{ font-size:20px; font-weight:700; }
+  .hd .tag{ font-size:11px; color:var(--amber); border:1px solid rgba(245,166,35,.4); border-radius:20px; padding:2px 8px; }
+  .upd{ font-size:12px; color:var(--sub); margin-bottom:16px; }
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .stat .num{ font-size:34px; font-weight:800; line-height:1.1; }
+  .stat .lab{ font-size:12px; color:var(--sub); margin-top:4px; }
+  .sec-t{ font-size:14px; font-weight:600; margin:18px 0 8px; }
+  .row{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; cursor:pointer; }
+  .row .top{ display:flex; align-items:center; justify-content:space-between; }
+  .row .car{ font-size:15px; font-weight:600; }
+  .row .score{ font-size:20px; font-weight:800; color:var(--amber); }
+  .row .score small{ font-size:11px; color:var(--sub); font-weight:400; }
+  .row .meta{ font-size:11px; color:var(--sub); margin-top:2px; }
+  .detail{ display:none; margin-top:10px; border-top:1px solid var(--line); padding-top:8px; }
+  .row.open .detail{ display:block; }
+  .detail table{ width:100%; border-collapse:collapse; font-size:12px; }
+  .detail td{ padding:3px 0; color:var(--sub); }
+  .detail td.g{ text-align:right; font-weight:600; }
+  .cut{ color:var(--green); } .boost{ color:var(--amber); }
+  .empty{ text-align:center; color:var(--sub); font-size:13px; padding:32px 0; }
+  .btn{ display:block; width:100%; background:var(--card); color:var(--tx); border:1px solid var(--line); border-radius:12px; padding:12px; font-size:14px; cursor:pointer; margin-top:14px; }
+  .ft{ font-size:11px; color:var(--sub); text-align:center; margin-top:20px; line-height:1.7; }
+</style>
+</head>
+<body>
+  <div class="hd"><h1>音质跑分 · 数据看板</h1><span class="tag">内部</span></div>
+  <div class="upd" id="upd">加载中…</div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="st-total">–</div><div class="lab">已记录跑分（真实数据）</div></div>
+    <div class="stat"><div class="num" id="st-models">–</div><div class="lab">有成绩的车型</div></div>
+  </div>
+  <div class="sec-t">各车型最新成绩（点开看方案）</div>
+  <div id="list"><div class="empty">加载中…</div></div>
+  <button class="btn" id="btn-refresh">刷新数据</button>
+  <div class="ft">数据源：腾讯云数据库（实时读取）<br>测试数据与已标记的异常记录已在服务端隔离，不计入本看板。</div>
+<script>
+var API = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest?kind=measurement&view=recent';
+function fmtF(f){ if(typeof f !== 'number') return '—'; return f >= 1000 ? (Math.round(f/100)/10) + 'kHz' : f + 'Hz'; }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function load(){
+  document.getElementById('upd').textContent = '加载中…';
+  fetch(API + '&_=' + Date.now()).then(function(r){ return r.json(); }).then(function(j){
+    if(!j || !j.ok) throw new Error('bad');
+    document.getElementById('st-total').textContent = j.total;
+    document.getElementById('st-models').textContent = j.items.length;
+    var now = new Date();
+    document.getElementById('upd').textContent = '更新于 ' + now.getHours() + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
+    var box = document.getElementById('list');
+    if(!j.items.length){ box.innerHTML = '<div class="empty">暂无真实成绩数据<br>车友测完第一条就会出现在这里</div>'; return; }
+    box.innerHTML = j.items.map(function(it, idx){
+      var mode = it.targetCurve === 'driving' ? '行车工况方案' : '驻车工况方案';
+      var det = '<div class="meta">暂无方案明细</div>';
+      if(it.planDetail && it.planDetail.length){
+        det = '<table>' + it.planDetail.map(function(p){
+          var g = (typeof p.g === 'number') ? p.g : 0;
+          var cls = g < 0 ? 'cut' : (g > 0 ? 'boost' : '');
+          var gs = (g > 0 ? '+' : '') + g + ' dB';
+          return '<tr><td>' + fmtF(p.f) + '</td><td class="g ' + cls + '">' + gs + '</td></tr>';
+        }).join('') + '</table><div class="meta" style="margin-top:6px;">一车一调：只适合这台车，照抄可能适得其反</div>';
+      }
+      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(it.series) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + '</div><div class="detail">' + det + '</div></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.row'), function(el){
+      el.addEventListener('click', function(){ el.classList.toggle('open'); });
+    });
+  }).catch(function(){
+    document.getElementById('upd').textContent = '读取失败，点下方刷新重试';
+  });
+}
+document.getElementById('btn-refresh').addEventListener('click', load);
+load();
+</script>
+</body>
+</html>
