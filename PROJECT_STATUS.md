@@ -134,3 +134,4 @@ cut-only；绝不推荐换喇叭/功放；用户数据不出境；年款严格�
 - [2026-10-20 16:10 A] C 位定位落规（Vincent 定）：OpenHands 只做备份待命、AB 紧急才启用；每日同步机制上线——cron c-standby-daily-sync（每日约 21:00）检查接管包四件套新鲜度并按需刷新 PROJECT_HANDOFF，正常静默（同步源=两 GitHub 仓库，C 直读）。
 - [2026-10-20 16:15 A] C 位写入演练通过（A 独立核验）：OpenHands 先 pull 至 2cfc3ff 再新建 C_TAKEOVER_DRILL.md 提交推送（103947e，署名 MuseC)，内容/远端读回一致——C 的接管能力已从"读懂"验到"能写"，演练后回待命；其询问是否代记状态日志，已由 A 登记，C 不动状态文件。
 - [2026-10-20 16:20 A] 数据架构扩展化收官：ingestSession 最终版部署完成，A 经 HTTP 网关 curl 四路复测全过（富字段 measurement 落库/老口径 calibration 零回归/GET 进度 count=2/未知 kind 拒绝），控制台读回 planDetail/carHw/floor31 等逐项属实。Vincent 确认 Google 备用码已妥善存放（账号安全链补齐）；体系未焊死处仅剩 B 侧待确认项。
+- [2026-10-20 16:35 A] B 侧三项全关（f8c195c）：0649ad9 根源定位（B cron 覆盖式复制＋过期副本）＋防复发三条落地＋B 对称值守已建＋v5 知悉——AB 协作面焊死。A 回 B schema 四项（0fb88ab）：gap-fix 客户端已落（现由共用库接管）/命名以实现为准/§3.2 已更新/四版本戳排期；精确机型 A+B 一致结论待 Vincent 确认。小程序 v0.3.1 代码就绪（并版+流畅度修复+工程 appid 修正，自检全过已入库），CI 上传卡微信 IP 白名单（出口池轮换至 104.29 段），待 Vincent 后台加白。
