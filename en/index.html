@@ -65,12 +65,13 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
   --green:#34D399;
   --r:16px;
   --sat:env(safe-area-inset-bottom,0px);
+  --sat-top:env(safe-area-inset-top,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{margin:0;padding:0;}
 body{
   background:var(--bg);color:var(--text);
-  font-family:-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
+  font-family:-apple-system,"PingFang SC","HarmonyOS Sans SC","HarmonyOS Sans","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;
   font-size:17px;line-height:1.6;
   -webkit-text-size-adjust:100%;
 }
@@ -98,7 +99,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 #wx-banner{display:none;background:#1a2230;color:var(--sub);font-size:13px;text-align:center;padding:8px 16px;border-bottom:1px solid var(--border);}
 #wx-banner.show{display:block;}
 /* 版块 */
-.sec{display:none;padding-top:20px;animation:fadein .25s ease;}
+.sec{display:none;padding-top:calc(20px + var(--sat-top));animation:fadein .25s ease;}
 .sec.active{display:block;}
 @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
 /* 字号层级 */
@@ -4056,7 +4057,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.294 · Beta';
+  ver.innerHTML = 'v2.9.295 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5059,7 +5060,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.294';
+var CALIB_VER = 'v2.9.295';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9466,7 +9467,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.294',
+        appVer: 'v2.9.295',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
