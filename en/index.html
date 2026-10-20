@@ -4042,7 +4042,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.261 · Beta';
+  ver.innerHTML = 'v2.9.262 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5013,7 +5013,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.261';
+var CALIB_VER = 'v2.9.262';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9024,7 +9024,7 @@ function doImportPlan(){
 
 /* =====================================================================
  * v2.9.99 分享比拼：生成带方案口令的分享文案，复制到剪贴板
- *   【调音玩】我的车载音响得了85分！
+ *   【音质跑分】我的车载音响得了85分！
  *   车型：XX XX款 | 调前63 → 调后85
  *   看着好玩，用着专业
  *   [方案口令：XXXX]
@@ -9225,7 +9225,7 @@ function init(){
   if(!window.COPY){ window.COPY = {}; }
   initBackButtons();
   initWxBanner();
-  // v2.9.215: 所有页面注入统一 banner（logo + 调音玩 + slogan），居右
+  // v2.9.215: 所有页面注入统一 banner（logo + 音质跑分 + slogan），居右
   try{
     var bannerHTML =
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
@@ -9418,7 +9418,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.261',
+        appVer: 'v2.9.262',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,

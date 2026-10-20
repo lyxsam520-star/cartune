@@ -263,9 +263,9 @@ ul.clean li{margin:6px 0;}
   <section class="sec" id="sec-home">
     <!-- v2.9.215: 首页 banner——logo + slogan，居左 -->
     <div style="display:flex;align-items:center;gap:14px;padding:20px 4px 6px;">
-      <img src="logo.png" alt="调音玩" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
+      <img src="logo.png" alt="音质跑分" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:1px;">调音玩</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:1px;">音质跑分</div>
         <div style="font-size:13px;color:var(--amber);margin-top:2px;">看着好玩，用着专业</div>
       </div>
     </div>
@@ -4273,7 +4273,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.261 · 内测版';
+  ver.innerHTML = 'v2.9.262 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5245,7 +5245,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.261';
+var CALIB_VER = 'v2.9.262';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5662,7 +5662,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.261';
+var CN_DATA_VER = 'v2.9.262';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -9386,7 +9386,7 @@ function doImportPlan(){
 
 /* =====================================================================
  * v2.9.99 分享比拼：生成带方案口令的分享文案，复制到剪贴板
- *   【调音玩】我的车载音响得了85分！
+ *   【音质跑分】我的车载音响得了85分！
  *   车型：XX XX款 | 调前63 → 调后85
  *   看着好玩，用着专业
  *   [方案口令：XXXX]
@@ -9420,7 +9420,7 @@ function sharePlanWithFriends(){
   var token = encodePlanToken({ label: '车友分享方案', gains: gains, source_car: carName, predicted_score: score });
   /* 组装文案 */
   var lines = [];
-  lines.push('【调音玩】我的车载音响得了' + (score != null ? score : '--') + '分！');
+  lines.push('【音质跑分】我的车载音响得了' + (score != null ? score : '--') + '分！');
   var carLine = '车型：' + carName;
   if(before != null && score != null && before !== score) carLine += ' | 调前' + before + ' → 调后' + score;
   lines.push(carLine);
@@ -9587,15 +9587,15 @@ function init(){
   if(!window.COPY){ window.COPY = {}; }
   initBackButtons();
   initWxBanner();
-  // v2.9.215: 所有页面注入统一 banner（logo + 调音玩 + slogan），居右
+  // v2.9.215: 所有页面注入统一 banner（logo + 音质跑分 + slogan），居右
   try{
     var bannerHTML =
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
       '<div style="text-align:right;">' +
-      '<div style="font-size:16px;font-weight:800;letter-spacing:1px;">调音玩</div>' +
+      '<div style="font-size:16px;font-weight:800;letter-spacing:1px;">音质跑分</div>' +
       '<div style="font-size:11px;color:var(--amber);">看着好玩，用着专业</div>' +
       '</div>' +
-      '<img src="logo.png" alt="调音玩" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;">' +
+      '<img src="logo.png" alt="音质跑分" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;">' +
       '</div>';
     document.querySelectorAll('.sec').forEach(function(sec){
       if(sec.id === 'sec-home') return; // 首页已有大 banner
