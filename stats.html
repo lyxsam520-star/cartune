@@ -41,11 +41,17 @@
   <div class="stats">
     <div class="stat"><div class="num" id="st-total">–</div><div class="lab">已记录跑分（真实数据）</div></div>
     <div class="stat"><div class="num" id="st-models">–</div><div class="lab">有成绩的车型</div></div>
+    <div class="stat"><div class="num" id="st-suspects">–</div><div class="lab">异常隔离记录</div></div>
+    <div class="stat"><div class="num" id="st-errors">–</div><div class="lab">错误上报（使用信号）</div></div>
   </div>
   <div class="sec-t">各车型最新成绩（点开看方案）</div>
   <div id="list"><div class="empty">加载中…</div></div>
+  <div class="sec-t">异常隔离区（不计入成绩）</div>
+  <div id="suspects"><div class="empty">加载中…</div></div>
+  <div class="sec-t">错误上报（有人在真机上用就会出现在这里）</div>
+  <div id="errors"><div class="empty">加载中…</div></div>
   <button class="btn" id="btn-refresh">刷新数据</button>
-  <div class="ft">数据源：腾讯云数据库（实时读取）<br>测试数据与已标记的异常记录已在服务端隔离，不计入本看板。</div>
+  <div class="ft">数据源：腾讯云数据库（实时读取）<br>测试数据与异常记录已隔离、不计入成绩，单列在下方隔离区。</div>
 <script>
 var API = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest?kind=measurement&view=recent';
 function fmtF(f){ if(typeof f !== 'number') return '—'; return f >= 1000 ? (Math.round(f/100)/10) + 'kHz' : f + 'Hz'; }
@@ -80,8 +86,43 @@ function load(){
     document.getElementById('upd').textContent = '读取失败，点下方刷新重试';
   });
 }
-document.getElementById('btn-refresh').addEventListener('click', load);
-load();
+function fmtT(iso){
+  if(!iso) return '';
+  var d = new Date(iso);
+  if(isNaN(d.getTime())) return '';
+  function p(n){ return ('0'+n).slice(-2); }
+  return (d.getMonth()+1) + '/' + d.getDate() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function shortDev(ua){
+  if(!ua) return '';
+  var m = ua.match(/(iPhone|iPad|Android|Windows NT|Macintosh)[^;)]*/);
+  return m ? m[0] : ua.slice(0, 40);
+}
+function loadSuspects(){
+  fetch(API.replace('view=recent', 'view=suspects') + '&_=' + Date.now()).then(function(r){ return r.json(); }).then(function(j){
+    if(!j || !j.ok) throw new Error('bad');
+    document.getElementById('st-suspects').textContent = j.total;
+    var box = document.getElementById('suspects');
+    if(!j.items.length){ box.innerHTML = '<div class="empty">暂无异常记录</div>'; return; }
+    box.innerHTML = j.items.map(function(it){
+      return '<div class="row" style="cursor:default;"><div class="top"><span class="car">' + esc(it.series || '（无车型）') + '</span><span class="score" style="color:var(--sub);">' + (it.score == null ? '—' : it.score) + ' <small>分</small></span></div><div class="meta">' + esc(it.reason || '已标记') + (it.version ? ' · 版本 ' + esc(it.version) : '') + (it.at ? ' · ' + fmtT(it.at) : '') + '</div></div>';
+    }).join('');
+  }).catch(function(){ document.getElementById('suspects').innerHTML = '<div class="empty">读取失败</div>'; });
+}
+function loadErrors(){
+  fetch(API.replace('view=recent', 'view=errors') + '&_=' + Date.now()).then(function(r){ return r.json(); }).then(function(j){
+    if(!j || !j.ok) throw new Error('bad');
+    document.getElementById('st-errors').textContent = j.total;
+    var box = document.getElementById('errors');
+    if(!j.items.length){ box.innerHTML = '<div class="empty">暂无错误上报<br>真实用户在真机上使用后，这里会有动静</div>'; return; }
+    box.innerHTML = j.items.map(function(it){
+      var msgs = (it.errors || []).map(function(e){ return '<div class="meta" style="color:#e8a13a;">' + esc(e.m) + (e.s ? '（' + esc(e.s) + (e.l ? ':' + e.l : '') + '）' : '') + '</div>'; }).join('');
+      return '<div class="row" style="cursor:default;"><div class="top"><span class="car" style="font-size:13px;">' + esc(shortDev(it.device) || '未知设备') + '</span><span class="meta">' + fmtT(it.at) + '</span></div><div class="meta">' + esc(it.source || '') + (it.version ? ' · ' + esc(it.version) : '') + '</div>' + msgs + '</div>';
+    }).join('');
+  }).catch(function(){ document.getElementById('errors').innerHTML = '<div class="empty">读取失败</div>'; });
+}
+document.getElementById('btn-refresh').addEventListener('click', function(){ load(); loadSuspects(); loadErrors(); });
+load(); loadSuspects(); loadErrors();
 </script>
 </body>
 </html>
