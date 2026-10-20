@@ -498,6 +498,10 @@ ul.clean li{margin:6px 0;}
     <div class="small" style="color:var(--sub);margin-top:6px;">灰色频段（20/25Hz、16k/20kHz）为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。</div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
+    <!-- v2.9.256: 实测校准参数标注（已解锁车型才显示） -->
+    <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
+      <div class="small" id="report-calib-note" style="color:var(--green);"></div>
+    </div>
     <!-- v2-C: diag+peq report blocks -->
     <!-- 深度诊断 + DSP PEQ 参数输出，PEQ 默认折叠 -->
     <div class="h mt16" id="diag-title" style="font-size:15px;"></div>
@@ -714,6 +718,40 @@ ul.clean li{margin:6px 0;}
     <button class="btn btn-primary" id="bounty-signup" style="width:100%;"></button>
     <div class="small mt8" style="color:var(--sub);" id="bounty-note"></div>
   </section>
+  <!-- ============ 8b. 中心频率推导闯关（v2.9.256） ============ -->
+  <section class="sec" id="sec-calib">
+    <div class="topbar"><button class="backbtn" data-back="sec-car" id="bk-calib"></button></div>
+    <div class="h" id="calib-title"></div>
+    <div class="small" id="calib-sub"></div>
+    <div class="card">
+      <div class="small" id="calib-model" style="font-weight:600;"></div>
+      <div class="prog"><i id="calib-fill"></i></div>
+      <div class="small mt8" id="calib-progress-text" style="color:var(--sub);"></div>
+      <div class="small mt8" id="calib-why" style="color:var(--sub);"></div>
+    </div>
+    <div class="card" id="calib-wizard-card">
+      <div class="small" id="calib-intro"></div>
+      <div class="h mt8" style="font-size:15px;" id="calib-step-title"></div>
+      <div class="small mt8" id="calib-step-tip"></div>
+      <canvas id="calib-canvas" style="width:100%;height:120px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;margin-top:10px;"></canvas>
+      <div class="small mt8" id="calib-status"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary" id="calib-btn-start" style="flex:1;"></button>
+        <button class="btn btn-ghost hidden" id="calib-btn-next" style="flex:1;"></button>
+      </div>
+      <ul class="clean mt8" id="calib-steps-list" style="font-size:13px;"></ul>
+    </div>
+    <div class="card hidden" id="calib-done-card">
+      <div class="small" id="calib-done-text"></div>
+      <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;">
+        <input type="checkbox" id="calib-consent" style="margin-top:2px;">
+        <span id="calib-consent-text"></span>
+      </label>
+      <button class="btn btn-primary mt8" id="calib-btn-submit" style="width:100%;" disabled></button>
+      <div class="small mt8" id="calib-submit-msg" style="color:var(--sub);"></div>
+    </div>
+    <button class="btn btn-ghost mt8" id="calib-btn-exit" style="width:100%;"></button>
+  </section>
   <!-- ============ 9. 技术原理 ============ -->
   <section class="sec" id="sec-tech">
     <div class="topbar"><button class="backbtn" data-back="sec-home" id="bk-tech"></button></div>
@@ -921,16 +959,21 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
    * ============================================================ */
   DSP.EQ_PRESETS = {
     3: { labels: ['低音', '中音', '高音'],
-         centers: [100, 1000, 10000], rangeDb: 6, stepDb: 1 },
+         centers: [100, 1000, 10000], rangeDb: 6, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     5: { labels: ['低音', '中低音', '中音', '中高音', '高音'],
-         centers: [60, 250, 1000, 4000, 12000], rangeDb: 9, stepDb: 1 },
+         centers: [60, 250, 1000, 4000, 12000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     7: { labels: ['重低音', '低音', '中低音', '中音', '中高音', '高音', '超高音'],
-         centers: [63, 160, 400, 1000, 2500, 6300, 16000], rangeDb: 9, stepDb: 1 },
+         centers: [63, 160, 400, 1000, 2500, 6300, 16000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     8: { labels: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
-         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1 },
+         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     // v2.9.95: 网易云音乐 10 段均衡器（31/63/125/250/500/1k/2k/4k/8k/16k，±12dB）
     10: { labels: ['31', '63', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'],
-         centers: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000], rangeDb: 12, stepDb: 1 }
+         centers: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000], rangeDb: 12, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null }
   };
 
   /**
@@ -942,7 +985,9 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     if (DSP.EQ_PRESETS[n]) {
       var p = DSP.EQ_PRESETS[n];
       return { bands: n, labels: p.labels.slice(), centers: p.centers.slice(),
-               rangeDb: p.rangeDb, stepDb: p.stepDb };
+               rangeDb: p.rangeDb, stepDb: p.stepDb,
+               calibratedCenters: p.calibratedCenters ? p.calibratedCenters.slice() : null,
+               calibratedQ: p.calibratedQ ? p.calibratedQ.slice() : null };
     }
     var labels = [], centers = [];
     var lo = Math.log(20), hi = Math.log(20000);
@@ -952,7 +997,8 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       centers.push(Math.round(Math.exp(lo + t * (hi - lo))));
       labels.push('B' + (i + 1));
     }
-    return { bands: n, labels: labels, centers: centers, rangeDb: 9, stepDb: 1 };
+    return { bands: n, labels: labels, centers: centers, rangeDb: 9, stepDb: 1,
+             calibratedCenters: null, calibratedQ: null };
   };
 
   /* ============================================================
@@ -2735,10 +2781,134 @@ var MODELS_DB = {
       rangeDb: (eqSpec && eqSpec.rangeDb > 0) ? eqSpec.rangeDb : fallback.rangeDb,
       stepDb: (eqSpec && eqSpec.stepDb > 0) ? eqSpec.stepDb : fallback.stepDb,
       confidence: eqSpec && eqSpec.confidence,
+      // v2.9.256: 实测校准参数（推导解锁车型才有；centers 已由校准值覆盖时同步带出）
+      calibratedCenters: (eqSpec && eqSpec.calibratedCenters && eqSpec.calibratedCenters.length === bands)
+        ? eqSpec.calibratedCenters.slice() : (fallback.calibratedCenters || null),
+      calibratedQ: (eqSpec && eqSpec.calibratedQ && eqSpec.calibratedQ.length === bands)
+        ? eqSpec.calibratedQ.slice() : (fallback.calibratedQ || null),
+      calibrated: !!(eqSpec && eqSpec.calibrated),
       usedFallbackCenters: !centers // 标记中心频率是经验兜底，UI 可提示用户
     };
   }
   DSP.normalizeEqSpec = normalizeEqSpec;
+
+  /* ============================================================
+   * v2.9.256: 中心频率推导（闯关校准）
+   * 原理：基准（EQ 全 0）与单段 +6dB 两次 31 段测量的差值曲线，
+   * 隆起峰位 = 该段滤波器真实中心频率；半高宽 → Q 值。
+   * 依据：REW 式逐段激励测量；峰位用对数频率轴抛物线插值，
+   * 31 段 1/3 倍频程网格下可分辨约 ±1/6 倍频程。
+   * ============================================================ */
+
+  /**
+   * 分析单个频段的 +6dB 隆起。
+   * @param {number[]} base31 基准测量（EQ 全 0）
+   * @param {number[]} boost31 该段 +6dB、其余 0 的测量
+   * @param {number[]|null} floor31 环境底噪（算 SNR 用，可空）
+   * @param {number} nominalFc 车机标注的中心频率（搜索窗口中心）
+   * @returns {{peakHz:number, peakDb:number, q:number, snrDb:number, valid:boolean, reason:string}}
+   */
+  DSP.calibAnalyzeBand = function (base31, boost31, floor31, nominalFc) {
+    var F = DSP.ISO31, i;
+    var bad = { peakHz: 0, peakDb: 0, q: 0, snrDb: 0, valid: false, reason: '数据不足' };
+    if (!base31 || !boost31 || base31.length !== 31 || boost31.length !== 31 || !(nominalFc > 0)) return bad;
+    // 差值曲线（dB 域直接相减；两次测量电平对齐方式与主流程一致：相对比较）
+    var delta = new Array(31);
+    for (i = 0; i < 31; i++) delta[i] = boost31[i] - base31[i];
+    // 搜索窗口：名义中心 ±1 倍频程
+    var lo = nominalFc / 2, hi = nominalFc * 2;
+    var pk = -1, pkV = -Infinity;
+    for (i = 0; i < 31; i++) {
+      if (F[i] >= lo && F[i] <= hi && delta[i] > pkV) { pkV = delta[i]; pk = i; }
+    }
+    if (pk < 0) return bad;
+    // 抛物线插值（x = log2 频率）：用峰点与左右邻点拟合顶点
+    var peakHz = F[pk];
+    if (pk > 0 && pk < 30) {
+      var y0 = delta[pk - 1], y1 = delta[pk], y2 = delta[pk + 1];
+      var denom = (y0 - 2 * y1 + y2);
+      if (denom < -0.01) {
+        var shift = 0.5 * (y0 - y2) / denom; // 单位：1/3 倍频程格
+        if (shift > -1 && shift < 1) {
+          peakHz = F[pk] * Math.pow(2, shift / 3);
+        }
+      }
+    }
+    // 半高宽 → Q：找左右 delta 降到峰值一半的频率（对数轴线性插值）
+    var half = pkV / 2;
+    var fL = null, fR = null;
+    for (i = pk; i > 0; i--) {
+      if (delta[i - 1] < half) {
+        var t1 = (half - delta[i]) / (delta[i - 1] - delta[i]);
+        fL = F[i] * Math.pow(F[i - 1] / F[i], t1);
+        break;
+      }
+    }
+    for (i = pk; i < 30; i++) {
+      if (delta[i + 1] < half) {
+        var t2 = (half - delta[i]) / (delta[i + 1] - delta[i]);
+        fR = F[i] * Math.pow(F[i + 1] / F[i], t2);
+        break;
+      }
+    }
+    var q = 0;
+    if (fL && fR && fR > fL) {
+      var bwOct = Math.log(fR / fL) / Math.LN2;
+      if (bwOct > 0.05 && bwOct < 6) {
+        var p2 = Math.pow(2, bwOct);
+        q = Math.sqrt(p2) / (p2 - 1); // 倍频程带宽 → Q（标准换算）
+        q = Math.max(0.4, Math.min(12, q));
+      }
+    }
+    // 峰点信噪比：+6dB 测量在峰频段的电平 − 底噪同频段
+    var snrDb = 99;
+    if (floor31 && floor31.length === 31) snrDb = boost31[pk] - floor31[pk];
+    var valid = true, reason = '';
+    if (!(pkV >= 2.5)) { valid = false; reason = '隆起不明显（' + pkV.toFixed(1) + 'dB）'; }
+    else if (snrDb < 10) { valid = false; reason = '信噪比不足（' + snrDb.toFixed(0) + 'dB）'; }
+    return {
+      peakHz: Math.round(peakHz * 10) / 10,
+      peakDb: Math.round(pkV * 10) / 10,
+      q: Math.round(q * 100) / 100,
+      snrDb: Math.round(snrDb * 10) / 10,
+      valid: valid, reason: reason
+    };
+  };
+
+  /** 数组中位数（空数组返回 null） */
+  DSP.calibMedian = function (arr) {
+    if (!arr || !arr.length) return null;
+    var a = arr.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  };
+
+  /**
+   * 由多份校准数据集推导真实中心频率与 Q（每段取中位数）。
+   * @param {Array} datasets 每份 { steps: [{band, peakHz, q, valid}] }
+   * @param {number} bands 段数
+   * @returns {{centers:number[], qs:number[]}|null} 数据不足返回 null
+   */
+  DSP.calibDerive = function (datasets, bands) {
+    if (!datasets || !datasets.length || !(bands > 0)) return null;
+    var centers = [], qs = [], b, d;
+    for (b = 0; b < bands; b++) {
+      var hs = [], qv = [];
+      for (d = 0; d < datasets.length; d++) {
+        var st = datasets[d] && datasets[d].steps && datasets[d].steps[b];
+        if (st && st.valid !== false && st.peakHz > 0) {
+          hs.push(st.peakHz);
+          if (st.q > 0) qv.push(st.q);
+        }
+      }
+      var c = DSP.calibMedian(hs);
+      if (c === null) return null;
+      centers.push(Math.round(c));
+      var qm = DSP.calibMedian(qv);
+      qs.push(qm === null ? 0 : Math.round(qm * 100) / 100);
+    }
+    return { centers: centers, qs: qs };
+  };
 
   function roundToStep(x, step) {
     if (!(step > 0)) step = 1;
@@ -3337,6 +3507,36 @@ window.COPY = {
     ctaSignup: "报名参加",
     signed: "已报名 ✓ 完成校准任务后发放奖励",
     note: "v1 报名记录保存在本机；云端同步与奖励发放 v2 上线。"
+  },
+  calib: {
+    cardTitle: "中心频率推导闯关",
+    cardWhy: "车机标注的频率（如 1000Hz）是名义值，滤波器真实中心往往有偏差。车友们一起逐段实测，把这台车的真实中心频率推导出来——推到 100% 解锁后，这款车型的每一份 EQ 方案都按实测参数计算，调得更准。",
+    statusProgress: function(n, total){ return "推导中 · 已汇集 " + n + " / " + total + " 份实测数据"; },
+    statusUnlocked: "已解锁 ✓ 本车型 EQ 已按实测中心频率校准",
+    statusMine: function(n){ return "你已贡献 " + n + " 份"; },
+    ctaJoin: "参与推导 →",
+    ctaContinue: "继续推导 →",
+    title: "中心频率推导",
+    sub: "逐段 +6dB 实测，反推车机 EQ 的真实中心频率",
+    intro: "一共 8 次测量：先把 EQ 全部归零测一次基准，再把每一段单独拨到 +6dB 各测一次。每段约 30 秒，向导会一步步带你做，中途退出下次可以接着来。",
+    needCar: "请先在车型页选择你的车型，再来参与推导。",
+    stepOf: function(x, n){ return "第 " + x + " / " + n + " 次测量"; },
+    stepBase: "把车机 EQ 全部归零（所有段都调回 0dB）",
+    stepBand: function(label, fc){ return "把「" + label + "」（标注 " + fc + "Hz）调到 +6dB，其余各段保持 0dB"; },
+    btnStart: "开始测量（30 秒）",
+    btnRetry: "重测这一步",
+    btnNext: "下一步",
+    measuring: "测量中，请保持安静，不要碰手机…",
+    stepOk: function(hz){ return "已记录：这一段的隆起峰在约 " + hz + "Hz"; },
+    stepWeak: "这一步的隆起不够明显，可能音量偏小或环境太吵。建议调大音量、关好车窗后重测这一步。",
+    allDone: "全部测完，数据有效 ✓",
+    consent: "同意上传本次校准数据：只上传每段的峰值频率与 Q 值等推导结果，不含录音、不含整段频谱。数据仅用于推导该车型的中心频率。",
+    btnSubmit: "提交这一份数据",
+    submitted: "已提交，感谢贡献！这款车的推导进度 +1。",
+    savedLocal: "已保存在本机（当前无法连接数据通道，联网后可再次提交）。",
+    exitBtn: "保存进度，下次继续",
+    reportNote: "本方案基于实测校准参数：该车型 EQ 中心频率已由车友实测推导，计算比名义值更贴合你的车机。",
+    listProgress: function(pct){ return "中心频率推导 " + pct + "%"; }
   },
   measure: {
     title: "开始测量",
@@ -4050,7 +4250,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.255 · 内测版';
+  ver.innerHTML = 'v2.9.256 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4325,9 +4525,12 @@ function carSpecFromSeries(brand, se){
   else if (bands === 8){ labels = ['B1','B2','B3','B4','B5','B6','B7','B8']; centers = [64,250,500,1000,3150,8000]; }
   else { labels = []; for (var i = 0; i < bands; i++) labels.push('B' + (i + 1)); }
   var conf = carConfidenceFromNote(se.eq_note);
-  return { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
+  var specObj = { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
            confidence: conf, note: se.eq_note || '',
            centersVerified: !!(centers && (conf === '用户实测' || conf === 'media实测')) };
+  // v2.9.256: 中心频率推导已解锁的车型 → 用实测校准参数覆盖名义/经验中心
+  try { applyCalibToSpec(specObj, brand, se.name); } catch (_) {}
+  return specObj;
 }
 function initCar(){
   setText('car-title','car.title');
@@ -4589,7 +4792,8 @@ function initCar(){
     carList.innerHTML = '';
     b.series.forEach(function(s){
       var li = document.createElement('li');
-      li.innerHTML = '<span>' + escapeHtml(s.name) + '</span>' + eqBadge(s);
+      li.innerHTML = '<span>' + escapeHtml(s.name) + '</span>' + eqBadge(s) +
+        calibHintHtml(b.name, s);
       bindTap(li, (function(ss){ return function(){ goYears(ss); }; })(s));
       carList.appendChild(li);
     });
@@ -4887,6 +5091,8 @@ function renderEqSpec(){
     var bc = document.getElementById('bounty-card');
     if(bc) bc.onclick = function(){ show('bounty'); };
   }
+  // v2.9.256: 已选车型 → 中心频率推导闯关卡（进度条 + 状态 + 入口）
+  try { renderCalibCard(box, spec); } catch (_) {}
 }
 /* v2.9.215: EQ 段数纠错弹窗——车友报错并填写正确段数，存 localStorage 待上传 */
 function showEqCorrectDialog(spec){
@@ -4999,6 +5205,429 @@ function refreshBountyBtn(){
   }else{
     btn.textContent = tt('bounty.ctaSignup');
     btn.className = 'btn btn-primary'; btn.style.width = '100%'; btn.disabled = false;
+  }
+}
+
+/* =====================================================================
+ * v2.9.256: 中心频率推导闯关（用户 2026-10-20 决策）
+ * - 每车型 10 份有效校准数据集 = 100%；集满后由服务端聚合推导
+ *   （每段峰位/Q 取中位数），此后该车型方案按实测参数计算。
+ * - 数据通道：既有 /m（type=calibration）+ GET /calib 进度查询；
+ *   通道不可用时静默降级：本机进度照常记录，服务端进度不显示。
+ * - 本机存储：ct_calib_v1 = { models: { key: {mine, unlocked, centers, qs} },
+ *                            wiz: { key, stepIdx, floor31, base31, steps:[...] } }
+ * ===================================================================== */
+var CALIB_NEEDED = 10;
+var CALIB_M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
+var CALIB_G_URL = 'https://soundscore-stats.lyxsam520.workers.dev/calib';
+var CALIB_APP = 'soundscore-cn';
+var CALIB_VER = 'v2.9.256';
+var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
+var calibFetching = {};
+
+function calibKey(brand, series){ return String(brand || '') + '|' + String(series || ''); }
+function calibStore(){
+  try{ return JSON.parse(localStorage.getItem('ct_calib_v1') || '{}') || {}; }catch(_){ return {}; }
+}
+function calibSave(st){
+  try{ localStorage.setItem('ct_calib_v1', JSON.stringify(st)); }catch(_){}
+}
+function calibModelState(key){
+  var st = calibStore();
+  if(!st.models) st.models = {};
+  if(!st.models[key]) st.models[key] = { mine: 0 };
+  return { store: st, model: st.models[key] };
+}
+/* 已解锁？优先服务端结论，其次本机缓存 */
+function calibUnlocked(key){
+  var r = calibRemote[key];
+  if(r && r.unlocked && r.centers) return { centers: r.centers, qs: r.qs || [] };
+  var st = calibStore();
+  var m = st.models && st.models[key];
+  if(m && m.unlocked && m.centers) return { centers: m.centers, qs: m.qs || [] };
+  return null;
+}
+/* 把校准参数应用到 eqSpec（carSpecFromSeries 调用） */
+function applyCalibToSpec(spec, brand, series){
+  if(!spec || !spec.bands) return;
+  var un = calibUnlocked(calibKey(brand, series));
+  if(un && un.centers.length === spec.bands){
+    spec.centers = un.centers.slice();
+    spec.calibratedCenters = un.centers.slice();
+    spec.calibratedQ = (un.qs || []).slice();
+    spec.centersVerified = true;
+    spec.calibrated = true;
+    spec.confidence = '用户实测';
+  }
+}
+/* 拉取服务端进度（失败静默；结果回来后刷新所有进度提示） */
+function calibFetch(key, brand, series){
+  if(calibFetching[key]) return;
+  calibFetching[key] = true;
+  try{
+    fetch(CALIB_G_URL + '?brand=' + encodeURIComponent(brand) + '&series=' + encodeURIComponent(series))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        calibFetching[key] = false;
+        if(!j) return;
+        calibRemote[key] = { count: j.count | 0, unlocked: !!j.unlocked,
+                             centers: j.centers || null, qs: j.qs || null };
+        if(j.unlocked && j.centers){
+          var cs = calibModelState(key);
+          cs.model.unlocked = true; cs.model.centers = j.centers; cs.model.qs = j.qs || [];
+          calibSave(cs.store);
+        }
+        refreshCalibHints();
+      })
+      .catch(function(){ calibFetching[key] = false; });
+  }catch(_){ calibFetching[key] = false; }
+}
+function calibProgressOf(key, brand, series){
+  var st = calibStore();
+  var m = (st.models && st.models[key]) || { mine: 0 };
+  var r = calibRemote[key];
+  var count = r ? r.count : null; // null = 服务端未知
+  var unlocked = !!calibUnlocked(key);
+  return { count: count, mine: m.mine || 0, unlocked: unlocked,
+           pct: unlocked ? 100 : (count !== null ? Math.min(100, Math.round(count / CALIB_NEEDED * 100)) : 0) };
+}
+/* 车系列表行内的进度提示（无服务端数据时不显示，不编造进度） */
+function calibHintHtml(brand, se){
+  try{
+    if(!se || !se.eq_bands) return '';
+    var key = calibKey(brand, se.name);
+    calibFetch(key, brand, se.name);
+    var p = calibProgressOf(key, brand, se.name);
+    if(p.unlocked) return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="color:var(--green);margin-top:2px;">✓ 中心频率已解锁</div>';
+    if(p.count === null) return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="display:none;"></div>';
+    return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="color:var(--sub);margin-top:2px;">' +
+      escapeHtml(tf('calib.listProgress')(p.pct)) + '</div>';
+  }catch(_){ return ''; }
+}
+function refreshCalibHints(){
+  try{
+    document.querySelectorAll('[data-calib-key]').forEach(function(el){
+      var key = el.getAttribute('data-calib-key');
+      var parts = key.split('|');
+      var p = calibProgressOf(key, parts[0], parts.slice(1).join('|'));
+      if(p.unlocked){ el.style.display = ''; el.style.color = 'var(--green)'; el.textContent = '✓ 中心频率已解锁'; }
+      else if(p.count !== null){ el.style.display = ''; el.textContent = tf('calib.listProgress')(p.pct); }
+    });
+    if(document.getElementById('sec-calib') && document.getElementById('sec-calib').classList.contains('active')) renderCalibPage();
+  }catch(_){}
+}
+/* 车型页闯关卡（renderEqSpec 末尾调用） */
+function renderCalibCard(box, spec){
+  var car = S().car;
+  if(!car || !car.brand || !spec || !spec.bands) return;
+  var key = calibKey(car.brand, car.series);
+  calibFetch(key, car.brand, car.series);
+  var p = calibProgressOf(key, car.brand, car.series);
+  var st = calibStore();
+  var wiz = st.wiz && st.wiz.key === key ? st.wiz : null;
+  var inProg = wiz && (wiz.stepIdx > 0 || wiz.base31);
+  var pct = p.pct;
+  var statusLine;
+  if(p.unlocked) statusLine = '<span style="color:var(--green);">' + escapeHtml(tt('calib.statusUnlocked')) + '</span>';
+  else if(p.count !== null) statusLine = escapeHtml(tf('calib.statusProgress')(p.count, CALIB_NEEDED));
+  else statusLine = escapeHtml(tf('calib.statusProgress')(p.mine, CALIB_NEEDED)) + '（本机记录）';
+  var mineLine = p.mine > 0 ? '<div class="small mt8" style="color:var(--cyan);">' + escapeHtml(tf('calib.statusMine')(p.mine)) + '</div>' : '';
+  // 用 DOM 追加（不能 innerHTML +=，会销毁同面板里已绑定的纠错链接 handler）
+  var card = document.createElement('div');
+  card.className = 'card mt16';
+  card.id = 'calib-card';
+  card.style.borderColor = 'rgba(34,211,238,.4)';
+  card.style.cursor = 'pointer';
+  card.innerHTML =
+    '<div class="h" style="font-size:15px;">🧭 ' + escapeHtml(tt('calib.cardTitle')) + '</div>' +
+    '<div class="prog"><i style="width:' + pct + '%;"></i></div>' +
+    '<div class="small mt8">' + statusLine + '</div>' + mineLine +
+    '<div class="small mt8" style="color:var(--sub);">' + escapeHtml(tt('calib.cardWhy')) + '</div>' +
+    '<div class="small mt8" style="color:var(--amber);">' +
+      escapeHtml(p.unlocked ? tt('calib.statusUnlocked') : (inProg ? tt('calib.ctaContinue') : tt('calib.ctaJoin'))) +
+    '</div>';
+  box.appendChild(card);
+  card.onclick = function(){ show('calib'); };
+}
+
+/* ---------------- 校准向导（sec-calib） ---------------- */
+var calibWiz = { measurer: null, busy: false };
+
+function calibDeviceId(){
+  try{
+    var id = localStorage.getItem('ct_device_id');
+    if(!id){ id = 'dvc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); localStorage.setItem('ct_device_id', id); }
+    return id;
+  }catch(_){ return ''; }
+}
+function calibSpec(){
+  var spec = S().eqSpec;
+  if(!spec || !spec.bands) return null;
+  var fb = DSP.eqPresetFor(spec.bands);
+  return { bands: spec.bands, labels: spec.labels || fb.labels,
+           nominal: spec.calibratedCenters ? spec.calibratedCenters.slice()
+             : ((spec.centers && spec.centers.length === spec.bands) ? spec.centers.slice() : fb.centers.slice()) };
+}
+function calibWizGet(create){
+  var car = S().car || {};
+  var key = calibKey(car.brand, car.series);
+  var st = calibStore();
+  var w = st.wiz;
+  if(w && w.key === key) return { store: st, wiz: w };
+  if(!create) return { store: st, wiz: null };
+  var spec = calibSpec();
+  if(!spec) return { store: st, wiz: null };
+  w = { key: key, brand: car.brand, series: car.series, year: car.year || '',
+        bands: spec.bands, labels: spec.labels, nominal: spec.nominal,
+        stepIdx: 0, floor31: null, base31: null, steps: [] };
+  st.wiz = w; calibSave(st);
+  return { store: st, wiz: w };
+}
+function calibStepCount(w){ return w.bands + 1; } // 基准 + 每段
+function renderCalibPage(){
+  setText('calib-title', 'calib.title');
+  setText('calib-sub', 'calib.sub');
+  setText('bk-calib', 'common.back');
+  setText('calib-why', 'calib.cardWhy');
+  setText('calib-intro', 'calib.intro');
+  setText('calib-consent-text', 'calib.consent');
+  setText('calib-btn-submit', 'calib.btnSubmit');
+  setText('calib-btn-exit', 'calib.exitBtn');
+  var car = S().car;
+  var modelEl = document.getElementById('calib-model');
+  var wizCard = document.getElementById('calib-wizard-card');
+  var doneCard = document.getElementById('calib-done-card');
+  if(!car || !car.brand || !calibSpec()){
+    if(modelEl) modelEl.textContent = tt('calib.needCar');
+    if(wizCard) wizCard.classList.add('hidden');
+    if(doneCard) doneCard.classList.add('hidden');
+    return;
+  }
+  if(wizCard) wizCard.classList.remove('hidden');
+  var key = calibKey(car.brand, car.series);
+  calibFetch(key, car.brand, car.series);
+  var p = calibProgressOf(key, car.brand, car.series);
+  if(modelEl) modelEl.textContent = car.brand + ' · ' + car.series + (car.year ? ' · ' + car.year : '');
+  var fill = document.getElementById('calib-fill');
+  if(fill) fill.style.width = p.pct + '%';
+  var pt = document.getElementById('calib-progress-text');
+  if(pt) pt.textContent = p.unlocked ? tt('calib.statusUnlocked')
+    : tf('calib.statusProgress')(p.count !== null ? p.count : p.mine, CALIB_NEEDED) + (p.mine ? ' · ' + tf('calib.statusMine')(p.mine) : '');
+  renderCalibStep();
+}
+function renderCalibStep(){
+  var got = calibWizGet(false);
+  var w = got.wiz;
+  var title = document.getElementById('calib-step-title');
+  var tip = document.getElementById('calib-step-tip');
+  var status = document.getElementById('calib-status');
+  var btnStart = document.getElementById('calib-btn-start');
+  var btnNext = document.getElementById('calib-btn-next');
+  var list = document.getElementById('calib-steps-list');
+  var doneCard = document.getElementById('calib-done-card');
+  if(!w){
+    var g2 = calibWizGet(true);
+    w = g2.wiz;
+    if(!w) return;
+  }
+  var total = calibStepCount(w);
+  var i, rows = '';
+  for(i = 0; i < total; i++){
+    var label = i === 0 ? tt('calib.stepBase') : tf('calib.stepBand')(w.labels[i - 1] || ('B' + i), w.nominal[i - 1]);
+    var mark = '○';
+    if(i < w.stepIdx) mark = '✓';
+    else if(i === w.stepIdx) mark = '▶';
+    var extra = '';
+    if(i > 0 && w.steps[i - 1] && w.steps[i - 1].analysis){
+      extra = '（峰 ≈ ' + Math.round(w.steps[i - 1].analysis.peakHz) + 'Hz）';
+    }
+    rows += '<li style="padding:3px 0;color:' + (i === w.stepIdx ? 'var(--text)' : 'var(--sub)') + ';">' + mark + ' ' + escapeHtml(label) + extra + '</li>';
+  }
+  if(list) list.innerHTML = rows;
+  if(w.stepIdx >= total){
+    if(title) title.textContent = tt('calib.allDone');
+    if(tip) tip.textContent = '';
+    if(btnStart) btnStart.classList.add('hidden');
+    if(btnNext) btnNext.classList.add('hidden');
+    if(doneCard) doneCard.classList.remove('hidden');
+    return;
+  }
+  if(doneCard) doneCard.classList.add('hidden');
+  var cur = w.stepIdx;
+  if(title) title.textContent = tf('calib.stepOf')(cur + 1, total);
+  if(tip) tip.textContent = cur === 0 ? tt('calib.stepBase')
+    : tf('calib.stepBand')(w.labels[cur - 1] || ('B' + cur), w.nominal[cur - 1]);
+  if(btnStart){ btnStart.classList.remove('hidden'); btnStart.textContent = tt('calib.btnStart'); btnStart.disabled = calibWiz.busy; }
+  if(btnNext) btnNext.classList.add('hidden');
+  if(status && !calibWiz.busy) status.textContent = '';
+}
+function drawCalibCanvas(band31){
+  try{
+    var cv = document.getElementById('calib-canvas');
+    if(!cv || !band31) return;
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.clientWidth, H = cv.clientHeight;
+    if(!W) return;
+    if(cv.width !== Math.round(W * dpr)){ cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var pad = 8, gap = 2, bw = (W - pad * 2 - gap * 30) / 31;
+    var pk = -Infinity, i;
+    for(i = 0; i < 31; i++) if(band31[i] > pk) pk = band31[i];
+    var top = Math.ceil(pk / 10) * 10, bot = top - 60;
+    for(i = 0; i < 31; i++){
+      var v = Math.max(bot, Math.min(top, band31[i]));
+      var frac = (v - bot) / (top - bot);
+      var bh = Math.max(2, frac * (H - 20));
+      var x = pad + i * (bw + gap), y = H - 10 - bh;
+      ctx.fillStyle = (i <= 1 || i >= 29) ? 'rgba(139,148,163,.5)' : '#22D3EE';
+      ctx.fillRect(x, y, bw, bh);
+    }
+  }catch(_){}
+}
+function calibSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function calibRunStep(){
+  if(calibWiz.busy) return;
+  var got = calibWizGet(true);
+  var w = got.wiz;
+  if(!w) return;
+  var status = document.getElementById('calib-status');
+  var btnStart = document.getElementById('calib-btn-start');
+  calibWiz.busy = true;
+  if(btnStart) btnStart.disabled = true;
+  (async function(){
+    try{
+      if(!calibWiz.measurer) calibWiz.measurer = new DSP.Measurer();
+      var M = calibWiz.measurer;
+      if(!M.analyser) await M.init(); // AudioContext 不可重复创建，仅首次初始化
+      M.setEqSpec(S().eqSpec);
+      var step = w.stepIdx;
+      // 基准步前先测 5 秒底噪（SNR 门控用；用户此时不要播放）
+      if(step === 0 && !w.floor31){
+        if(status) status.textContent = '先测 5 秒环境底噪：请保持安静，不要播放声音…';
+        w.floor31 = await M.measure(5, null);
+        calibSave(got.store);
+      }
+      if(status) status.textContent = tt('calib.measuring');
+      // 手机蓝牙场景：App 内播粉噪；车机 U 盘场景：用户已在车机播放，二者不冲突
+      var useBt = (typeof app !== 'undefined' && app.playMode === 'bt');
+      if(useBt){ try{ M.playPink(null, 0.4); }catch(_){}}
+      var remain = 30;
+      var timer = setInterval(function(){
+        remain--;
+        if(status && remain > 0) status.textContent = tt('calib.measuring') + ' ' + remain + 's';
+      }, 1000);
+      var meas31 = await M.measure(30, function(fr){ if(fr && fr.band31) drawCalibCanvas(fr.band31); });
+      clearInterval(timer);
+      if(useBt){ try{ M.stopPink(0.3); }catch(_){}}
+      drawCalibCanvas(meas31);
+      if(step === 0){
+        w.base31 = meas31;
+      }else{
+        var an = DSP.calibAnalyzeBand(w.base31, meas31, w.floor31, w.nominal[step - 1]);
+        w.steps[step - 1] = { band: step - 1, meas31: meas31, analysis: an };
+        if(status) status.textContent = an.valid
+          ? tf('calib.stepOk')(Math.round(an.peakHz))
+          : (tt('calib.stepWeak') + '（' + an.reason + '）');
+      }
+      w.stepIdx = step + 1;
+      calibSave(got.store);
+      track('calib_step', { step: step, bands: w.bands });
+    }catch(e){
+      if(status) status.textContent = '测量失败：' + (e && e.message ? e.message : '麦克风不可用') + '。请重试。';
+      try{ if(calibWiz.measurer) calibWiz.measurer.stopPink(0.1); }catch(_){}
+    }
+    calibWiz.busy = false;
+    renderCalibStep();
+    // 若刚完成的段分析无效，停留在该步允许重测
+    var g3 = calibWizGet(false);
+    if(g3.wiz && g3.wiz.stepIdx > 0){
+      var lastIdx = g3.wiz.stepIdx - 1;
+      var lastStep = lastIdx === 0 ? null : g3.wiz.steps[lastIdx - 1];
+      if(lastStep && lastStep.analysis && !lastStep.analysis.valid){
+        g3.wiz.stepIdx = lastIdx;
+        calibSave(g3.store);
+        renderCalibStep();
+        var st2 = document.getElementById('calib-status');
+        if(st2) st2.textContent = tt('calib.stepWeak') + '（' + lastStep.analysis.reason + '）';
+        var b2 = document.getElementById('calib-btn-start');
+        if(b2) b2.textContent = tt('calib.btnRetry');
+      }
+    }
+  })();
+}
+function calibSubmit(){
+  var got = calibWizGet(false);
+  var w = got.wiz;
+  if(!w) return;
+  var msg = document.getElementById('calib-submit-msg');
+  var steps = [], i;
+  for(i = 0; i < w.bands; i++){
+    var s = w.steps[i];
+    if(!s || !s.analysis) { if(msg) msg.textContent = tt('calib.stepWeak'); return; }
+    steps.push({ band: s.band, peakHz: s.analysis.peakHz, q: s.analysis.q,
+                 peakDb: s.analysis.peakDb, snrDb: s.analysis.snrDb });
+  }
+  var payload = {
+    type: 'calibration', consent: true, app: CALIB_APP, appVer: CALIB_VER, ts: Date.now(),
+    car: { brand: w.brand, series: w.series, year: w.year },
+    eqBands: w.bands, nominal: w.nominal, steps: steps,
+    device: (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Other'),
+    deviceId: calibDeviceId()
+  };
+  var btn = document.getElementById('calib-btn-submit');
+  if(btn) btn.disabled = true;
+  fetch(CALIB_M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload), keepalive: true })
+    .then(function(r){
+      if(!r.ok) throw new Error('http ' + r.status);
+      var cs = calibModelState(w.key);
+      cs.model.mine = (cs.model.mine || 0) + 1;
+      calibSave(cs.store);
+      var st = calibStore();
+      st.wiz = null; calibSave(st);
+      if(msg) msg.textContent = tt('calib.submitted');
+      track('calib_submit', { bands: w.bands });
+      setTimeout(function(){ renderCalibPage(); }, 600);
+    })
+    .catch(function(){
+      var st = calibStore();
+      if(!st.pending) st.pending = [];
+      st.pending.push(payload);
+      st.wiz = null; calibSave(st);
+      if(msg) msg.textContent = tt('calib.savedLocal');
+      if(btn) btn.disabled = false;
+    });
+}
+function initCalib(){
+  setText('calib-title', 'calib.title');
+  var bStart = document.getElementById('calib-btn-start');
+  if(bStart) bStart.onclick = calibRunStep;
+  var bExit = document.getElementById('calib-btn-exit');
+  if(bExit) bExit.onclick = function(){ show('car'); };
+  var chk = document.getElementById('calib-consent');
+  var bSub = document.getElementById('calib-btn-submit');
+  if(chk && bSub) chk.addEventListener('change', function(){ bSub.disabled = !chk.checked; });
+  if(bSub) bSub.onclick = calibSubmit;
+  CTA.calib = [];
+  ON_SHOW.calib = function(){ renderCalibPage(); };
+  // 报告页：已解锁车型标注实测校准参数
+  var _origRenderReport = window.renderReport;
+  if(typeof _origRenderReport === 'function' && !window._calibReportHooked){
+    window._calibReportHooked = true;
+    window.renderReport = function(){
+      var r = _origRenderReport.apply(this, arguments);
+      try{
+        var card = document.getElementById('report-calib-card');
+        var spec = S().eqSpec;
+        if(card && spec && spec.calibrated){
+          card.classList.remove('hidden');
+          setText('report-calib-note', 'calib.reportNote');
+        }else if(card){ card.classList.add('hidden'); }
+      }catch(_){}
+      return r;
+    };
   }
 }
 /* =====================================================================
@@ -8821,6 +9450,7 @@ function init(){
   // v2.9.215: initChecklist 已删除（第二页移除）
   initCar();
   initBounty();
+  try{ initCalib(); }catch(_){}
   initMeasure();
   initConsent();
   initPay();

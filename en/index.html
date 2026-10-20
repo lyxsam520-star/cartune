@@ -561,6 +561,10 @@ ul.clean li{margin:6px 0;}
     </div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
+    <!-- v2.9.256: measured-calibration badge (unlocked models only) -->
+    <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
+      <div class="small" id="report-calib-note" style="color:var(--green);"></div>
+    </div>
     <!-- v2-C: diag+peq report blocks -->
     <!-- 深度诊断 + DSP PEQ 参数输出，PEQ 默认折叠 -->
     <div class="h mt16" id="diag-title" style="font-size:15px;"></div>
@@ -773,6 +777,41 @@ ul.clean li{margin:6px 0;}
     <button class="btn btn-primary" id="bounty-signup" style="width:100%;"></button>
     <div class="small mt8" style="color:var(--sub);" id="bounty-note"></div>
   </section>
+  <!-- ============ 8b. Center-Frequency Challenge (v2.9.256) ============ -->
+  <section class="sec" id="sec-calib">
+    <div class="topbar"><button class="backbtn" data-back="sec-car" id="bk-calib"></button></div>
+    <div class="h" id="calib-title"></div>
+    <div class="small" id="calib-sub"></div>
+    <div class="card">
+      <div class="small" id="calib-model" style="font-weight:600;"></div>
+      <div class="prog"><i id="calib-fill"></i></div>
+      <div class="small mt8" id="calib-progress-text" style="color:var(--sub);"></div>
+      <div class="small mt8" id="calib-why" style="color:var(--sub);"></div>
+    </div>
+    <div class="card" id="calib-wizard-card">
+      <div class="small" id="calib-intro"></div>
+      <div class="h mt8" style="font-size:15px;" id="calib-step-title"></div>
+      <div class="small mt8" id="calib-step-tip"></div>
+      <canvas id="calib-canvas" style="width:100%;height:120px;display:block;background:#0d1219;border:1px solid var(--border);border-radius:12px;margin-top:10px;"></canvas>
+      <div class="small mt8" id="calib-status"></div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button class="btn btn-primary" id="calib-btn-start" style="flex:1;"></button>
+        <button class="btn btn-ghost hidden" id="calib-btn-next" style="flex:1;"></button>
+      </div>
+      <ul class="clean mt8" id="calib-steps-list" style="font-size:13px;"></ul>
+    </div>
+    <div class="card hidden" id="calib-done-card">
+      <div class="small" id="calib-done-text"></div>
+      <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;">
+        <input type="checkbox" id="calib-consent" style="margin-top:2px;">
+        <span id="calib-consent-text"></span>
+      </label>
+      <button class="btn btn-primary mt8" id="calib-btn-submit" style="width:100%;" disabled></button>
+      <div class="small mt8" id="calib-submit-msg" style="color:var(--sub);"></div>
+    </div>
+    <button class="btn btn-ghost mt8" id="calib-btn-exit" style="width:100%;"></button>
+  </section>
+  </section>
   <!-- ============ 9. 技术原理 ============ -->
   <section class="sec" id="sec-tech">
     <div class="topbar"><button class="backbtn" data-back="sec-home" id="bk-tech"></button></div>
@@ -980,16 +1019,21 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
    * ============================================================ */
   DSP.EQ_PRESETS = {
     3: { labels: ['Bass', 'Mid', 'Treble'],
-         centers: [100, 1000, 10000], rangeDb: 6, stepDb: 1 },
+         centers: [100, 1000, 10000], rangeDb: 6, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     5: { labels: ['Bass', 'Low Mid', 'Mid', 'High Mid', 'Treble'],
-         centers: [60, 250, 1000, 4000, 12000], rangeDb: 9, stepDb: 1 },
+         centers: [60, 250, 1000, 4000, 12000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     7: { labels: ['Sub Bass', 'Bass', 'Low Mid', 'Mid', 'High Mid', 'Treble', 'Super Treble'],
-         centers: [63, 160, 400, 1000, 2500, 6300, 16000], rangeDb: 9, stepDb: 1 },
+         centers: [63, 160, 400, 1000, 2500, 6300, 16000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
     8: { labels: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8'],
-         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1 },
-    // v2.9.95: 网易云音乐 10 段均衡器（31/63/125/250/500/1k/2k/4k/8k/16k，±12dB）
+         centers: [63, 125, 250, 500, 1000, 2000, 4000, 8000], rangeDb: 9, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null },
+    // v2.9.95: NetEase Cloud Music 10-band EQ (31/63/125/250/500/1k/2k/4k/8k/16k, ±12dB)
     10: { labels: ['31', '63', '125', '250', '500', '1k', '2k', '4k', '8k', '16k'],
-         centers: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000], rangeDb: 12, stepDb: 1 }
+         centers: [31, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000], rangeDb: 12, stepDb: 1,
+         calibratedCenters: null, calibratedQ: null }
   };
 
   /**
@@ -1001,7 +1045,9 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
     if (DSP.EQ_PRESETS[n]) {
       var p = DSP.EQ_PRESETS[n];
       return { bands: n, labels: p.labels.slice(), centers: p.centers.slice(),
-               rangeDb: p.rangeDb, stepDb: p.stepDb };
+               rangeDb: p.rangeDb, stepDb: p.stepDb,
+               calibratedCenters: p.calibratedCenters ? p.calibratedCenters.slice() : null,
+               calibratedQ: p.calibratedQ ? p.calibratedQ.slice() : null };
     }
     var labels = [], centers = [];
     var lo = Math.log(20), hi = Math.log(20000);
@@ -1011,7 +1057,8 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
       centers.push(Math.round(Math.exp(lo + t * (hi - lo))));
       labels.push('B' + (i + 1));
     }
-    return { bands: n, labels: labels, centers: centers, rangeDb: 9, stepDb: 1 };
+    return { bands: n, labels: labels, centers: centers, rangeDb: 9, stepDb: 1,
+             calibratedCenters: null, calibratedQ: null };
   };
 
   /* ============================================================
@@ -2533,10 +2580,112 @@ var MODELS_DB = {
       rangeDb: (eqSpec && eqSpec.rangeDb > 0) ? eqSpec.rangeDb : fallback.rangeDb,
       stepDb: (eqSpec && eqSpec.stepDb > 0) ? eqSpec.stepDb : fallback.stepDb,
       confidence: eqSpec && eqSpec.confidence,
-      usedFallbackCenters: !centers // 标记中心频率是经验兜底，UI 可提示用户
+      // v2.9.256: measured calibration params (unlocked models only)
+      calibratedCenters: (eqSpec && eqSpec.calibratedCenters && eqSpec.calibratedCenters.length === bands)
+        ? eqSpec.calibratedCenters.slice() : (fallback.calibratedCenters || null),
+      calibratedQ: (eqSpec && eqSpec.calibratedQ && eqSpec.calibratedQ.length === bands)
+        ? eqSpec.calibratedQ.slice() : (fallback.calibratedQ || null),
+      calibrated: !!(eqSpec && eqSpec.calibrated),
+      usedFallbackCenters: !centers // marks centers as empirical fallback; UI may hint
     };
   }
   DSP.normalizeEqSpec = normalizeEqSpec;
+
+  /* ============================================================
+   * v2.9.256: Center-frequency derivation (calibration challenge)
+   * Delta between baseline (EQ flat) and a single +6dB band boost:
+   * bump peak = the band's true center; half-height width → Q.
+   * Peak located by parabolic interpolation on the log-frequency axis.
+   * ============================================================ */
+  DSP.calibAnalyzeBand = function (base31, boost31, floor31, nominalFc) {
+    var F = DSP.ISO31, i;
+    var bad = { peakHz: 0, peakDb: 0, q: 0, snrDb: 0, valid: false, reason: 'insufficient data' };
+    if (!base31 || !boost31 || base31.length !== 31 || boost31.length !== 31 || !(nominalFc > 0)) return bad;
+    var delta = new Array(31);
+    for (i = 0; i < 31; i++) delta[i] = boost31[i] - base31[i];
+    var lo = nominalFc / 2, hi = nominalFc * 2;
+    var pk = -1, pkV = -Infinity;
+    for (i = 0; i < 31; i++) {
+      if (F[i] >= lo && F[i] <= hi && delta[i] > pkV) { pkV = delta[i]; pk = i; }
+    }
+    if (pk < 0) return bad;
+    var peakHz = F[pk];
+    if (pk > 0 && pk < 30) {
+      var y0 = delta[pk - 1], y1 = delta[pk], y2 = delta[pk + 1];
+      var denom = (y0 - 2 * y1 + y2);
+      if (denom < -0.01) {
+        var shift = 0.5 * (y0 - y2) / denom;
+        if (shift > -1 && shift < 1) {
+          peakHz = F[pk] * Math.pow(2, shift / 3);
+        }
+      }
+    }
+    var half = pkV / 2;
+    var fL = null, fR = null;
+    for (i = pk; i > 0; i--) {
+      if (delta[i - 1] < half) {
+        var t1 = (half - delta[i]) / (delta[i - 1] - delta[i]);
+        fL = F[i] * Math.pow(F[i - 1] / F[i], t1);
+        break;
+      }
+    }
+    for (i = pk; i < 30; i++) {
+      if (delta[i + 1] < half) {
+        var t2 = (half - delta[i]) / (delta[i + 1] - delta[i]);
+        fR = F[i] * Math.pow(F[i + 1] / F[i], t2);
+        break;
+      }
+    }
+    var q = 0;
+    if (fL && fR && fR > fL) {
+      var bwOct = Math.log(fR / fL) / Math.LN2;
+      if (bwOct > 0.05 && bwOct < 6) {
+        var p2 = Math.pow(2, bwOct);
+        q = Math.sqrt(p2) / (p2 - 1);
+        q = Math.max(0.4, Math.min(12, q));
+      }
+    }
+    var snrDb = 99;
+    if (floor31 && floor31.length === 31) snrDb = boost31[pk] - floor31[pk];
+    var valid = true, reason = '';
+    if (!(pkV >= 2.5)) { valid = false; reason = 'bump too weak (' + pkV.toFixed(1) + 'dB)'; }
+    else if (snrDb < 10) { valid = false; reason = 'SNR too low (' + snrDb.toFixed(0) + 'dB)'; }
+    return {
+      peakHz: Math.round(peakHz * 10) / 10,
+      peakDb: Math.round(pkV * 10) / 10,
+      q: Math.round(q * 100) / 100,
+      snrDb: Math.round(snrDb * 10) / 10,
+      valid: valid, reason: reason
+    };
+  };
+
+  DSP.calibMedian = function (arr) {
+    if (!arr || !arr.length) return null;
+    var a = arr.slice().sort(function (x, y) { return x - y; });
+    var m = Math.floor(a.length / 2);
+    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+  };
+
+  DSP.calibDerive = function (datasets, bands) {
+    if (!datasets || !datasets.length || !(bands > 0)) return null;
+    var centers = [], qs = [], b, d;
+    for (b = 0; b < bands; b++) {
+      var hs = [], qv = [];
+      for (d = 0; d < datasets.length; d++) {
+        var st = datasets[d] && datasets[d].steps && datasets[d].steps[b];
+        if (st && st.valid !== false && st.peakHz > 0) {
+          hs.push(st.peakHz);
+          if (st.q > 0) qv.push(st.q);
+        }
+      }
+      var c = DSP.calibMedian(hs);
+      if (c === null) return null;
+      centers.push(Math.round(c));
+      var qm = DSP.calibMedian(qv);
+      qs.push(qm === null ? 0 : Math.round(qm * 100) / 100);
+    }
+    return { centers: centers, qs: qs };
+  };
 
   function roundToStep(x, step) {
     if (!(step > 0)) step = 1;
@@ -3135,6 +3284,36 @@ window.COPY = {
     ctaSignup: "Join",
     signed: "Joined ✓ Reward issued after completing the tasks",
     note: "v1: signup stored on this device; cloud sync and rewards arrive in v2."
+  },
+  calib: {
+    cardTitle: "Center-Frequency Challenge",
+    cardWhy: "The frequencies printed on your head unit (e.g. 1000Hz) are nominal values — the filters' true centers usually differ. Measure each band together, and this model's true center frequencies get derived from the crowd. Reach 100% to unlock: every EQ plan for this model then computes from measured parameters, tuned more accurately.",
+    statusProgress: function(n, total){ return "Deriving · " + n + " / " + total + " datasets collected"; },
+    statusUnlocked: "Unlocked ✓ This model's EQ now uses measured center frequencies",
+    statusMine: function(n){ return "You contributed " + n + " dataset" + (n > 1 ? "s" : ""); },
+    ctaJoin: "Join the challenge →",
+    ctaContinue: "Continue →",
+    title: "Center-Frequency Challenge",
+    sub: "+6dB per band, reverse-engineer the head-unit EQ's true center frequencies",
+    intro: "8 measurements in total: first set all EQ to 0 and measure a baseline, then boost each band to +6dB one at a time. ~30 s per step; the wizard walks you through. Quitting mid-way is fine — you can resume later.",
+    needCar: "Please select your car on the car page first.",
+    stepOf: function(x, n){ return "Measurement " + x + " / " + n; },
+    stepBase: "Set ALL head-unit EQ bands to 0 (flat)",
+    stepBand: function(label, fc){ return "Set \"" + label + "\" (marked " + fc + "Hz) to +6dB, keep the rest at 0dB"; },
+    btnStart: "Start measurement (30 s)",
+    btnRetry: "Re-measure this step",
+    btnNext: "Next",
+    measuring: "Measuring — stay quiet, don't touch the phone…",
+    stepOk: function(hz){ return "Recorded: this band's peak is around " + hz + "Hz"; },
+    stepWeak: "This step's bump is too weak — try raising the volume and closing the windows, then re-measure this step.",
+    allDone: "All steps measured, data valid ✓",
+    consent: "I agree to upload this calibration data: only per-band peak frequency and Q values — no audio, no full spectrum. Used solely to derive this model's center frequencies.",
+    btnSubmit: "Submit this dataset",
+    submitted: "Submitted, thank you! This model's challenge progress +1.",
+    savedLocal: "Saved on this device (data channel unavailable; you can resubmit when online).",
+    exitBtn: "Save progress, continue later",
+    reportNote: "Plan computed from measured calibration: this model's EQ center frequencies were crowd-measured, fitting your head unit better than nominal values.",
+    listProgress: function(pct){ return "Center-freq challenge " + pct + "%"; }
   },
   measure: {
     title: "Start Measurement",
@@ -3860,7 +4039,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.255 · Beta';
+  ver.innerHTML = 'v2.9.256 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4135,9 +4314,12 @@ function carSpecFromSeries(brand, se){
   else if (bands === 8){ labels = ['B1','B2','B3','B4','B5','B6','B7','B8']; centers = [64,250,500,1000,3150,8000]; }
   else { labels = []; for (var i = 0; i < bands; i++) labels.push('B' + (i + 1)); }
   var conf = carConfidenceFromNote(se.eq_note);
-  return { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
+  var specObj = { bands: bands, labels: labels, centers: centers, rangeDb: rangeDb, stepDb: stepDb,
            confidence: conf, note: se.eq_note || '',
            centersVerified: !!(centers && (conf === 'user-measured' || conf === 'media-tested')) };
+  // v2.9.256: unlocked challenge models -> override with measured calibration params
+  try { applyCalibToSpec(specObj, brand, se.name); } catch (_) {}
+  return specObj;
 }
 function initCar(){
   setText('car-title','car.title');
@@ -4399,7 +4581,8 @@ function initCar(){
     carList.innerHTML = '';
     b.series.forEach(function(s){
       var li = document.createElement('li');
-      li.innerHTML = '<span>' + escapeHtml(s.name) + '</span>' + eqBadge(s);
+      li.innerHTML = '<span>' + escapeHtml(s.name) + '</span>' + eqBadge(s) +
+        calibHintHtml(b.name, s);
       bindTap(li, (function(ss){ return function(){ goYears(ss); }; })(s));
       carList.appendChild(li);
     });
@@ -4697,6 +4880,8 @@ function renderEqSpec(){
     var bc = document.getElementById('bounty-card');
     if(bc) bc.onclick = function(){ show('bounty'); };
   }
+  // v2.9.256: selected car -> center-frequency challenge card (progress + entry)
+  try { renderCalibCard(box, spec); } catch (_) {}
 }
 /* v2.9.215: EQ 段数纠错弹窗——车友报错并填写正确段数，存 localStorage 待上传 */
 function showEqCorrectDialog(spec){
@@ -4809,6 +4994,419 @@ function refreshBountyBtn(){
   }else{
     btn.textContent = tt('bounty.ctaSignup');
     btn.className = 'btn btn-primary'; btn.style.width = '100%'; btn.disabled = false;
+  }
+}
+
+/* =====================================================================
+ * v2.9.256: Center-Frequency Challenge (Vincent decision 2026-10-20)
+ * - 10 valid calibration datasets per model = 100%; the server aggregates
+ *   them (per-band median peak/Q) and unlocks measured parameters.
+ * - Channel: existing /m (type=calibration) + GET /calib progress;
+ *   when unavailable the feature degrades silently (on-device progress kept).
+ * - Storage: ct_calib_v1 = { models: { key: {mine, unlocked, centers, qs} },
+ *                            wiz: { key, stepIdx, floor31, base31, steps:[...] } }
+ * ===================================================================== */
+var CALIB_NEEDED = 10;
+var CALIB_M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
+var CALIB_G_URL = 'https://soundscore-stats.lyxsam520.workers.dev/calib';
+var CALIB_APP = 'soundscore-en';
+var CALIB_VER = 'v2.9.256';
+var calibRemote = {};
+var calibFetching = {};
+
+function calibKey(brand, series){ return String(brand || '') + '|' + String(series || ''); }
+function calibStore(){
+  try{ return JSON.parse(localStorage.getItem('ct_calib_v1') || '{}') || {}; }catch(_){ return {}; }
+}
+function calibSave(st){
+  try{ localStorage.setItem('ct_calib_v1', JSON.stringify(st)); }catch(_){}
+}
+function calibModelState(key){
+  var st = calibStore();
+  if(!st.models) st.models = {};
+  if(!st.models[key]) st.models[key] = { mine: 0 };
+  return { store: st, model: st.models[key] };
+}
+function calibUnlocked(key){
+  var r = calibRemote[key];
+  if(r && r.unlocked && r.centers) return { centers: r.centers, qs: r.qs || [] };
+  var st = calibStore();
+  var m = st.models && st.models[key];
+  if(m && m.unlocked && m.centers) return { centers: m.centers, qs: m.qs || [] };
+  return null;
+}
+function applyCalibToSpec(spec, brand, series){
+  if(!spec || !spec.bands) return;
+  var un = calibUnlocked(calibKey(brand, series));
+  if(un && un.centers.length === spec.bands){
+    spec.centers = un.centers.slice();
+    spec.calibratedCenters = un.centers.slice();
+    spec.calibratedQ = (un.qs || []).slice();
+    spec.centersVerified = true;
+    spec.calibrated = true;
+    spec.confidence = 'user-measured';
+  }
+}
+function calibFetch(key, brand, series){
+  if(calibFetching[key]) return;
+  calibFetching[key] = true;
+  try{
+    fetch(CALIB_G_URL + '?brand=' + encodeURIComponent(brand) + '&series=' + encodeURIComponent(series))
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        calibFetching[key] = false;
+        if(!j) return;
+        calibRemote[key] = { count: j.count | 0, unlocked: !!j.unlocked,
+                             centers: j.centers || null, qs: j.qs || null };
+        if(j.unlocked && j.centers){
+          var cs = calibModelState(key);
+          cs.model.unlocked = true; cs.model.centers = j.centers; cs.model.qs = j.qs || [];
+          calibSave(cs.store);
+        }
+        refreshCalibHints();
+      })
+      .catch(function(){ calibFetching[key] = false; });
+  }catch(_){ calibFetching[key] = false; }
+}
+function calibProgressOf(key, brand, series){
+  var st = calibStore();
+  var m = (st.models && st.models[key]) || { mine: 0 };
+  var r = calibRemote[key];
+  var count = r ? r.count : null;
+  var unlocked = !!calibUnlocked(key);
+  return { count: count, mine: m.mine || 0, unlocked: unlocked,
+           pct: unlocked ? 100 : (count !== null ? Math.min(100, Math.round(count / CALIB_NEEDED * 100)) : 0) };
+}
+function calibHintHtml(brand, se){
+  try{
+    if(!se || !se.eq_bands) return '';
+    var key = calibKey(brand, se.name);
+    calibFetch(key, brand, se.name);
+    var p = calibProgressOf(key, brand, se.name);
+    if(p.unlocked) return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="color:var(--green);margin-top:2px;">✓ Center frequencies unlocked</div>';
+    if(p.count === null) return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="display:none;"></div>';
+    return '<div class="small" data-calib-key="' + escapeHtml(key) + '" style="color:var(--sub);margin-top:2px;">' +
+      escapeHtml(tf('calib.listProgress')(p.pct)) + '</div>';
+  }catch(_){ return ''; }
+}
+function refreshCalibHints(){
+  try{
+    document.querySelectorAll('[data-calib-key]').forEach(function(el){
+      var key = el.getAttribute('data-calib-key');
+      var parts = key.split('|');
+      var p = calibProgressOf(key, parts[0], parts.slice(1).join('|'));
+      if(p.unlocked){ el.style.display = ''; el.style.color = 'var(--green)'; el.textContent = '✓ Center frequencies unlocked'; }
+      else if(p.count !== null){ el.style.display = ''; el.textContent = tf('calib.listProgress')(p.pct); }
+    });
+    if(document.getElementById('sec-calib') && document.getElementById('sec-calib').classList.contains('active')) renderCalibPage();
+  }catch(_){}
+}
+function renderCalibCard(box, spec){
+  var car = S().car;
+  if(!car || !car.brand || !spec || !spec.bands) return;
+  var key = calibKey(car.brand, car.series);
+  calibFetch(key, car.brand, car.series);
+  var p = calibProgressOf(key, car.brand, car.series);
+  var st = calibStore();
+  var wiz = st.wiz && st.wiz.key === key ? st.wiz : null;
+  var inProg = wiz && (wiz.stepIdx > 0 || wiz.base31);
+  var pct = p.pct;
+  var statusLine;
+  if(p.unlocked) statusLine = '<span style="color:var(--green);">' + escapeHtml(tt('calib.statusUnlocked')) + '</span>';
+  else if(p.count !== null) statusLine = escapeHtml(tf('calib.statusProgress')(p.count, CALIB_NEEDED));
+  else statusLine = escapeHtml(tf('calib.statusProgress')(p.mine, CALIB_NEEDED)) + ' (on-device)';
+  var mineLine = p.mine > 0 ? '<div class="small mt8" style="color:var(--cyan);">' + escapeHtml(tf('calib.statusMine')(p.mine)) + '</div>' : '';
+  // DOM append (innerHTML += would destroy handlers bound earlier in this panel)
+  var card = document.createElement('div');
+  card.className = 'card mt16';
+  card.id = 'calib-card';
+  card.style.borderColor = 'rgba(34,211,238,.4)';
+  card.style.cursor = 'pointer';
+  card.innerHTML =
+    '<div class="h" style="font-size:15px;">🧭 ' + escapeHtml(tt('calib.cardTitle')) + '</div>' +
+    '<div class="prog"><i style="width:' + pct + '%;"></i></div>' +
+    '<div class="small mt8">' + statusLine + '</div>' + mineLine +
+    '<div class="small mt8" style="color:var(--sub);">' + escapeHtml(tt('calib.cardWhy')) + '</div>' +
+    '<div class="small mt8" style="color:var(--amber);">' +
+      escapeHtml(p.unlocked ? tt('calib.statusUnlocked') : (inProg ? tt('calib.ctaContinue') : tt('calib.ctaJoin'))) +
+    '</div>';
+  box.appendChild(card);
+  card.onclick = function(){ show('calib'); };
+}
+
+/* ---------------- Calibration wizard (sec-calib) ---------------- */
+var calibWiz = { measurer: null, busy: false };
+
+function calibDeviceId(){
+  try{
+    var id = localStorage.getItem('ct_device_id');
+    if(!id){ id = 'dvc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); localStorage.setItem('ct_device_id', id); }
+    return id;
+  }catch(_){ return ''; }
+}
+function calibSpec(){
+  var spec = S().eqSpec;
+  if(!spec || !spec.bands) return null;
+  var fb = DSP.eqPresetFor(spec.bands);
+  return { bands: spec.bands, labels: spec.labels || fb.labels,
+           nominal: spec.calibratedCenters ? spec.calibratedCenters.slice()
+             : ((spec.centers && spec.centers.length === spec.bands) ? spec.centers.slice() : fb.centers.slice()) };
+}
+function calibWizGet(create){
+  var car = S().car || {};
+  var key = calibKey(car.brand, car.series);
+  var st = calibStore();
+  var w = st.wiz;
+  if(w && w.key === key) return { store: st, wiz: w };
+  if(!create) return { store: st, wiz: null };
+  var spec = calibSpec();
+  if(!spec) return { store: st, wiz: null };
+  w = { key: key, brand: car.brand, series: car.series, year: car.year || '',
+        bands: spec.bands, labels: spec.labels, nominal: spec.nominal,
+        stepIdx: 0, floor31: null, base31: null, steps: [] };
+  st.wiz = w; calibSave(st);
+  return { store: st, wiz: w };
+}
+function calibStepCount(w){ return w.bands + 1; }
+function renderCalibPage(){
+  setText('calib-title', 'calib.title');
+  setText('calib-sub', 'calib.sub');
+  setText('bk-calib', 'common.back');
+  setText('calib-why', 'calib.cardWhy');
+  setText('calib-intro', 'calib.intro');
+  setText('calib-consent-text', 'calib.consent');
+  setText('calib-btn-submit', 'calib.btnSubmit');
+  setText('calib-btn-exit', 'calib.exitBtn');
+  var car = S().car;
+  var modelEl = document.getElementById('calib-model');
+  var wizCard = document.getElementById('calib-wizard-card');
+  var doneCard = document.getElementById('calib-done-card');
+  if(!car || !car.brand || !calibSpec()){
+    if(modelEl) modelEl.textContent = tt('calib.needCar');
+    if(wizCard) wizCard.classList.add('hidden');
+    if(doneCard) doneCard.classList.add('hidden');
+    return;
+  }
+  if(wizCard) wizCard.classList.remove('hidden');
+  var key = calibKey(car.brand, car.series);
+  calibFetch(key, car.brand, car.series);
+  var p = calibProgressOf(key, car.brand, car.series);
+  if(modelEl) modelEl.textContent = car.brand + ' · ' + car.series + (car.year ? ' · ' + car.year : '');
+  var fill = document.getElementById('calib-fill');
+  if(fill) fill.style.width = p.pct + '%';
+  var pt = document.getElementById('calib-progress-text');
+  if(pt) pt.textContent = p.unlocked ? tt('calib.statusUnlocked')
+    : tf('calib.statusProgress')(p.count !== null ? p.count : p.mine, CALIB_NEEDED) + (p.mine ? ' · ' + tf('calib.statusMine')(p.mine) : '');
+  renderCalibStep();
+}
+function renderCalibStep(){
+  var got = calibWizGet(false);
+  var w = got.wiz;
+  var title = document.getElementById('calib-step-title');
+  var tip = document.getElementById('calib-step-tip');
+  var status = document.getElementById('calib-status');
+  var btnStart = document.getElementById('calib-btn-start');
+  var btnNext = document.getElementById('calib-btn-next');
+  var list = document.getElementById('calib-steps-list');
+  var doneCard = document.getElementById('calib-done-card');
+  if(!w){
+    var g2 = calibWizGet(true);
+    w = g2.wiz;
+    if(!w) return;
+  }
+  var total = calibStepCount(w);
+  var i, rows = '';
+  for(i = 0; i < total; i++){
+    var label = i === 0 ? tt('calib.stepBase') : tf('calib.stepBand')(w.labels[i - 1] || ('B' + i), w.nominal[i - 1]);
+    var mark = '○';
+    if(i < w.stepIdx) mark = '✓';
+    else if(i === w.stepIdx) mark = '▶';
+    var extra = '';
+    if(i > 0 && w.steps[i - 1] && w.steps[i - 1].analysis){
+      extra = ' (peak ≈ ' + Math.round(w.steps[i - 1].analysis.peakHz) + 'Hz)';
+    }
+    rows += '<li style="padding:3px 0;color:' + (i === w.stepIdx ? 'var(--text)' : 'var(--sub)') + ';">' + mark + ' ' + escapeHtml(label) + extra + '</li>';
+  }
+  if(list) list.innerHTML = rows;
+  if(w.stepIdx >= total){
+    if(title) title.textContent = tt('calib.allDone');
+    if(tip) tip.textContent = '';
+    if(btnStart) btnStart.classList.add('hidden');
+    if(btnNext) btnNext.classList.add('hidden');
+    if(doneCard) doneCard.classList.remove('hidden');
+    return;
+  }
+  if(doneCard) doneCard.classList.add('hidden');
+  var cur = w.stepIdx;
+  if(title) title.textContent = tf('calib.stepOf')(cur + 1, total);
+  if(tip) tip.textContent = cur === 0 ? tt('calib.stepBase')
+    : tf('calib.stepBand')(w.labels[cur - 1] || ('B' + cur), w.nominal[cur - 1]);
+  if(btnStart){ btnStart.classList.remove('hidden'); btnStart.textContent = tt('calib.btnStart'); btnStart.disabled = calibWiz.busy; }
+  if(btnNext) btnNext.classList.add('hidden');
+  if(status && !calibWiz.busy) status.textContent = '';
+}
+function drawCalibCanvas(band31){
+  try{
+    var cv = document.getElementById('calib-canvas');
+    if(!cv || !band31) return;
+    var dpr = window.devicePixelRatio || 1;
+    var W = cv.clientWidth, H = cv.clientHeight;
+    if(!W) return;
+    if(cv.width !== Math.round(W * dpr)){ cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+    var ctx = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    var pad = 8, gap = 2, bw = (W - pad * 2 - gap * 30) / 31;
+    var pk = -Infinity, i;
+    for(i = 0; i < 31; i++) if(band31[i] > pk) pk = band31[i];
+    var top = Math.ceil(pk / 10) * 10, bot = top - 60;
+    for(i = 0; i < 31; i++){
+      var v = Math.max(bot, Math.min(top, band31[i]));
+      var frac = (v - bot) / (top - bot);
+      var bh = Math.max(2, frac * (H - 20));
+      var x = pad + i * (bw + gap), y = H - 10 - bh;
+      ctx.fillStyle = (i <= 1 || i >= 29) ? 'rgba(139,148,163,.5)' : '#22D3EE';
+      ctx.fillRect(x, y, bw, bh);
+    }
+  }catch(_){}
+}
+function calibRunStep(){
+  if(calibWiz.busy) return;
+  var got = calibWizGet(true);
+  var w = got.wiz;
+  if(!w) return;
+  var status = document.getElementById('calib-status');
+  var btnStart = document.getElementById('calib-btn-start');
+  calibWiz.busy = true;
+  if(btnStart) btnStart.disabled = true;
+  (async function(){
+    try{
+      if(!calibWiz.measurer) calibWiz.measurer = new DSP.Measurer();
+      var M = calibWiz.measurer;
+      if(!M.analyser) await M.init();
+      M.setEqSpec(S().eqSpec);
+      var step = w.stepIdx;
+      if(step === 0 && !w.floor31){
+        if(status) status.textContent = 'Ambient floor first (5 s): stay quiet, no playback…';
+        w.floor31 = await M.measure(5, null);
+        calibSave(got.store);
+      }
+      if(status) status.textContent = tt('calib.measuring');
+      var useBt = (typeof app !== 'undefined' && app.playMode === 'bt');
+      if(useBt){ try{ M.playPink(null, 0.4); }catch(_){}}
+      var remain = 30;
+      var timer = setInterval(function(){
+        remain--;
+        if(status && remain > 0) status.textContent = tt('calib.measuring') + ' ' + remain + 's';
+      }, 1000);
+      var meas31 = await M.measure(30, function(fr){ if(fr && fr.band31) drawCalibCanvas(fr.band31); });
+      clearInterval(timer);
+      if(useBt){ try{ M.stopPink(0.3); }catch(_){}}
+      drawCalibCanvas(meas31);
+      if(step === 0){
+        w.base31 = meas31;
+      }else{
+        var an = DSP.calibAnalyzeBand(w.base31, meas31, w.floor31, w.nominal[step - 1]);
+        w.steps[step - 1] = { band: step - 1, meas31: meas31, analysis: an };
+        if(status) status.textContent = an.valid
+          ? tf('calib.stepOk')(Math.round(an.peakHz))
+          : (tt('calib.stepWeak') + ' (' + an.reason + ')');
+      }
+      w.stepIdx = step + 1;
+      calibSave(got.store);
+      track('calib_step', { step: step, bands: w.bands });
+    }catch(e){
+      if(status) status.textContent = 'Measurement failed: ' + (e && e.message ? e.message : 'mic unavailable') + '. Please retry.';
+      try{ if(calibWiz.measurer) calibWiz.measurer.stopPink(0.1); }catch(_){}
+    }
+    calibWiz.busy = false;
+    renderCalibStep();
+    var g3 = calibWizGet(false);
+    if(g3.wiz && g3.wiz.stepIdx > 0){
+      var lastIdx = g3.wiz.stepIdx - 1;
+      var lastStep = lastIdx === 0 ? null : g3.wiz.steps[lastIdx - 1];
+      if(lastStep && lastStep.analysis && !lastStep.analysis.valid){
+        g3.wiz.stepIdx = lastIdx;
+        calibSave(g3.store);
+        renderCalibStep();
+        var st2 = document.getElementById('calib-status');
+        if(st2) st2.textContent = tt('calib.stepWeak') + ' (' + lastStep.analysis.reason + ')';
+        var b2 = document.getElementById('calib-btn-start');
+        if(b2) b2.textContent = tt('calib.btnRetry');
+      }
+    }
+  })();
+}
+function calibSubmit(){
+  var got = calibWizGet(false);
+  var w = got.wiz;
+  if(!w) return;
+  var msg = document.getElementById('calib-submit-msg');
+  var steps = [], i;
+  for(i = 0; i < w.bands; i++){
+    var s = w.steps[i];
+    if(!s || !s.analysis) { if(msg) msg.textContent = tt('calib.stepWeak'); return; }
+    steps.push({ band: s.band, peakHz: s.analysis.peakHz, q: s.analysis.q,
+                 peakDb: s.analysis.peakDb, snrDb: s.analysis.snrDb });
+  }
+  var payload = {
+    type: 'calibration', consent: true, app: CALIB_APP, appVer: CALIB_VER, ts: Date.now(),
+    car: { brand: w.brand, series: w.series, year: w.year },
+    eqBands: w.bands, nominal: w.nominal, steps: steps,
+    device: (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Other'),
+    deviceId: calibDeviceId()
+  };
+  var btn = document.getElementById('calib-btn-submit');
+  if(btn) btn.disabled = true;
+  fetch(CALIB_M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload), keepalive: true })
+    .then(function(r){
+      if(!r.ok) throw new Error('http ' + r.status);
+      var cs = calibModelState(w.key);
+      cs.model.mine = (cs.model.mine || 0) + 1;
+      calibSave(cs.store);
+      var st = calibStore();
+      st.wiz = null; calibSave(st);
+      if(msg) msg.textContent = tt('calib.submitted');
+      track('calib_submit', { bands: w.bands });
+      setTimeout(function(){ renderCalibPage(); }, 600);
+    })
+    .catch(function(){
+      var st = calibStore();
+      if(!st.pending) st.pending = [];
+      st.pending.push(payload);
+      st.wiz = null; calibSave(st);
+      if(msg) msg.textContent = tt('calib.savedLocal');
+      if(btn) btn.disabled = false;
+    });
+}
+function initCalib(){
+  setText('calib-title', 'calib.title');
+  var bStart = document.getElementById('calib-btn-start');
+  if(bStart) bStart.onclick = calibRunStep;
+  var bExit = document.getElementById('calib-btn-exit');
+  if(bExit) bExit.onclick = function(){ show('car'); };
+  var chk = document.getElementById('calib-consent');
+  var bSub = document.getElementById('calib-btn-submit');
+  if(chk && bSub) chk.addEventListener('change', function(){ bSub.disabled = !chk.checked; });
+  if(bSub) bSub.onclick = calibSubmit;
+  CTA.calib = [];
+  ON_SHOW.calib = function(){ renderCalibPage(); };
+  var _origRenderReport = window.renderReport;
+  if(typeof _origRenderReport === 'function' && !window._calibReportHooked){
+    window._calibReportHooked = true;
+    window.renderReport = function(){
+      var r = _origRenderReport.apply(this, arguments);
+      try{
+        var card = document.getElementById('report-calib-card');
+        var spec = S().eqSpec;
+        if(card && spec && spec.calibrated){
+          card.classList.remove('hidden');
+          setText('report-calib-note', 'calib.reportNote');
+        }else if(card){ card.classList.add('hidden'); }
+      }catch(_){}
+      return r;
+    };
   }
 }
 /* =====================================================================
@@ -8649,6 +9247,7 @@ function init(){
   // v2.9.215: initChecklist 已删除（第二页移除）
   initCar();
   initBounty();
+  try{ initCalib(); }catch(_){}
   initMeasure();
   initConsent();
   initPay();
