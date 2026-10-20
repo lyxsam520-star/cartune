@@ -112,7 +112,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.306 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.307 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -353,7 +353,7 @@ ul.clean li{margin:6px 0;}
       <button class="btn btn-ghost" id="home-tech-more" style="width:100%;margin-top:10px;">查看完整技术原理</button>
     </div>
     <!-- v2.9.215: 测前准备（原第二页 5 项检查精简并入），点击展开 -->
-    <div class="card mt16" id="home-tips-card" style="cursor:pointer;"><div style="display:flex;align-items:center;gap:12px;"><div style="font-size:22px;line-height:1;">📋</div><div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;">怎么跑分</div><div class="small">6 步流程，点击展开</div></div><div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tips-arrow">&rsaquo;</div></div><div id="home-tips-body" style="display:none;margin-top:12px;text-align:left;"><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">1</span><span>选车型——点「开始跑分」，选你的品牌车系，确认车机 EQ 有几段；没有你的车，选「随便测测」也能测着玩（数据不入库）。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">2</span><span>备环境——按「跑高分指引」准备：发动机熄火、找安静的地方、车机 EQ 全部归零、关掉环绕声和播放器音效。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">3</span><span>播粉噪——车机播放粉红噪声：U 盘最准，蓝牙也可以；音量就用平时听歌的音量，不用刻意开大。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">4</span><span>放手机开测——取下手机壳，手机放在驾驶位头枕处，点开始测量：先测 5 秒环境底噪，再测 25 秒频谱，全程别动手机。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">5</span><span>看分数拿方案——测完立刻出跑分和 31 段频谱，并按你车机的 EQ 段数生成一份只削不增的调整方案。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">6</span><span>照方案调，再复测——在车机上把每段 EQ 按方案调好，回到驾驶位复测一次，分数涨了多少一目了然；经常开车听，还有一套行车工况方案。</span></div><button class="btn btn-ghost" id="home-tips-more" style="width:100%;margin-top:2px;">查看跑高分指引</button></div></div>
+    <div class="card mt16" id="home-tips-card" style="cursor:pointer;"><div style="display:flex;align-items:center;gap:12px;"><div style="font-size:22px;line-height:1;">📋</div><div style="flex:1;min-width:0;"><div style="font-size:15px;font-weight:700;">如何跑分</div><div class="small">6 步流程，点击展开</div></div><div style="color:var(--sub);font-size:20px;line-height:1;" id="home-tips-arrow">&rsaquo;</div></div><div id="home-tips-body" style="display:none;margin-top:12px;text-align:left;"><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">1</span><span>选车型——点「开始跑分」，选你的品牌车系，确认车机 EQ 有几段；没有你的车，选「随便测测」也能测着玩（数据不入库）。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">2</span><span>备环境——按「跑高分指引」准备：发动机熄火、找安静的地方、车机 EQ 全部归零、关掉环绕声和播放器音效。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">3</span><span>播粉噪——车机播放粉红噪声：U 盘最准，蓝牙也可以；音量就用平时听歌的音量，不用刻意开大。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">4</span><span>放手机开测——取下手机壳，手机放在驾驶位头枕处，点开始测量：先测 5 秒环境底噪，再测 25 秒频谱，全程别动手机。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;margin-bottom:12px;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">5</span><span>看分数拿方案——测完立刻出跑分和 31 段频谱，并按你车机的 EQ 段数生成一份只削不增的调整方案。</span></div><div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;color:var(--amber);font-weight:800;">6</span><span>照方案调，再复测——在车机上把每段 EQ 按方案调好，回到驾驶位复测一次，分数涨了多少一目了然；经常开车听，还有一套行车工况方案。</span></div><button class="btn btn-ghost" id="home-tips-more" style="width:100%;margin-top:2px;">查看跑高分指引</button></div></div>
     <!-- 里程碑：从 0 到现在的核心关键动作（Vincent 2026-10-20 定名） -->
     <div class="card mt16" id="home-ms-card" style="cursor:pointer;">
       <div style="display:flex;align-items:center;gap:12px;">
@@ -4275,7 +4275,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.306: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.307: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4325,7 +4325,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.306 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.307 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5342,7 +5342,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.306';
+var CALIB_VER = 'v2.9.307';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5770,7 +5770,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.306';
+var CN_DATA_VER = 'v2.9.307';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5889,7 +5889,7 @@ var CN_DATA_VER = 'v2.9.306';
     }catch(_){}
   }
   window.__cnMSend = cnMaybeSend;
-  // TD-004 补强（v2.9.306）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
+  // TD-004 补强（v2.9.307）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
   // 触发：首错后 4 秒 / 每 20 秒巡检 / 切后台或关页（keepalive）；同指纹每页≤2 条，附堆栈前 300 字。
   var __errBatches = 0, __errTimer = null;
   function cnFlushErrors(){
@@ -7454,7 +7454,7 @@ async function startMeasureFlow(opts){
     try { alert('麦克风启动失败，请检查权限后重试。'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.306: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
+    // v2.9.307: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
