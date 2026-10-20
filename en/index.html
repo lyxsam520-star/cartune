@@ -35,8 +35,8 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
 <meta property="og:image" content="https://lyxsam520-star.github.io/cartune/en/logo.png">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="SoundScore - Free Car Audio Tuning & EQ Optimizer">
-<meta name="twitter:description" content="Tune your car stereo with your phone. Free RTA analyzer + personalized EQ plan.">
+<meta name="twitter:title" content="SoundScore - Car Audio Tuning & EQ Optimizer">
+<meta name="twitter:description" content="Tune your car stereo with your phone. RTA analyzer + personalized EQ plan.">
 <meta name="twitter:image" content="https://lyxsam520-star.github.io/cartune/en/logo.png">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication",
@@ -44,7 +44,7 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
 "operatingSystem":"iOS, Android","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
 "description":"Car audio tuning tool: phone-based RTA spectrum analyzer that measures your car's frequency response and generates a personalized head-unit EQ plan.",
 "url":"https://lyxsam520-star.github.io/cartune/en/",
-"inLanguage":"en","isAccessibleForFree":true}
+"inLanguage":"en"}
 </script>
 <style>
 /* ============ 加载 spinner（v2.9.3：生成方案时防"假死"） ============ */
@@ -257,7 +257,7 @@ ul.clean li{margin:6px 0;}
 </head>
 <body>
 <style>.seo-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;}</style>
-<h1 class="seo-hidden">SoundScore - Free Car Audio Tuning with Your Phone | RTA Spectrum Analyzer &amp; Personalized EQ Plan</h1>
+<h1 class="seo-hidden">SoundScore - Car Audio Tuning with Your Phone | RTA Spectrum Analyzer &amp; Personalized EQ Plan</h1>
 <noscript><div style="padding:24px;font-family:sans-serif;max-width:600px;margin:0 auto;">
 <h2>SoundScore - Car Audio Tuning</h2>
 <p>SoundScore is a free phone-based car audio tuning tool. It uses your phone's microphone as an RTA spectrum analyzer to measure your car's frequency response, then generates a personalized EQ tuning plan for your head unit.</p>
@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.280 · Beta';
+  ver.innerHTML = 'v2.9.281 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5040,7 +5040,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.280';
+var CALIB_VER = 'v2.9.281';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -8577,7 +8577,7 @@ function startRemeasurePrompt(){
       ov.className = 'iso-overlay';
       ov.innerHTML =
         '<div class="iso-card">' +
-        '<div class="h" style="font-size:17px;">Free re-measurements used up</div>' +
+        '<div class="h" style="font-size:17px;">Re-measurement limit reached</div>' +
         '<div class="small mt8">You\'ve used your 2 free re-measurements. Contact support if issues persist.</div>' +
         '<button class="btn btn-primary" id="rc-ok">Got it</button>' +
         '</div>';
@@ -9446,7 +9446,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.280',
+        appVer: 'v2.9.281',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
