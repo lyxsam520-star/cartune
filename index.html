@@ -291,7 +291,7 @@ ul.clean li{margin:6px 0;}
         </div>
       </div>
       <div class="small" style="line-height:1.7;margin-top:10px;text-align:left;">
-        30 秒测出实测频响，以驻车目标曲线为标准打分：100 分为完美贴合，分数越低偏离越大。调音前后各打一次，直观看到提升了多少分。
+        30 秒测出实测频响，与驻车目标曲线对比打分：分越高，与目标曲线贴合得越好。跑分看的是相对提升，没有满分一说——调音前后各打一次，提升了多少分一目了然。
       </div>
     </div>
     <!-- v2.9.215: 同车型跑分计数独立卡，选车后显示 -->
@@ -4281,7 +4281,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.266 · 内测版';
+  ver.innerHTML = 'v2.9.267 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5253,7 +5253,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.266';
+var CALIB_VER = 'v2.9.267';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5670,7 +5670,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.266';
+var CN_DATA_VER = 'v2.9.267';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
