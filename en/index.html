@@ -3511,7 +3511,7 @@ window.COPY = {
     micErrTitle: "Microphone failed to start",
     micErrBody: "Check browser microphone permission and retry; or read the How It Works page first",
     levelLow: 'Sound too quiet: turn up the head-unit volume. On Bluetooth, make sure the phone isn\'t on call audio (it hijacks the mic) — keep media audio only.',
-    usbPlayingTip: "Just keep the pink noise playing — tap Start for a 30 s measurement, no timer needed.",
+    usbPlayingTip: "Pause the head unit first, then tap Start: the first 5 seconds measure the noise floor — resume playback when the screen says so.",
     tipCase: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipPosition: "📍 Place your phone at the driver's headrest — don't move it during both steps. Ambient floor and stereo measurement are both done at the driver's seat: the tuning target is exactly what you hear while driving. A mount is recommended; at minimum keep your hand steady and the position fixed.",
@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.334 · Beta';
+  ver.innerHTML = 'v2.9.335 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.334';
+var CALIB_VER = 'v2.9.335';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9656,7 +9656,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.334',
+        appVer: 'v2.9.335',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
