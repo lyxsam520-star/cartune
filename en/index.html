@@ -8,6 +8,12 @@ This software is proprietary. No copying, modification, distribution, or commerc
 
 
 <meta charset="UTF-8">
+<script>
+/* TD-004 全局错误捕获：只缓冲截断摘要（消息/文件尾/行号），上报由数据模块负责 */
+window.__errBuf=[];window.__errCap=function(m,s,l){try{if(window.__errBuf.length<5)window.__errBuf.push({m:String(m||'').slice(0,200),s:String(s||'').split('?')[0].slice(-80),l:l|0});}catch(_){}};
+window.addEventListener('error',function(e){window.__errCap(e.message,e.filename,e.lineno);},true);
+window.addEventListener('unhandledrejection',function(e){try{window.__errCap('promise: '+((e.reason&&e.reason.message)||e.reason),'',0);}catch(_){}});
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0B0E13">
 <link rel="icon" type="image/png" href="logo.png">
@@ -4042,7 +4048,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.262 · Beta';
+  ver.innerHTML = 'v2.9.263 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5013,7 +5019,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.262';
+var CALIB_VER = 'v2.9.263';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9418,7 +9424,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.262',
+        appVer: 'v2.9.263',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9441,6 +9447,19 @@ else{ init(); }
         body: JSON.stringify(payload), keepalive: true }).catch(function(){});
     }catch(_){}
   }
+  // TD-004: error digest reporting (once per page, silent failure)
+  var __errFlushed = false;
+  function mFlushErrors(){
+    if(__errFlushed) return;
+    try{
+      var buf = (window.__errBuf || []).slice(0, 5);
+      if(!buf.length) return;
+      __errFlushed = true;
+      fetch(M_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+        body: JSON.stringify({ product: 'soundscore', kind: 'clienterror', schemaVer: 1, app: 'soundscore', appVer: CALIB_VER, device: String(navigator.userAgent || '').slice(0, 120), errors: buf }) }).catch(function(){});
+    }catch(_){}
+  }
+  setTimeout(mFlushErrors, 5000);
   // hook into report view: send after a fresh measurement when consented
   try{
     var _origShow = window.show;
@@ -9448,6 +9467,7 @@ else{ init(); }
       window.show = function(id){
         var r = _origShow.apply(this, arguments);
         try{ if(id === 'report'){ setTimeout(mMaybeSend, 800); } }catch(_){}
+        try{ mFlushErrors(); }catch(_){}
         return r;
       };
     }
