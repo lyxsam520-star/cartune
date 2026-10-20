@@ -116,7 +116,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.307 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.308 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -3193,7 +3193,7 @@ var MODELS_DB = {
 window.COPY = {
   home: {
     title: "Score Your Car Audio",
-    subtitle: "Measure your car's true sound in 30 seconds. Not happy with the score? Get an EQ plan for your head unit's bands, apply it, re-measure, and watch it climb.",
+    subtitle: "Measure your car's true sound in 30 seconds. Not happy with the score? Get an EQ plan for your head unit's bands, apply it, re-measure, and watch it climb. Bring unreasonable EQ settings back to reasonable.",
     ctaPrimary: "Next",
     ctaPrimaryEn: "Next",
     ctaPro: "Pro Mode",
@@ -4072,7 +4072,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.307 · Beta';
+  ver.innerHTML = 'v2.9.308 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5077,7 +5077,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.307';
+var CALIB_VER = 'v2.9.308';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6946,7 +6946,7 @@ async function startMeasureFlow(opts){
     try { alert('Mic failed to start — check permission and retry.'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.307: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
+    // v2.9.308: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -9514,7 +9514,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.307',
+        appVer: 'v2.9.308',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9538,7 +9538,7 @@ else{ init(); }
     }catch(_){}
   }
   // TD-004: error digest reporting (once per page, silent failure)
-  // TD-004 strengthened (v2.9.307): batched error reports (<=6 batches/page, buffer cleared on send);
+  // TD-004 strengthened (v2.9.308): batched error reports (<=6 batches/page, buffer cleared on send);
   // triggers: 4s after first error / every 20s / on hide or pagehide (keepalive); <=2 per fingerprint per page, with stack head.
   var __errBatches = 0, __errTimer = null;
   function mFlushErrors(){
