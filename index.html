@@ -112,7 +112,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.311 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.312 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -552,7 +552,7 @@ ul.clean li{margin:6px 0;}
     <div class="small" style="color:var(--sub);margin-top:6px;">灰色频段（20/25Hz、16k/20kHz）为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。</div>
     </div>
     <div class="card mt16"><div class="small" id="report-trust"></div></div>
-    <!-- v2.9.311: 麦克风处理未完全关闭时的事实提示（默认隐藏，renderReport 按本次 micSettings 显示） -->
+    <!-- v2.9.312: 麦克风处理未完全关闭时的事实提示（默认隐藏，renderReport 按本次 micSettings 显示） -->
     <div class="card mt16 hidden" id="report-mic-card"><div class="small" id="report-mic-note" style="color:var(--amber);"></div></div>
     <!-- v2.9.256: 实测校准参数标注（已解锁车型才显示） -->
     <div class="card mt16 hidden" id="report-calib-card" style="border-color:rgba(52,211,153,.45);">
@@ -2160,7 +2160,7 @@ var MODELS_DB = {
    *    - RMS 归一不在此处做：对比阶段用"相对比较"（测量-目标）自然消去绝对电平
    * ============================================================ */
 
-  // v2.9.311: UA 平台/容器解析（判定顺序：鸿蒙→iOS→安卓；失败一律 'other'，静默降级）
+  // v2.9.312: UA 平台/容器解析（判定顺序：鸿蒙→iOS→安卓；失败一律 'other'，静默降级）
   window.__uaPlatform = function(){ try{ var ua = navigator.userAgent || ''; if(/OpenHarmony|HarmonyOS|ArkWeb/.test(ua)) return 'harmony'; if(/iPhone|iPad|iPod/.test(ua)) return 'ios'; if(/Android/.test(ua)) return 'android'; return 'other'; }catch(_){ return 'other'; } };
   window.__uaContainer = function(){ try{ var ua = navigator.userAgent || ''; if(/MicroMessenger/.test(ua)) return 'wechat'; if(/ArkWeb|TBS\/|X5|MQQBrowser/.test(ua)) return 'webview-other'; return 'browser'; }catch(_){ return 'other'; } };
   // getUserMedia 兼容：标准 API 优先，webkit 前缀兜底
@@ -2297,7 +2297,7 @@ var MODELS_DB = {
     };
     return getUserMediaCompat(constraints).then(function (stream) {
       self.stream = stream;
-      // v2.9.311: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
+      // v2.9.312: read back effective mic settings via track.getSettings(); store in session state for upload + report hint; silent fallback
       try {
         var _trk = stream.getAudioTracks && stream.getAudioTracks()[0];
         if (_trk && _trk.getSettings) {
@@ -4297,7 +4297,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.311: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.312: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4347,7 +4347,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.311 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.312 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5364,7 +5364,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.311';
+var CALIB_VER = 'v2.9.312';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5792,7 +5792,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.311';
+var CN_DATA_VER = 'v2.9.312';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5914,7 +5914,7 @@ var CN_DATA_VER = 'v2.9.311';
     }catch(_){}
   }
   window.__cnMSend = cnMaybeSend;
-  // TD-004 补强（v2.9.311）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
+  // TD-004 补强（v2.9.312）：错误摘要分批上报（每页≤6批，发送即清空缓冲）；
   // 触发：首错后 4 秒 / 每 20 秒巡检 / 切后台或关页（keepalive）；同指纹每页≤2 条，附堆栈前 300 字。
   var __errBatches = 0, __errTimer = null;
   function cnFlushErrors(){
@@ -6302,8 +6302,7 @@ function rafLoop(){
     if(remain<=1 && remain>0){
       if(!app.avgShown){
         app.avgShown = true; // 结束前 1 秒：最终平均（窗口过长会让静音帧混入平均、且用户干等）
-        // v2.9.35: 进入最终平均就停粉噪（用户：算平均时别再响了，45 秒数据已够）
-        try{ if(app.measurer && app.measurer.stopPink) app.measurer.stopPink(0.2); }catch(_){}
+        // 精度优先（Vincent 2026-10-20 定）：测量段内一切为精度让路——粉噪播满整个采集时长，不再提前停声；停声由 measurer 在采集结束时 0.2s 淡出完成。
         // v2.9.215: 监听一结束就报"测试结束"，不等算完
         try{
           if(window.speechSynthesis){
@@ -7479,7 +7478,7 @@ async function startMeasureFlow(opts){
     try { alert('麦克风启动失败，请检查权限后重试。'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    // v2.9.311: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
+    // v2.9.312: 按错误类型分流指引（安卓 WebView/微信内 NotAllowedError 是死胡同，通用文案用户照做也没用）
     var _mb305 = null;
     try {
       var _en305 = e && e.name;
@@ -7845,7 +7844,7 @@ function renderReport(){
   setText('report-trust','report.trustNote');
   // v2.9.251: P1 诚实标注——iPhone 修正表来自单台 iPhone 12 Pro Max 实测，非全机型通用
   try{ if(DSP.isIPhone && DSP.isIPhone()){ var _te251=document.getElementById('report-trust'); if(_te251 && _te251.textContent.indexOf('12 Pro Max')<0){ _te251.textContent += '（iPhone 麦克风修正表来自单台 iPhone 12 Pro Max 实测。）'; } } }catch(_){}
-  // v2.9.311: 本次 micSettings 中 ec/ns/agc 任一为 true 时显示事实提示（会话内存状态，不依赖服务器回读）
+  // v2.9.312: 本次 micSettings 中 ec/ns/agc 任一为 true 时显示事实提示（会话内存状态，不依赖服务器回读）
   try{ var _ms309 = (S().micSettings || window.__micSettings || null); var _mc309 = document.getElementById('report-mic-card'); if(_mc309){ if(_ms309 && (_ms309.ec === true || _ms309.ns === true || _ms309.agc === true)){ _mc309.classList.remove('hidden'); var _mn309 = document.getElementById('report-mic-note'); if(_mn309) _mn309.textContent = '本次测量检测到手机音频处理未完全关闭，结果可信度略降'; } else { _mc309.classList.add('hidden'); } } }catch(_){}
   setText('report-priceline','report.priceLine');
   setText('bk-report','common.back');
