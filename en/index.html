@@ -3287,7 +3287,7 @@ window.COPY = {
   },
   calib: {
     cardTitle: "Center-Frequency Challenge",
-    cardWhy: "The frequencies printed on your head unit (e.g. 1000Hz) are nominal values — the filters' true centers usually differ. Measure each band together, and this model's true center frequencies get derived from the crowd. Reach 100% to unlock: every EQ plan for this model then computes from measured parameters, tuned more accurately.",
+    cardWhy: "Ten measured datasets reveal this model's true center frequencies — every EQ plan is then computed from real data, tuned more accurately.",
     statusProgress: function(n, total){ return "Deriving · " + n + " / " + total + " datasets collected"; },
     statusUnlocked: "Unlocked ✓ This model's EQ now uses measured center frequencies",
     statusMine: function(n){ return "You contributed " + n + " dataset" + (n > 1 ? "s" : ""); },
@@ -4039,7 +4039,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.256 · Beta';
+  ver.innerHTML = 'v2.9.257 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5124,7 +5124,7 @@ function renderCalibCard(box, spec){
   card.style.cursor = 'pointer';
   card.innerHTML =
     '<div class="h" style="font-size:15px;">🧭 ' + escapeHtml(tt('calib.cardTitle')) + '</div>' +
-    '<div class="prog"><i style="width:' + pct + '%;"></i></div>' +
+    '<div style="position:relative;height:14px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;"><i style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:var(--cyan);border-radius:999px;"></i><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#dbe7f5;line-height:1;">' + pct + '%</span></div>' +
     '<div class="small mt8">' + statusLine + '</div>' + mineLine +
     '<div class="small mt8" style="color:var(--sub);">' + escapeHtml(tt('calib.cardWhy')) + '</div>' +
     '<div class="small mt8" style="color:var(--amber);">' +

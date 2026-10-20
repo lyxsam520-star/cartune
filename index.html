@@ -3510,7 +3510,7 @@ window.COPY = {
   },
   calib: {
     cardTitle: "中心频率推导闯关",
-    cardWhy: "车机标注的频率（如 1000Hz）是名义值，滤波器真实中心往往有偏差。车友们一起逐段实测，把这台车的真实中心频率推导出来——推到 100% 解锁后，这款车型的每一份 EQ 方案都按实测参数计算，调得更准。",
+    cardWhy: "凑齐 10 份实测，就能算出这款车真实的中心频率——解锁后每份 EQ 方案都按真实参数算，调得更准。",
     statusProgress: function(n, total){ return "推导中 · 已汇集 " + n + " / " + total + " 份实测数据"; },
     statusUnlocked: "已解锁 ✓ 本车型 EQ 已按实测中心频率校准",
     statusMine: function(n){ return "你已贡献 " + n + " 份"; },
@@ -4250,7 +4250,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.256 · 内测版';
+  ver.innerHTML = 'v2.9.257 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5340,7 +5340,7 @@ function renderCalibCard(box, spec){
   card.style.cursor = 'pointer';
   card.innerHTML =
     '<div class="h" style="font-size:15px;">🧭 ' + escapeHtml(tt('calib.cardTitle')) + '</div>' +
-    '<div class="prog"><i style="width:' + pct + '%;"></i></div>' +
+    '<div style="position:relative;height:14px;background:#232b38;border-radius:999px;margin-top:10px;overflow:hidden;"><i style="position:absolute;left:0;top:0;bottom:0;width:' + pct + '%;background:var(--cyan);border-radius:999px;"></i><span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#dbe7f5;line-height:1;">' + pct + '%</span></div>' +
     '<div class="small mt8">' + statusLine + '</div>' + mineLine +
     '<div class="small mt8" style="color:var(--sub);">' + escapeHtml(tt('calib.cardWhy')) + '</div>' +
     '<div class="small mt8" style="color:var(--amber);">' +
