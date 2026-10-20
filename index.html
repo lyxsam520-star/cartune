@@ -334,6 +334,29 @@ ul.clean li{margin:6px 0;}
         <div class="small" style="display:flex;gap:10px;line-height:1.6;text-align:left;"><span style="flex:0 0 auto;">🏆</span><span>要高分用 U 盘或网盘播——蓝牙会压缩音质，U 盘/网盘直播最准。<a href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="color:var(--accent);">点此下载粉噪文件（百度网盘）</a></span></div>
       </div>
     </div>
+    <!-- 里程碑：从 0 到现在的核心关键动作（Vincent 2026-10-20 定名） -->
+    <div class="card mt16" id="home-ms-card" style="cursor:pointer;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="font-size:22px;line-height:1;">🏁</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:15px;font-weight:700;">里程碑</div>
+          <div class="small">从 0 到现在的重要更新，点开展开</div>
+        </div>
+        <div style="color:var(--sub);font-size:20px;line-height:1;" id="home-ms-arrow">&rsaquo;</div>
+      </div>
+      <div id="home-ms-body" style="display:none;margin-top:12px;text-align:left;">
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/12</span><span class="small" style="text-align:left;">立项：以专业手机调音方法论为基石——只削不增、一车一调</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/13</span><span class="small" style="text-align:left;">首版上线：浏览器打开就能测，首台真车测→调全流程跑通</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/16</span><span class="small" style="text-align:left;">精度验收：与专业声学仪实测对比，100Hz–12.5kHz 全频段误差在 ±3dB 内</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/18</span><span class="small" style="text-align:left;">英文版上线：SoundScore 走出国门，车型库拓展至 16 个海外品牌</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/19</span><span class="small" style="text-align:left;">全免费定版：跑分与调音方案全部免费开放，复测不限次数</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/20</span><span class="small" style="text-align:left;">双工况评分：驻车/行车两套口径——熄火测高分，行车听真实</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/20</span><span class="small" style="text-align:left;">校准闯关上线：车友共同实测每款车的真实 EQ 中心频率</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/20</span><span class="small" style="text-align:left;">小程序「音质跑分」通过认证，与网页版同名同数据</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/20</span><span class="small" style="text-align:left;">数据大本营落成：全部数据迁入腾讯云，首页成绩轮播上线</span></div>
+        <div style="display:flex;gap:10px;line-height:1.55;"><span style="flex:0 0 40px;color:var(--amber);font-weight:700;font-size:12px;padding-top:1px;">10/20</span><span class="small" style="text-align:left;">错误哨兵上线：用户反馈自动跟进，bug 自动修复并回复提交人</span></div>
+      </div>
+    </div>
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
@@ -4233,7 +4256,7 @@ function show(id){
     try{
       var _tc = parseInt(localStorage.getItem('ct_tune_count')||'0', 10)||0;
       var _el = document.getElementById('home-tune-num');
-      if(_el) _el.textContent = '0'; // v2.9.276: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
+      if(_el) _el.textContent = '0'; // v2.9.277: 本地计数清零，改由云端真实总数（view=recent 的 total）覆盖
       // 显示最高得分
       var _h = getScoreHistory();
       var _se = document.getElementById('home-car-score');
@@ -4283,7 +4306,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.276 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.277 · 内测版 · 调音群微信：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -4401,6 +4424,17 @@ function initHome(){
   if(_htc) _htc.onclick = function(){
     var body = document.getElementById('home-tips-body');
     var arrow = document.getElementById('home-tips-arrow');
+    if(body && arrow){
+      var open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : 'block';
+      arrow.innerHTML = open ? '&rsaquo;' : '&#x25BE;';
+    }
+  };
+  // 里程碑卡片点击展开/收起（与测前准备同模式）
+  var _hmc = document.getElementById('home-ms-card');
+  if(_hmc) _hmc.onclick = function(){
+    var body = document.getElementById('home-ms-body');
+    var arrow = document.getElementById('home-ms-arrow');
     if(body && arrow){
       var open = body.style.display !== 'none';
       body.style.display = open ? 'none' : 'block';
@@ -5275,7 +5309,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.276';
+var CALIB_VER = 'v2.9.277';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5692,7 +5726,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.276';
+var CN_DATA_VER = 'v2.9.277';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
