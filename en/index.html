@@ -3939,20 +3939,20 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "Every car deserves its own score.",
     heroTitleEn: "Every car deserves its own score.",
-    heroBody: "One phone, 30 seconds: measure your car audio's true frequency response and get a plan matched to your head unit's actual EQ bands. Serious measurement, playful experience.",
+    heroBody: "One phone, 30 seconds: measure your car audio's true frequency response (how loud each band actually is) and get a plan matched to your head unit's actual EQ bands. Serious measurement, playful experience.",
     heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
         t: "1 · How we measure",
         tEn: "1 · How we measure",
-        b: "Three principles: every car's acoustic fingerprint is unique — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan.",
-        bEn: "Three principles: every car's acoustic fingerprint is unique — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan."
+        b: "Three principles: every car's acoustic fingerprint (its unique sound character) is different — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan.",
+        bEn: "Three principles: every car's acoustic fingerprint (its unique sound character) is different — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan."
       },
       {
         t: "2 · Target and plan",
         tEn: "2 · Target and plan",
-        b: "First the target: Parked and Driving curves from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit.",
-        bEn: "First the target: Parked and Driving curves from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit."
+        b: "First the target: two target curves (the standard shape we want your sound to reach — Parked and Driving), from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit.",
+        bEn: "First the target: two target curves (the standard shape we want your sound to reach — Parked and Driving), from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit."
       },
       {
         t: "3 · Honest limits",
@@ -3961,8 +3961,8 @@ window.COPY = {
         bEn: "Phone measurements capture relative trends, not lab-grade; plans are systematic compromises, with honest flags where EQ can't help; no carmaker affiliation."
       }
     ],
-    harmanNote: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES literature). No affiliation with, cooperation with, or endorsement by Harman.",
-    harmanNoteEn: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES literature). No affiliation with, cooperation with, or endorsement by Harman.",
+    harmanNote: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES: the Audio Engineering Society's journals). No affiliation with, cooperation with, or endorsement by Harman.",
+    harmanNoteEn: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES: the Audio Engineering Society's journals). No affiliation with, cooperation with, or endorsement by Harman.",
     disclaimer: "This page is a technical explanation, not a promise of results; measurements and plans vary by vehicle, environment and operation. No affiliation with any carmaker.",
     guideTitle: "High-Score Guide (Before You Measure)",
     guideBody: "📍 Phone on the driver headrest, don’t move it — we tune what you hear while driving\n🧭 Flip the phone around — the mic is on the bottom edge; face that edge toward the windshield with the screen toward you, not pointing down\n📱 Remove the phone case — don’t block the mic holes, highs come through cleaner\n🔇 Measure somewhere quiet — garage or quiet street at night; quieter = more accurate\n🎚️ Zero the head-unit EQ, turn off surround/sound-field/effects — you want the speakers’ raw performance. Photograph the EQ screen first in case.\n📵 All player effects off — EQ/effects/volume-leveling in music apps must be off or the spectrum gets distorted\n🔵 Bluetooth: connect as ‘Media audio’ — call audio is mono and mixes channels. The measuring phone doesn’t need Bluetooth.\n📲 Use two devices: one plays pink noise, one measures. On one iPhone, playing and recording at once makes it turn itself down — results skew.\n🏆 For top scores use USB — Bluetooth compresses audio; USB is the most accurate. Download the pink noise file from the link below and copy it to the drive.",
@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.332 · Beta';
+  ver.innerHTML = 'v2.9.333 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.332';
+var CALIB_VER = 'v2.9.333';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9656,7 +9656,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.332',
+        appVer: 'v2.9.333',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,

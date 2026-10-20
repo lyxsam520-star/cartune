@@ -4209,20 +4209,20 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "让每辆车，都有自己的声音。",
     heroTitleEn: "Every car deserves its own score.",
-    heroBody: "一部手机、30 秒，测出你车内音响的真实频响，按你车机的实际 EQ 段数给方案。看着好玩，用着专业。",
+    heroBody: "一部手机、30 秒，测出你车内音响的真实频响（每个频段实际有多响），按你车机的实际 EQ 段数给方案。看着好玩，用着专业。",
     heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
         t: "1 · 我们怎么测",
         tEn: "1 · How we measure",
-        b: "基本原理有三条：一，每辆车的声学指纹都不同，必须实测，不能靠猜；二，手机就是仪器，播放测试音频、录音分析，还原车内真相；三，你的每次测量（匿名化）都在变成系统的数据养分——数据、算法、AI 三者结合，为你生成专属方案。用的人越多，系统越懂车。",
-        bEn: "Three principles: every car's acoustic fingerprint is unique — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan."
+        b: "基本原理有三条：一，每辆车的声学指纹（独一无二的声音特征）都不同，必须实测，不能靠猜；二，手机就是仪器，播放测试音频、录音分析，还原车内真相；三，你的每次测量（匿名化）都在变成系统的数据养分——数据、算法、AI 三者结合，为你生成专属方案。用的人越多，系统越懂车。",
+        bEn: "Three principles: every car's acoustic fingerprint (its unique sound character) is different — measure, don't guess; your phone is the instrument; every anonymized measurement feeds the system — data, algorithms and AI combined for your personal plan."
       },
       {
         t: "2 · 目标与方案",
         tEn: "2 · Target and plan",
-        b: "先有目标：驻车、行车两条曲线，源于国内外车载声学研究的长期积累。再有方案：融合声学测量、听感科学与数学优化，按你车机的实际配置生成唯一确定的调音方案。",
-        bEn: "First the target: Parked and Driving curves from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit."
+        b: "先有目标：驻车、行车两条目标曲线（希望声音最终达成的标准形状），源于国内外车载声学研究的长期积累。再有方案：融合声学测量、听感科学与数学优化，按你车机的实际配置生成唯一确定的调音方案。",
+        bEn: "First the target: two target curves (the standard shape we want your sound to reach — Parked and Driving), from global in-car acoustic research. Then the plan: a synthesis of measurement, psychoacoustics and optimization, tailored to your head unit."
       },
       {
         t: "3 · 诚实边界",
@@ -4231,8 +4231,8 @@ window.COPY = {
         bEn: "Phone measurements capture relative trends, not lab-grade; plans are systematic compromises, with honest flags where EQ can't help; no carmaker affiliation."
       }
     ],
-    harmanNote: "目标曲线设计参考了 Harman 公开发表的车载实验目标曲线（AES/JAES 文献），与 Harman 公司无任何关联、合作或背书关系。",
-    harmanNoteEn: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES literature). No affiliation with, cooperation with, or endorsement by Harman.",
+    harmanNote: "目标曲线设计参考了 Harman 公开发表的车载实验目标曲线（AES/JAES：音频工程学会的学术文献），与 Harman 公司无任何关联、合作或背书关系。",
+    harmanNoteEn: "Target-curve design references Harman's published in-car experimental target curves (AES/JAES: the Audio Engineering Society's journals). No affiliation with, cooperation with, or endorsement by Harman.",
     disclaimer: "本页为技术说明，不构成效果承诺；测量与方案结果因车辆、环境与操作而异。与各汽车厂商无任何关联。",
     guideTitle: "跑高分指引（测前准备）",
     guideBody: "📍 手机放驾驶位头枕处，全程别动——调的是你开车时听到的声音\n🧭 手机反过来放——话筒在手机底部，让底部对着前挡风玻璃、屏幕朝向你；别让底部朝下或对着自己\n📱 取下手机壳再测——别挡住麦克风孔，高频更准\n🔇 找安静地方测——地下车库、夜晚小区，越安静越准\n🎚️ 车机 EQ 全部归零，关闭环绕声/声场/音效——测到的是喇叭真实表现。怕调乱？先给 EQ 界面拍张照\n📵 播放器音效全关——网易云/QQ音乐的均衡器、音效、音量均衡必须关闭，否则频谱被扭曲\n🔵 播放设备蓝牙连「媒体音频」——电话音频是单声道低音质，左右会混成一路；测量手机本身不用连蓝牙\n📲 播放和测量分开两台设备——一台播粉噪，一台纯测。同一台又播又录，iPhone 会自己压小音量，测不准\n🏆 要高分用 U 盘播——蓝牙会压缩音质，U 盘最准；粉噪文件点下方链接下载、拷进 U 盘即可",
@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.332 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.333 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.332';
+var CALIB_VER = 'v2.9.333';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5864,7 +5864,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.332';
+var CN_DATA_VER = 'v2.9.333';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
