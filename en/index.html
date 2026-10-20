@@ -4039,7 +4039,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.257 · Beta';
+  ver.innerHTML = 'v2.9.258 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5007,10 +5007,10 @@ function refreshBountyBtn(){
  *                            wiz: { key, stepIdx, floor31, base31, steps:[...] } }
  * ===================================================================== */
 var CALIB_NEEDED = 10;
-var CALIB_M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
-var CALIB_G_URL = 'https://soundscore-stats.lyxsam520.workers.dev/calib';
+var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
+var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.256';
+var CALIB_VER = 'v2.9.258';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9309,7 +9309,7 @@ else{ init(); }
   send('page_view');
 
   /* 4. Anonymized measurement data (opt-in, GDPR) */
-  var M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
+  var M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
   var consentBox = document.getElementById('ss-data-consent');
   var mLastHash = '';
   try{
@@ -9386,7 +9386,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.245',
+        appVer: 'v2.9.258',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,

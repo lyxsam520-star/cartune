@@ -293,6 +293,11 @@ ul.clean li{margin:6px 0;}
       <div class="small" style="text-align:left;">你的车型已有 <span id="home-model-num" style="color:var(--amber);font-weight:700;">0</span> 辆参与了跑分</div>
       <div class="small" style="text-align:left;color:var(--sub);margin-top:4px;">你的测量数据（去标识化后）会帮助同款车车友调得更准</div>
     </div>
+    <!-- v2.9.258: 参与车型数据优化（匿名上传授权开关，与 EN 版 ss-data-consent 对齐） -->
+    <div class="card mt16" id="home-data-card">
+      <label class="checkrow"><input type="checkbox" id="cn-data-consent">
+        <span><span class="body14" style="font-weight:600;">参与车型数据优化</span><br><span class="small" style="color:var(--sub);">同意后，测量完成会上传匿名化频谱与得分（不含录音、不含个人信息），用于车型声学数据积累与方案优化。拒绝不影响使用，可随时关闭。</span></span></label>
+    </div>
     <div class="card center mt16">
       <!-- v2.9.46: 首页专业模式卡片已移除，开关移到测量页频谱旁 -->
       <div class="card" id="home-tech-link" style="display:flex;align-items:center;gap:12px;cursor:pointer;">
@@ -4250,7 +4255,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.257 · 内测版';
+  ver.innerHTML = 'v2.9.258 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5212,16 +5217,17 @@ function refreshBountyBtn(){
  * v2.9.256: 中心频率推导闯关（用户 2026-10-20 决策）
  * - 每车型 10 份有效校准数据集 = 100%；集满后由服务端聚合推导
  *   （每段峰位/Q 取中位数），此后该车型方案按实测参数计算。
- * - 数据通道：既有 /m（type=calibration）+ GET /calib 进度查询；
+ * - 数据通道（2026-10-20 改）：腾讯云开发 ingestSession（与小程序共用一库）——
+ *   POST type=calibration 写 calibration_sessions；GET ?brand=&series= 查进度；
  *   通道不可用时静默降级：本机进度照常记录，服务端进度不显示。
  * - 本机存储：ct_calib_v1 = { models: { key: {mine, unlocked, centers, qs} },
  *                            wiz: { key, stepIdx, floor31, base31, steps:[...] } }
  * ===================================================================== */
 var CALIB_NEEDED = 10;
-var CALIB_M_URL = 'https://soundscore-stats.lyxsam520.workers.dev/m';
-var CALIB_G_URL = 'https://soundscore-stats.lyxsam520.workers.dev/calib';
+var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
+var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.256';
+var CALIB_VER = 'v2.9.258';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5630,6 +5636,108 @@ function initCalib(){
     };
   }
 }
+/* =====================================================================
+ * 数据回流（CN）：匿名化测量数据 → 腾讯云开发 ingestSession（与小程序共用一库）
+ * 2026-10-20 定版：H5 与小程序共用 yinzhipaofen-prod；Cloudflare Worker 退出数据通道。
+ * 隐私：仅用户在首页勾选「参与车型数据优化」后才发送（localStorage ct_data_consent）；
+ * 只发 31 段频谱 / 得分 / 车型 / 方案增益 / 复测残差，不发录音与原始 PCM；
+ * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
+ * ===================================================================== */
+var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
+var CN_DATA_VER = 'v2.9.258';
+(function(){
+  var consentBox = document.getElementById('cn-data-consent');
+  var mLastHash = '';
+  try{
+    if(consentBox && localStorage.getItem('ct_data_consent') === '1') consentBox.checked = true;
+  }catch(_){}
+  if(consentBox) consentBox.addEventListener('change', function(){
+    try{ localStorage.setItem('ct_data_consent', consentBox.checked ? '1' : '0'); }catch(_){}
+  });
+  function mHash(a){
+    var h = 0;
+    try{
+      var s = JSON.stringify(a);
+      for(var i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+    }catch(_){}
+    return (h >>> 0).toString(16);
+  }
+  function cnMaybeSend(){
+    try{
+      if(!consentBox || !consentBox.checked) return;
+      var st = (typeof S === 'function') ? S() : null;
+      if(!st || !st.measL || !st.measR) return;
+      var hash = mHash([st.measL, st.measR]);
+      if(hash === mLastHash || hash === '0') return;
+      mLastHash = hash;
+      var sc = null;
+      try{ sc = (typeof calcCarScore === 'function') ? calcCarScore() : null; }catch(_){}
+      var car = st.car || {};
+      var planGains = [];
+      try{
+        var _prev = (typeof buildPlan === 'function') ? buildPlan() : null;
+        var _bands = (_prev && (_prev.bands || [])) || [];
+        for(var i = 0; i < _bands.length; i++){
+          var b = _bands[i];
+          planGains.push({ f: b.fc || b.f || b.freq || null, g: b.gainDb != null ? b.gainDb : b.g });
+        }
+      }catch(_){}
+      var device = 'Other';
+      try{
+        device = (DSP.isIPad && DSP.isIPad()) ? 'iPad' : ((DSP.isIPhone && DSP.isIPhone()) ? 'iPhone' : 'Other');
+      }catch(_){}
+      var sessionId = '';
+      try{
+        sessionId = localStorage.getItem('ct_session_id') || '';
+        if(!sessionId){
+          sessionId = 'ct-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+          localStorage.setItem('ct_session_id', sessionId);
+        }
+      }catch(_){}
+      var remeasure = null;
+      try{
+        var rmList = st.remeasure || [];
+        if(rmList.length > 0){
+          var rm = rmList[rmList.length - 1];
+          remeasure = { r1: rm.r1, r2: rm.r2, fit1: rm.fit1, fit2: rm.fit2,
+            score1: rm.score1, score2: rm.score2, delta: rm.delta,
+            target: rm.target || '', dspVer: rm.dsp || '', ts: rm.ts || 0 };
+        }
+      }catch(_){}
+      var deviceModel = '';
+      try{
+        var ua = navigator.userAgent || '';
+        var m = ua.match(/iPhone OS ([\d_]+)/);
+        if(m) deviceModel = 'iPhone iOS ' + m[1].replace(/_/g, '.');
+        else if(/iPad/.test(ua)) deviceModel = 'iPad';
+      }catch(_){}
+      var payload = {
+        kind: 'measurement', consent: true, app: 'soundscore-cn', appVer: CN_DATA_VER,
+        session: sessionId,
+        spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
+        score: (sc && sc.score != null) ? sc.score : null,
+        car: { brand: car.brand || '', series: car.series || '', year: car.year || '' },
+        playMethod: (typeof app !== 'undefined' && app.playMode) ? String(app.playMode) : '',
+        device: device, deviceModel: deviceModel,
+        eqBands: (st.eqSpec && st.eqSpec.bands) || 0,
+        plan: planGains, remeasure: remeasure
+      };
+      fetch(CN_INGEST_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload), keepalive: true }).catch(function(){});
+    }catch(_){}
+  }
+  window.__cnMSend = cnMaybeSend;
+  try{
+    var _origShowCn = window.show;
+    if(typeof _origShowCn === 'function'){
+      window.show = function(id){
+        var r = _origShowCn.apply(this, arguments);
+        try{ if(id === 'report'){ setTimeout(cnMaybeSend, 800); } }catch(_){}
+        return r;
+      };
+    }
+  }catch(_){}
+})();
 /* =====================================================================
  * 测量页（核心）
  * 流程（v2.4 进阶版，v2.2 时为 30s）：50s 合并监听一次跑完——底噪 10s → 立体声 40s（默认）；
