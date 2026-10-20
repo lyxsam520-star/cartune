@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.264 · Beta';
+  ver.innerHTML = 'v2.9.265 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5020,7 +5020,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.264';
+var CALIB_VER = 'v2.9.265';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9425,7 +9425,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.264',
+        appVer: 'v2.9.265',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9461,28 +9461,73 @@ else{ init(); }
     }catch(_){}
   }
   setTimeout(mFlushErrors, 5000);
-  // Home score ticker: latest real results (model + score), loops while data exists, hidden when empty
-  var __tickerItems = null, __tickerIdx = 0, __tickerTimer = null;
+  // Home score ticker: latest real results (model + score), loops while data exists, hidden when empty; tap to view the plan
+  var __tickerItems = null, __tickerIdx = 0, __tickerTimer = null, __tickerCur = null;
   function homeTickerRender(){
     var wrap = document.getElementById('home-ticker');
     var txt = document.getElementById('home-ticker-txt');
     if(!wrap || !txt) return;
     if(!__tickerItems || !__tickerItems.length){ wrap.style.display = 'none'; return; }
     var it = __tickerItems[__tickerIdx % __tickerItems.length]; __tickerIdx++;
+    __tickerCur = it;
     txt.style.opacity = '0';
-    setTimeout(function(){ txt.textContent = it.series + ': scored ' + it.score + ' pts'; txt.style.opacity = '1'; }, 180);
+    setTimeout(function(){ txt.textContent = it.series + ': scored ' + it.score + ' pts ›'; txt.style.opacity = '1'; }, 180);
     wrap.style.display = '';
+    wrap.style.cursor = 'pointer';
   }
   function homeTickerStart(){
     try{
       if(__tickerItems){ homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); return; }
       __tickerItems = [];
       fetch(M_URL + '?kind=measurement&view=recent').then(function(r){ return r.json(); }).then(function(j){
-        if(j && j.ok && j.items && j.items.length){ __tickerItems = j.items; homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); }
+        if(j && j.ok){
+          if(typeof j.total === 'number'){ var n = document.getElementById('home-tune-num'); if(n) n.textContent = j.total; }
+          if(j.items && j.items.length){ __tickerItems = j.items; homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); }
+        }
       }).catch(function(){});
     }catch(_){}
   }
   setTimeout(homeTickerStart, 1200);
+  // Plan detail modal (opens on ticker tap; data arrives with the ticker, no extra request)
+  function tickerFmtF(f){ f = Number(f) || 0; return f >= 1000 ? (Math.round(f / 100) / 10) + 'kHz' : f + 'Hz'; }
+  function tickerShowPlan(){
+    var it = __tickerCur; if(!it) return;
+    if(__tickerTimer){ clearInterval(__tickerTimer); __tickerTimer = null; }
+    var ov = document.getElementById('ticker-plan-ov');
+    if(!ov){
+      ov = document.createElement('div');
+      ov.id = 'ticker-plan-ov';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
+      ov.innerHTML = '<div style="background:#1c1c1e;border-radius:16px;max-width:340px;width:100%;padding:20px;color:#f5f5f7;">'
+        + '<div id="tp-title" style="font-size:17px;font-weight:800;"></div>'
+        + '<div id="tp-sub" style="font-size:12px;color:#98989f;margin-top:4px;"></div>'
+        + '<div id="tp-rows" style="margin-top:14px;"></div>'
+        + '<div style="font-size:12px;color:#98989f;margin-top:14px;line-height:1.6;">One car, one tune: this plan comes from that owner\'s own measurement and fits their car only. Copying it to yours can backfire — measure your car and generate your own plan.</div>'
+        + '<button id="tp-close" style="margin-top:16px;width:100%;padding:11px;border:none;border-radius:10px;background:#f5a623;color:#111;font-size:15px;font-weight:700;">Close</button></div>';
+      document.body.appendChild(ov);
+      var closeFn = function(){ ov.style.display = 'none'; if(__tickerItems && __tickerItems.length && !__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); };
+      ov.addEventListener('click', function(e){ if(e.target === ov) closeFn(); });
+      ov.querySelector('#tp-close').addEventListener('click', closeFn);
+    }
+    ov.querySelector('#tp-title').textContent = it.series + ' · ' + it.score + ' pts';
+    ov.querySelector('#tp-sub').textContent = it.targetCurve === 'driving' ? 'Driving plan' : 'Parked plan';
+    var rows = ov.querySelector('#tp-rows');
+    if(it.planDetail && it.planDetail.length){
+      var h = '';
+      for(var i = 0; i < it.planDetail.length; i++){
+        var p = it.planDetail[i], g = Number(p.g) || 0;
+        h += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2c2c2e;font-size:14px;"><span>' + tickerFmtF(p.f) + '</span><span style="font-weight:700;color:' + (g < 0 ? '#30d158' : (g > 0 ? '#f5a623' : '#98989f')) + '">' + (g > 0 ? '+' : '') + g + ' dB</span></div>';
+      }
+      rows.innerHTML = h;
+    } else {
+      rows.innerHTML = '<div style="font-size:13px;color:#98989f;">No plan details for this result yet</div>';
+    }
+    ov.style.display = 'flex';
+  }
+  try{
+    var __tk = document.getElementById('home-ticker');
+    if(__tk) __tk.addEventListener('click', tickerShowPlan);
+  }catch(_){}
   // hook into report view: send after a fresh measurement when consented
   try{
     var _origShow = window.show;
