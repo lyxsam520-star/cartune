@@ -77,7 +77,9 @@ function load(){
           return '<tr><td>' + fmtF(p.f) + '</td><td class="g ' + cls + '">' + gs + '</td></tr>';
         }).join('') + '</table><div class="meta" style="margin-top:6px;">一车一调：只适合这台车，照抄可能适得其反</div>';
       }
-      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(it.series) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + '</div><div class="detail">' + det + '</div></div>';
+      var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
+      var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');
+      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + '</div><div class="detail">' + det + '</div></div>';
     }).join('');
     Array.prototype.forEach.call(box.querySelectorAll('.row'), function(el){
       el.addEventListener('click', function(){ el.classList.toggle('open'); });
