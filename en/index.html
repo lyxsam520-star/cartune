@@ -355,6 +355,7 @@ ul.clean li{margin:6px 0;}
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);"><span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span>  measurements completed worldwide</div>
+    <div id="home-ticker" class="small center" style="margin-top:8px;color:var(--sub);display:none;min-height:18px;"><span id="home-ticker-txt" style="transition:opacity .35s;"></span></div>
     <div class="small center" style="margin-top:6px;"><a href="#" id="ss-privacy-open" style="color:var(--sub);">Privacy</a></div>
   </section>
 
@@ -4048,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.263 · Beta';
+  ver.innerHTML = 'v2.9.264 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5019,7 +5020,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.263';
+var CALIB_VER = 'v2.9.264';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9424,7 +9425,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.263',
+        appVer: 'v2.9.264',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9460,6 +9461,28 @@ else{ init(); }
     }catch(_){}
   }
   setTimeout(mFlushErrors, 5000);
+  // Home score ticker: latest real results (model + score), loops while data exists, hidden when empty
+  var __tickerItems = null, __tickerIdx = 0, __tickerTimer = null;
+  function homeTickerRender(){
+    var wrap = document.getElementById('home-ticker');
+    var txt = document.getElementById('home-ticker-txt');
+    if(!wrap || !txt) return;
+    if(!__tickerItems || !__tickerItems.length){ wrap.style.display = 'none'; return; }
+    var it = __tickerItems[__tickerIdx % __tickerItems.length]; __tickerIdx++;
+    txt.style.opacity = '0';
+    setTimeout(function(){ txt.textContent = it.series + ': scored ' + it.score + ' pts'; txt.style.opacity = '1'; }, 180);
+    wrap.style.display = '';
+  }
+  function homeTickerStart(){
+    try{
+      if(__tickerItems){ homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); return; }
+      __tickerItems = [];
+      fetch(M_URL + '?kind=measurement&view=recent').then(function(r){ return r.json(); }).then(function(j){
+        if(j && j.ok && j.items && j.items.length){ __tickerItems = j.items; homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); }
+      }).catch(function(){});
+    }catch(_){}
+  }
+  setTimeout(homeTickerStart, 1200);
   // hook into report view: send after a fresh measurement when consented
   try{
     var _origShow = window.show;
@@ -9468,6 +9491,7 @@ else{ init(); }
         var r = _origShow.apply(this, arguments);
         try{ if(id === 'report'){ setTimeout(mMaybeSend, 800); } }catch(_){}
         try{ mFlushErrors(); }catch(_){}
+        try{ if(id === 'home'){ setTimeout(homeTickerStart, 300); } }catch(_){}
         return r;
       };
     }

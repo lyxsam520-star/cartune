@@ -339,6 +339,7 @@ ul.clean li{margin:6px 0;}
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
     <div class="small center" style="margin-top:16px;color:var(--sub);">共 <span id="home-tune-num" style="color:var(--amber);font-weight:700;">0</span> 辆车参加了跑分</div>
+    <div id="home-ticker" class="small center" style="margin-top:8px;color:var(--sub);display:none;min-height:18px;"><span id="home-ticker-txt" style="transition:opacity .35s;"></span></div>
     <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">问题反馈 — 报 bug 或提建议</a></div>
   </section>
 
@@ -4279,7 +4280,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.263 · 内测版';
+  ver.innerHTML = 'v2.9.264 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5251,7 +5252,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.263';
+var CALIB_VER = 'v2.9.264';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5668,7 +5669,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.263';
+var CN_DATA_VER = 'v2.9.264';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5801,6 +5802,29 @@ var CN_DATA_VER = 'v2.9.263';
     }catch(_){}
   }
   setTimeout(cnFlushErrors, 5000);
+  // 首页成绩轮播：最近真实成绩（车型+分数），有数据就无限循环轮播，无数据整栏隐藏
+  var __tickerItems = null, __tickerIdx = 0, __tickerTimer = null;
+  function homeTickerRender(){
+    var wrap = document.getElementById('home-ticker');
+    var txt = document.getElementById('home-ticker-txt');
+    if(!wrap || !txt) return;
+    if(!__tickerItems || !__tickerItems.length){ wrap.style.display = 'none'; return; }
+    var it = __tickerItems[__tickerIdx % __tickerItems.length]; __tickerIdx++;
+    txt.style.opacity = '0';
+    setTimeout(function(){ txt.textContent = it.series + '：音质 ' + it.score + ' 分'; txt.style.opacity = '1'; }, 180);
+    wrap.style.display = '';
+  }
+  function homeTickerStart(){
+    try{
+      if(__tickerItems){ homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); return; }
+      __tickerItems = [];
+      fetch(CN_INGEST_URL + '?kind=measurement&view=recent').then(function(r){ return r.json(); }).then(function(j){
+        if(j && j.ok && j.items && j.items.length){ __tickerItems = j.items; homeTickerRender(); if(!__tickerTimer) __tickerTimer = setInterval(homeTickerRender, 3000); }
+      }).catch(function(){});
+    }catch(_){}
+  }
+  window.__homeTickerStart = homeTickerStart;
+  setTimeout(homeTickerStart, 1200);
   try{
     var _origShowCn = window.show;
     if(typeof _origShowCn === 'function'){
@@ -5808,6 +5832,7 @@ var CN_DATA_VER = 'v2.9.263';
         var r = _origShowCn.apply(this, arguments);
         try{ if(id === 'report'){ setTimeout(cnMaybeSend, 800); } }catch(_){}
         try{ cnFlushErrors(); }catch(_){}
+        try{ if(id === 'home'){ setTimeout(homeTickerStart, 300); } }catch(_){}
         return r;
       };
     }
