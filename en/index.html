@@ -111,7 +111,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .h{font-size:20px;font-weight:600;margin:0 0 6px;line-height:1.5;}
 .body14{font-size:14px;color:var(--text);}
 .small{font-size:13px;color:var(--sub);}
-.num{font-variant-numeric:tabular-nums;}
+.num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 /* 卡片 */
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:12px 0;}
 .card.dim{opacity:.55;}
@@ -167,7 +167,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .field label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px;}
 .input,select.input{
   width:100%;background:#0f141c;border:1px solid var(--border);border-radius:12px;
-  color:var(--text);font-size:15px;padding:13px 12px;font-family:inherit;outline:none;
+  color:var(--text);font-size:16px;padding:13px 12px;font-family:inherit;outline:none;
 }
 .input:focus{border-color:var(--amber);}
 .input.err{border-color:var(--red);}
@@ -4070,7 +4070,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.297 · Beta';
+  ver.innerHTML = 'v2.9.298 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5073,7 +5073,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.297';
+var CALIB_VER = 'v2.9.298';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9480,7 +9480,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.297',
+        appVer: 'v2.9.298',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
