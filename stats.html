@@ -116,7 +116,7 @@ function loadErrors(){
     var box = document.getElementById('errors');
     if(!j.items.length){ box.innerHTML = '<div class="empty">暂无错误上报<br>真实用户在真机上使用后，这里会有动静</div>'; return; }
     box.innerHTML = j.items.map(function(it){
-      var msgs = (it.errors || []).map(function(e){ return '<div class="meta" style="color:#e8a13a;">' + esc(e.m) + (e.s ? '（' + esc(e.s) + (e.l ? ':' + e.l : '') + '）' : '') + '</div>'; }).join('');
+      var msgs = (it.errors || []).map(function(e){ var rb = e.resolved ? ' <span style="color:#34d399;font-weight:700;">✓ 已解决' + (e.resolvedVer ? ' · ' + esc(e.resolvedVer) : '') + '</span>' : ''; return '<div class="meta" style="color:' + (e.resolved ? '#8b94a3' : '#e8a13a') + ';">' + esc(e.m) + (e.s ? '（' + esc(e.s) + (e.l ? ':' + e.l : '') + '）' : '') + rb + '</div>'; }).join('');
       return '<div class="row" style="cursor:default;"><div class="top"><span class="car" style="font-size:13px;">' + esc(shortDev(it.device) || '未知设备') + '</span><span class="meta">' + fmtT(it.at) + '</span></div><div class="meta">' + esc(it.source || '') + (it.version ? ' · ' + esc(it.version) : '') + '</div>' + msgs + '</div>';
     }).join('');
   }).catch(function(){ document.getElementById('errors').innerHTML = '<div class="empty">读取失败</div>'; });
