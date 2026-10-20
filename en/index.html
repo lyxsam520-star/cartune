@@ -113,7 +113,7 @@ input,button{font-size:16px;} /* iOS 防聚焦自动缩放 */
 .small{font-size:13px;color:var(--sub);}
 .num,#home-score-num,#score-value,#score-before,#score-after,#score-delta,#home-car-score,#leveldb{font-variant-numeric:tabular-nums;}
 
-/* 品牌字标（v2.9.304 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
+/* 品牌字标（v2.9.305 定版）：双色——前段纯白、后段琥珀渐变；首页主锁版带声波柱小标 */
 .wordmark{font-weight:900;letter-spacing:3px;display:inline-block;transform:skewX(-7deg);}
 .wordmark .wm-hot{background:linear-gradient(90deg,var(--amber),#FFB84D);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .wm-lines{display:inline-block;margin-left:10px;vertical-align:middle;}
@@ -4069,7 +4069,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.304 · Beta';
+  ver.innerHTML = 'v2.9.305 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5074,7 +5074,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.304';
+var CALIB_VER = 'v2.9.305';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -6933,7 +6933,20 @@ async function startMeasureFlow(opts){
     try { alert('Mic failed to start — check permission and retry.'); } catch (_) {}
     document.getElementById('mic-err-card').classList.remove('hidden');
     document.getElementById('mic-err-title').textContent = ttx('measure.micErrTitle','measure.validityFail');
-    document.getElementById('mic-err-body').textContent = ttx('measure.micErrBody','measure.safeNote');
+    // v2.9.305: error-type-specific guidance (NotAllowedError inside WebViews/WeChat is a dead end for generic copy)
+    var _mb305 = null;
+    try {
+      var _en305 = e && e.name;
+      if (window.isSecureContext === false) _mb305 = 'This page was opened over a non-secure connection, so the browser blocks the microphone. Open the official https link in your browser and retry.';
+      else if (_en305 === 'NotAllowedError' || _en305 === 'SecurityError') {
+        _mb305 = /MicroMessenger/i.test(navigator.userAgent)
+          ? 'Microphone permission was not granted. If you opened this in WeChat, tap the ··· menu and choose "Open in browser", then retry.'
+          : 'Microphone permission was denied. Tap the lock/settings icon in the address bar, set Microphone to "Allow", then reload and retry.';
+      }
+      else if (_en305 === 'NotFoundError' || _en305 === 'OverconstrainedError') _mb305 = 'No usable microphone was found. Make sure no other app is using it, then retry.';
+      else if (_en305 === 'NotReadableError') _mb305 = 'The microphone is temporarily unreadable, possibly held by another app. Close any recording or calling app and retry.';
+    } catch (_) {}
+    document.getElementById('mic-err-body').textContent = _mb305 || ttx('measure.micErrBody','measure.safeNote');
     track('measure_mic_denied', {remeasure:!!app._remeasureMode});
     CTA.measure = [{ text: tt('common.retry'), onClick: retryMeasureFn() }];
     renderCTA(CTA.measure);
@@ -9274,7 +9287,9 @@ function initBackButtons(){
 function initWxBanner(){
   if(/MicroMessenger/i.test(navigator.userAgent)){
     var bar = document.getElementById('wx-banner');
-    bar.textContent = 'You\'re in WeChat\'s built-in browser — open in Safari for full mic access';
+    bar.textContent = /Android|OpenHarmony/i.test(navigator.userAgent)
+      ? 'You\'re in WeChat\'s built-in browser — if measuring won\'t start, tap ··· and open in your browser'
+      : 'You\'re in WeChat\'s built-in browser — open in Safari for full mic access';
     bar.classList.add('show');
     track('wx_ua_banner');
   }
@@ -9486,7 +9501,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.304',
+        appVer: 'v2.9.305',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9510,7 +9525,7 @@ else{ init(); }
     }catch(_){}
   }
   // TD-004: error digest reporting (once per page, silent failure)
-  // TD-004 strengthened (v2.9.304): batched error reports (<=6 batches/page, buffer cleared on send);
+  // TD-004 strengthened (v2.9.305): batched error reports (<=6 batches/page, buffer cleared on send);
   // triggers: 4s after first error / every 20s / on hide or pagehide (keepalive); <=2 per fingerprint per page, with stack head.
   var __errBatches = 0, __errTimer = null;
   function mFlushErrors(){
