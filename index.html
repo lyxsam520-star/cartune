@@ -3779,7 +3779,7 @@ window.COPY = {
     micErrTitle: "麦克风启动失败",
     micErrBody: "请检查浏览器麦克风权限后重试；也可以先去看看技术原理页",
     levelLow: '收到的声音偏小：请调大车机音量；如用蓝牙，检查手机蓝牙是否连了电话音频（会抢麦克风），只保留媒体音频',
-    usbPlayingTip: "先把车机暂停好，再点开始：前 5 秒测底噪，测完按屏幕提示恢复播放。",
+    usbPlayingTip: "粉噪一直播着就行，点开始直接测 30 秒，无需掐表。",
     tipCase: "📱 取下手机壳再测——手机壳会闷住麦克风孔，高频拾音更干净，测得更准",
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipPosition: "📍 手机放在驾驶位头枕处——两步测量全程不要移动手机。环境底噪和立体声整体测量都在驾驶位完成：调音目标就是你开车时实际听到的声音。推荐用支架固定，至少保证手不抖、位置不动。",
@@ -3842,9 +3842,9 @@ window.COPY = {
     stepMergedLr: "合并监听（50 秒）：底噪 10s＋左 20s＋右 20s，一次跑完",
     stepMergedLrEn: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
     stepMergedTip: "全程共 30 秒：前 5 秒安静测底噪，后 25 秒测频谱，粉噪会随后淡入。",
-    stepMergedTipUsb: "全程共 30 秒：先暂停播放，安静 5 秒测底噪；然后恢复播放，再测 25 秒频谱。",
+    stepMergedTipUsb: "粉噪保持播放，全程共 30 秒，直接测频谱，不用暂停。",
     stepMergedTipEn: "30 seconds total: first 5 quiet seconds measure the noise floor, then 25 seconds of spectrum as the pink noise fades in.",
-    stepMergedTipUsbEn: "30 seconds total: pause playback for 5 quiet seconds of noise floor, then resume and measure 25 seconds of spectrum.",
+    stepMergedTipUsbEn: "Keep the pink noise playing — 30 seconds total, straight spectrum measurement, no pausing.",
     progressMerged: "监听进度：30 秒",
     progressMergedEn: "Listening progress: 30s",
     stepMergedQuick: "合并监听（12 秒）：底噪 4s＋立体声 8s，一次跑完",
@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.335 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.336 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.335';
+var CALIB_VER = 'v2.9.336';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5864,7 +5864,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.335';
+var CN_DATA_VER = 'v2.9.336';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -6177,6 +6177,8 @@ var PHASES_QUICK = [
 ];
 /* v2.9.81: 调试直达——跳过底噪相位，直接测粉噪（先把频谱搞定，跑通后恢复） */
 var PHASES_DBG_QUICK = [ {key:'sig', dur:30, side:null, obj:'measure.objStereo'} ];
+/* v2.9.336 Vincent 定版：外部播放（U 盘/App）标准模式直测 30s 信号，不测底噪——不让用户当人肉播放开关（暂停舞）；底噪置 null 诚实标记（floorMode=null），引擎按「无底噪跳过门控」口径处理。BT 模式 App 自控播放，保留真实底噪（用户零负担）。 */
+var PHASES_EXT = [ {key:'sig', dur:30, side:null, obj:'measure.objStereo'} ];
 var PHASES_DBG_STD   = [ {key:'sig', dur:50, side:null, obj:'measure.objStereo'} ];
 var PHASES_LR = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
@@ -7662,15 +7664,9 @@ async function startMeasureFlow(opts){
   var res = null;
   // v2.9.215: 开始播报已去掉（用户要求）
   try{
-    // v2.9.323 D4: 全模式恢复底噪段（floor 5s + sig 25s，总时长仍 30s）。
-    // USB/App 外播靠阶段文案引导用户先暂停播放 5 秒（底噪相位换暂停指引文案）；
-    // 没暂停会被底噪异常熔断诚实中止，不产假数据（floorAnomaly 保持）。
-    var _phases = (app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO);
-    if(app.playMode !== 'bt' && app.speedMode !== 'quick'){
-      _phases = _phases.map(function(p){
-        return p.key==='floor' ? {key:p.key, dur:p.dur, side:p.side, obj:'measure.objFloorUsb'} : p;
-      });
-    }
+    // v2.9.336: 外部播放标准模式直测（PHASES_EXT，无底噪段）；BT 用 PHASES_STEREO（含真实底噪，App 自控零负担）；快速模式不变。
+    var _extStd = (app.playMode !== 'bt' && app.speedMode !== 'quick');
+    var _phases = (app.speedMode==='quick' ? PHASES_QUICK : (_extStd ? PHASES_EXT : PHASES_STEREO));
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
       phases: _phases,
@@ -7693,7 +7689,7 @@ async function startMeasureFlow(opts){
   // v2.9.43: GPS 监控已移除，无需停止
   if(res && res.noSignal){ return failNoSignal(token); }
   if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
-  var floor31 = res.floor31, meas = res.seg31.sig;
+  var floor31 = _extStd ? null : res.floor31, meas = res.seg31.sig; // v2.9.336: 外部直测无底噪→null（引擎跳过 SNR 门控、payload 诚实标记）
   // v2.9.81: 调试跳过底噪时，用 -120dB 占位，避免下游空指针
   S().floor31 = floor31;
   // v2.9.323 D4: 底噪口径标记——服务端据此区分真实 5s 实测底噪与合成假值（仅标准 5s 底噪段打标）

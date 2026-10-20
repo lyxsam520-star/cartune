@@ -3511,7 +3511,7 @@ window.COPY = {
     micErrTitle: "Microphone failed to start",
     micErrBody: "Check browser microphone permission and retry; or read the How It Works page first",
     levelLow: 'Sound too quiet: turn up the head-unit volume. On Bluetooth, make sure the phone isn\'t on call audio (it hijacks the mic) — keep media audio only.',
-    usbPlayingTip: "Pause the head unit first, then tap Start: the first 5 seconds measure the noise floor — resume playback when the screen says so.",
+    usbPlayingTip: "Just keep the pink noise playing — tap Start for a 30 s measurement, no timer needed.",
     tipCase: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipCaseEn: "📱 Remove your phone case before measuring — cases muffle the mic holes; highs come through cleaner and the measurement is more accurate",
     tipPosition: "📍 Place your phone at the driver's headrest — don't move it during both steps. Ambient floor and stereo measurement are both done at the driver's seat: the tuning target is exactly what you hear while driving. A mount is recommended; at minimum keep your hand steady and the position fixed.",
@@ -3574,7 +3574,7 @@ window.COPY = {
     stepMergedLr: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
     stepMergedLrEn: "Combined listening (50s): 10s floor + 20s L + 20s R, one pass",
     stepMergedTip: "30 seconds total: first 5 quiet seconds measure the noise floor, then 25 seconds of spectrum as the pink noise fades in.",
-    stepMergedTipUsb: "30 seconds total: pause playback for 5 quiet seconds of noise floor, then resume and measure 25 seconds of spectrum.",
+    stepMergedTipUsb: "Keep the pink noise playing — 30 seconds total, straight spectrum measurement, no pausing.",
     stepMergedTipEn: "One pass with no pauses: pink noise fades in automatically and fades out at 30s.",
     progressMerged: "Listening progress: 30s",
     progressMergedEn: "Listening progress: 30s",
@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.335 · Beta';
+  ver.innerHTML = 'v2.9.336 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.335';
+var CALIB_VER = 'v2.9.336';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5620,6 +5620,8 @@ var PHASES_QUICK = [
 ];
 /* v2.9.81: 调试直达——跳过底噪相位，直接测粉噪（先把频谱搞定，跑通后恢复） */
 var PHASES_DBG_QUICK = [ {key:'sig', dur:30, side:null, obj:'measure.objStereo'} ];
+/* v2.9.336: external playback (USB/App) standard mode measures 30s of signal directly, no noise-floor phase — users are not a play/pause switch. floor31=null (honest floorMode=null); BT keeps the real floor (app-controlled, zero user burden). */
+var PHASES_EXT = [ {key:'sig', dur:30, side:null, obj:'measure.objStereo'} ];
 var PHASES_DBG_STD   = [ {key:'sig', dur:50, side:null, obj:'measure.objStereo'} ];
 var PHASES_LR = [
   {key:'floor', dur:10, side:'off', obj:'measure.objFloor'},
@@ -7109,12 +7111,8 @@ async function startMeasureFlow(opts){
     // v2.9.323 D4: 全模式恢复底噪段（floor 5s + sig 25s，总时长仍 30s）。
     // USB/App 外播靠阶段文案引导用户先暂停播放 5 秒（底噪相位换暂停指引文案）；
     // 没暂停会被底噪异常熔断诚实中止，不产假数据（floorAnomaly 保持）。
-    var _phases = (app.speedMode==='quick' ? PHASES_QUICK : PHASES_STEREO);
-    if(app.playMode !== 'bt' && app.speedMode !== 'quick'){
-      _phases = _phases.map(function(p){
-        return p.key==='floor' ? {key:p.key, dur:p.dur, side:p.side, obj:'measure.objFloorUsb'} : p;
-      });
-    }
+    var _extStd = (app.playMode !== 'bt' && app.speedMode !== 'quick');
+    var _phases = (app.speedMode==='quick' ? PHASES_QUICK : (_extStd ? PHASES_EXT : PHASES_STEREO));
     res = await M.measureMerged({
       btPlay: app.playMode==='bt',
       phases: _phases,
@@ -7137,7 +7135,7 @@ async function startMeasureFlow(opts){
   // v2.9.43: GPS 监控已移除，无需停止
   if(res && res.noSignal){ return failNoSignal(token); }
   if(res && res.floorAnomaly){ return failFloorAnomaly(token); }
-  var floor31 = res.floor31, meas = res.seg31.sig;
+  var floor31 = _extStd ? null : res.floor31, meas = res.seg31.sig; // v2.9.336: no floor measured → null (engine skips SNR gating, payload honestly marked)
   // v2.9.81: 调试跳过底噪时，用 -120dB 占位，避免下游空指针
   S().floor31 = floor31;
   // v2.9.323 D4: 底噪口径标记——服务端据此区分真实 5s 实测底噪与合成假值（仅标准 5s 底噪段打标）
@@ -9656,7 +9654,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.335',
+        appVer: 'v2.9.336',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
