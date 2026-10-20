@@ -1008,11 +1008,17 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
 
   /* ============================================================
  * 车型数据库 MODELS_DB（品牌→车系→年款，结构仿懂车帝/汽车之家）
- * series 字段：name | years[] | eq_bands?（缺失=未知，0=车机不可调） | eq_note?
+ * series 字段：name | years[] | eq_bands?（缺失=未知，0=车机不可调） | eq_note? | hw?
+ * hw（声学硬件档案，2026-10-20 扩展契约）：数组，每项对应一组年款的声学配置——
+ *   { years?（缺失=全系）, active?{spk_brand,spk_count,spk_layout,amp_power_w,dsp,tech[]…},
+ *     passive?{glass,insulation,…}, hw_note（来源与可信度，无来源不入库） }
+ *   主动=发声链（喇叭/功放/ANC/空间音频），被动=隔声链（玻璃/隔音/密封）；字段全可选，
+ *   缺失=未收录（绝不填 0 或编造）；新维度在 active/passive 内加键即可，老代码忽略未知键。
+ *   纪律：只增不减、改动留来源——车型档案与测量数据一样是沉淀资产。
  * v0 本地内置；v1+ 由 H5 采集 + 云端聚合补充
  * ============================================================ */
 var MODELS_DB = {
- "version": "2026-10-13",
+ "version": "2026-10-20",
  "brands": [
   {
    "name": "比亚迪",
@@ -1121,7 +1127,19 @@ var MODELS_DB = {
       "2021款"
      ],
      "eq_bands": 7,
-     "eq_note": "用户实测7段：重低音/低音/中低音/中音/中高音/高音/超高音，±9dB"
+     "eq_note": "用户实测7段：重低音/低音/中低音/中音/中高音/高音/超高音，±9dB",
+     "hw": [
+      {
+       "years": ["2023款", "2022款", "2021款"],
+       "active": { "spk_brand": "Bose", "tech": ["主动降噪ANC"] },
+       "hw_note": "来源：车机EQ规格调研（银河OS/Bose）；ANC 见 RTA 技术资料库干扰项清单；喇叭数量/功率无公开来源，未收录"
+      },
+      {
+       "years": ["2026款", "2025款", "2024款"],
+       "active": { "spk_brand": "无界之声" },
+       "hw_note": "来源：车机EQ规格调研（Flyme Auto/无界之声）；喇叭数量/功率无公开来源，未收录"
+      }
+     ]
     },
     {
      "name": "星愿",
@@ -4255,7 +4273,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.259 · 内测版';
+  ver.innerHTML = 'v2.9.260 · 内测版';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5227,7 +5245,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.259';
+var CALIB_VER = 'v2.9.260';
 var calibRemote = {};   // key -> {count, unlocked, centers, qs}（服务端进度缓存）
 var calibFetching = {};
 
@@ -5644,7 +5662,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.259';
+var CN_DATA_VER = 'v2.9.260';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5661,6 +5679,35 @@ var CN_DATA_VER = 'v2.9.259';
       for(var i = 0; i < s.length; i++){ h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
     }catch(_){}
     return (h >>> 0).toString(16);
+  }
+  function carHwOf(carObj){
+    try{
+      if(!carObj || typeof MODELS_DB === 'undefined' || !MODELS_DB.brands) return null;
+      var yd = String(carObj.year || '').replace(/\D/g, '').slice(0, 4);
+      for(var bi = 0; bi < MODELS_DB.brands.length; bi++){
+        var br = MODELS_DB.brands[bi];
+        if(!br || br.name !== carObj.brand) continue;
+        var list = br.series || [];
+        for(var si = 0; si < list.length; si++){
+          var se = list[si];
+          if(!se || se.name !== carObj.series || !se.hw || !se.hw.length) continue;
+          var fallback = null;
+          for(var hi = 0; hi < se.hw.length; hi++){
+            var rec = se.hw[hi];
+            if(!rec) continue;
+            if(!rec.years){ if(!fallback) fallback = rec; continue; }
+            if(!yd) continue;
+            for(var yi = 0; yi < rec.years.length; yi++){
+              if(String(rec.years[yi]).replace(/\D/g, '').slice(0, 4) === yd){
+                return { active: rec.active || null, passive: rec.passive || null };
+              }
+            }
+          }
+          if(fallback) return { active: fallback.active || null, passive: fallback.passive || null };
+        }
+      }
+    }catch(_){}
+    return null;
   }
   function cnMaybeSend(){
     try{
@@ -5717,6 +5764,7 @@ var CN_DATA_VER = 'v2.9.259';
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
         car: { brand: car.brand || '', series: car.series || '', year: car.year || '' },
+        carHw: carHwOf(car),
         playMethod: (typeof app !== 'undefined' && app.playMode) ? String(app.playMode) : '',
         device: device, deviceModel: deviceModel,
         eqBands: (st.eqSpec && st.eqSpec.bands) || 0,

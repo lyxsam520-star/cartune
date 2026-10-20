@@ -1063,7 +1063,10 @@ var QRCode;!function(){function a(a){this.mode=c.MODE_8BIT_BYTE,this.data=a,this
 
   /* ============================================================
  * 车型数据库 MODELS_DB（品牌→车系→年款，结构仿懂车帝/汽车之家）
- * series 字段：name | years[] | eq_bands?（缺失=未知，0=车机不可调） | eq_note?
+ * series 字段：name | years[] | eq_bands?（缺失=未知，0=车机不可调） | eq_note? | hw?
+ * hw（声学硬件档案，扩展契约与 CN 同口径）：数组，每项 { years?, active?{spk_brand,spk_count,spk_layout,
+ *   amp_power_w,dsp,tech[]…}, passive?{glass,insulation,…}, hw_note（来源，无来源不入库） }；
+ *   主动=发声链、被动=隔声链；字段全可选，缺失=未收录，绝不编造；新维度在两袋内加键。
  * v0 本地内置；v1+ 由 H5 采集 + 云端聚合补充
  * ============================================================ */
 var MODELS_DB = {
@@ -4039,7 +4042,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.259 · Beta';
+  ver.innerHTML = 'v2.9.260 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5010,7 +5013,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.259';
+var CALIB_VER = 'v2.9.260';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9326,6 +9329,35 @@ else{ init(); }
     }catch(_){}
     return (h >>> 0).toString(16);
   }
+  function carHwOf(carObj){
+    try{
+      if(!carObj || typeof MODELS_DB === 'undefined' || !MODELS_DB.brands) return null;
+      var yd = String(carObj.year || '').replace(/\D/g, '').slice(0, 4);
+      for(var bi = 0; bi < MODELS_DB.brands.length; bi++){
+        var br = MODELS_DB.brands[bi];
+        if(!br || br.name !== carObj.brand) continue;
+        var list = br.series || [];
+        for(var si = 0; si < list.length; si++){
+          var se = list[si];
+          if(!se || se.name !== carObj.series || !se.hw || !se.hw.length) continue;
+          var fallback = null;
+          for(var hi = 0; hi < se.hw.length; hi++){
+            var rec = se.hw[hi];
+            if(!rec) continue;
+            if(!rec.years){ if(!fallback) fallback = rec; continue; }
+            if(!yd) continue;
+            for(var yi = 0; yi < rec.years.length; yi++){
+              if(String(rec.years[yi]).replace(/\D/g, '').slice(0, 4) === yd){
+                return { active: rec.active || null, passive: rec.passive || null };
+              }
+            }
+          }
+          if(fallback) return { active: fallback.active || null, passive: fallback.passive || null };
+        }
+      }
+    }catch(_){}
+    return null;
+  }
   function mMaybeSend(){
     try{
       if(!consentBox || !consentBox.checked) return;
@@ -9386,11 +9418,12 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.259',
+        appVer: 'v2.9.260',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
         car: { brand: car.brand || '', series: car.series || '', year: car.year || '' },
+        carHw: carHwOf(car),
         playMethod: (typeof app !== 'undefined' && app.playMode) ? String(app.playMode) : '',
         device: device,
         deviceModel: deviceModel,
