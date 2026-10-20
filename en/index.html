@@ -18,8 +18,8 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
 <meta name="theme-color" content="#0B0E13">
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
-<title>SoundScore - Free Car Audio Tuning & EQ Optimizer | RTA Spectrum Analyzer</title>
-<meta name="description" content="Tune your car audio with your phone. Free RTA spectrum analyzer measures your car's frequency response and generates a personalized EQ plan for your head unit. No app install needed.">
+<title>SoundScore - Car Audio Tuning & EQ Optimizer | RTA Spectrum Analyzer</title>
+<meta name="description" content="Tune your car audio with your phone. RTA spectrum analyzer measures your car's frequency response and generates a personalized EQ plan for your head unit. No app install needed.">
 <meta name="keywords" content="car audio tuning, car EQ optimizer, RTA analyzer, car stereo tuning, head unit EQ, car sound tuning app, free car audio test, frequency response measurement, car audio calibration">
 <meta name="author" content="SoundScore">
 <meta name="robots" content="index, follow">
@@ -29,8 +29,8 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
 <link rel="alternate" hreflang="x-default" href="https://lyxsam520-star.github.io/cartune/en/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SoundScore">
-<meta property="og:title" content="SoundScore - Free Car Audio Tuning & EQ Optimizer">
-<meta property="og:description" content="Measure your car's audio with your phone's microphone and get a personalized EQ tuning plan. Free RTA spectrum analyzer, no install required.">
+<meta property="og:title" content="SoundScore - Car Audio Tuning & EQ Optimizer">
+<meta property="og:description" content="Measure your car's audio with your phone's microphone and get a personalized EQ tuning plan. RTA spectrum analyzer, no install required.">
 <meta property="og:url" content="https://lyxsam520-star.github.io/cartune/en/">
 <meta property="og:image" content="https://lyxsam520-star.github.io/cartune/en/logo.png">
 <meta property="og:locale" content="en_US">
@@ -42,7 +42,7 @@ window.addEventListener('unhandledrejection',function(e){try{window.__errCap('pr
 {"@context":"https://schema.org","@type":"SoftwareApplication",
 "name":"SoundScore","applicationCategory":"MultimediaApplication",
 "operatingSystem":"iOS, Android","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
-"description":"Free car audio tuning tool: phone-based RTA spectrum analyzer that measures your car's frequency response and generates a personalized head-unit EQ plan.",
+"description":"Car audio tuning tool: phone-based RTA spectrum analyzer that measures your car's frequency response and generates a personalized head-unit EQ plan.",
 "url":"https://lyxsam520-star.github.io/cartune/en/",
 "inLanguage":"en","isAccessibleForFree":true}
 </script>
@@ -4049,7 +4049,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#636366;font-size:11px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.279 · Beta';
+  ver.innerHTML = 'v2.9.280 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5040,7 +5040,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.279';
+var CALIB_VER = 'v2.9.280';
 var calibRemote = {};
 var calibFetching = {};
 
@@ -9446,7 +9446,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.279',
+        appVer: 'v2.9.280',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
