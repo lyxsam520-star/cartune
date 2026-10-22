@@ -4470,7 +4470,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.357 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.358 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5489,7 +5489,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.357';
+var CALIB_VER = 'v2.9.358';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5917,7 +5917,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.357';
+var CN_DATA_VER = 'v2.9.358';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -8441,6 +8441,52 @@ function calcCarScoreFrom(meas, opts){
 }
 /* v2.9.215 Layer 3: 页面加载时固化函数 hash（定义后立即执行） */
 try{ _atInitFnHash(); }catch(_){}
+
+/* v2.9.358: 低分测量问题诊断（40分以下自动出，分数/方案不动）——只给原因和重测建议，不改分。
+   口径：截断门比预测门更严（陡降>15dB且10000Hz<-90dB，或10000Hz<-100dB），22分那种10.4dB滚降不算截断；怠速只用打分自身的isIdle标志作提示，不用40/50偏差重算（宽频低频过量时40/50也高，不是孤立怠速峰）；单次频谱分不出位置/环境/EQ未归零，那些只进自查清单，不定罪。 */
+function lowDiagHtml(meas, target, score, opts){
+  opts = opts || {};
+  if(!meas || meas.length < 31 || !target || target.length < 31) return '';
+  var i, offs = [];
+  for(i=14;i<=20;i++) offs.push(meas[i]-target[i]);
+  offs.sort(function(a,b){ return a-b; });
+  var med = offs[Math.floor(offs.length/2)], dev = [];
+  for(i=0;i<31;i++) dev.push((meas[i]-med)-target[i]);
+  function medOf(a,b){ var t=[]; for(var j=a;j<=b;j++) t.push(dev[j]); t.sort(function(x,y){ return x-y; }); return t[Math.floor(t.length/2)]; }
+  var lowMed = medOf(5,11), lowMax = Math.max.apply(null, dev.slice(5,12)), hfMed = medOf(26,28);
+  var drop = meas[26]-meas[27], cliff = ((drop > 15 && meas[27] < -90) || (meas[27] < -100));
+  var factors = [];
+  if(opts.tampered) factors.push('数据校验未通过：本次测量数据质量待确认。建议检查粉噪是否正常播放、环境是否过吵、测量是否被中断，重启浏览器后重测。');
+  if(cliff) factors.push('高频截断嫌疑：8000Hz ' + meas[26].toFixed(1) + ' dB → 10000Hz ' + meas[27].toFixed(1) + ' dB，掉了 ' + drop.toFixed(1) + ' dB，10000Hz已到本底附近，不是车的高音特性，是mic链路带宽截断，高频部分不可信。建议换另一台手机（优先iPhone）同条件对照一次，看高频是否还塌；若对照不塌，原次高频不算数。');
+  if(lowMed > 8 || lowMax > 12) factors.push('低频过量：63-250Hz中位数偏差 ' + lowMed.toFixed(1) + ' dB，最高 ' + lowMax.toFixed(1) + ' dB。建议先确认基线车机EQ已归零、播放器音效全关，再按方案低频切量调，调完复测看残差；若基线未归零，先归零重测，不要带着切量测基线。');
+  if(!cliff && hfMed < -10) factors.push('高频凹陷：8000/10000/12500中位数偏差 ' + hfMed.toFixed(1) + ' dB，是凹陷不是峰值，只减不增修不了，不拔高。建议先做U盘无损 vs 蓝牙对比，看凹陷跟不跟播放方式走；若U盘下仍凹陷，接受为高频限制。');
+  if(opts.isIdle) factors.push('怠速环境：本次已按行车曲线评分（40/50Hz偏差双双超+8dB）。若实际已熄火，请确认熄火状态后重测；若确实怠速，行车曲线已处理，低分仍需看低频方案。');
+  if(opts.planAllZero) factors.push('方案全0异常：7段增益全0，但分数只有 ' + score + ' 分，全0等于没调。建议对照重测一次，看方案是否出现；不要按全0“调完”就以为调好了。');
+  var verdict = opts.tampered ? '结论：测量不可信，建议先重测，不要按这个低分调车。'
+    : cliff ? '结论：混合——测量部分不可信，车况部分可信。按低频方案调，高频部分用对照重测验证，不要把高频截断当车况修。'
+    : '结论：暂未见强测量嫌疑，低分更像车况。按方案调，调完复测看残差。';
+  var html = '<div style="text-align:left;margin-top:12px;"><div style="font-size:15px;font-weight:700;">低分测量问题诊断（40分以下）</div>';
+  html += '<div class="small" style="margin-top:6px;line-height:1.6;">' + verdict + '分数和方案不动，诊断只给原因和重测建议，不改分。</div>';
+  for(i=0;i<factors.length;i++) html += '<div class="small" style="margin-top:6px;line-height:1.6;">· ' + factors[i] + '</div>';
+  html += '<div class="small" style="margin-top:6px;line-height:1.6;">位置与环境自查（单次频谱无法证明这些，只能逐项确认）：手机放驾驶位头枕处，全程别动；手机反过来放；取下手机壳，话筒不遮挡；找安静地方，车窗全关，空调关或低；车机EQ归零，关闭环绕/声场，播放器音效全关，无损原声；车机声场平衡居中；音量跟上次一致，太小信噪比低，太大削顶' + (opts.playMethod === 'bt' ? '；本次用蓝牙，U盘无损再测一次对比' : '') + '。</div>';
+  html += '<div class="small" style="margin-top:6px;line-height:1.6;">对照方法：换设备、换播放方式、换位置各重测一次，看问题跟不跟条件走。</div></div>';
+  return html;
+}
+function renderLowDiag(r){
+  try{
+    var el = document.getElementById('score-card'); if(!el) return;
+    var old = document.getElementById('low-diag');
+    if(!r || typeof r.score !== 'number' || r.score >= 40){ if(old) old.remove(); return; }
+    var meas = null; try{ meas = avg31(); }catch(_){ meas = null; }
+    var tgt = []; try{ for(var i=0;i<31;i++) tgt.push(DSP.targetDbAt(DSP.ISO31[i])); }catch(_){ tgt = []; }
+    var planAllZero = false;
+    try{ var pl = S().plan; var bands = (pl && pl.bands) ? pl.bands : (Array.isArray(pl) ? pl : null); if(bands && bands.length){ var all0 = true; for(var j=0;j<bands.length;j++){ var gv = (bands[j] && typeof bands[j].gainDb === 'number') ? bands[j].gainDb : ((bands[j] && typeof bands[j].g === 'number') ? bands[j].g : 0); if(gv !== 0){ all0 = false; break; } } planAllZero = all0; } }catch(_){}
+    var html = lowDiagHtml(meas, tgt, r.score, { playMethod: (typeof app !== 'undefined' && app.playMode) ? app.playMode : '', tampered: !!r.tampered, planAllZero: planAllZero, isIdle: !!r.isIdle });
+    if(!html){ if(old) old.remove(); return; }
+    if(!old){ old = document.createElement('div'); old.id = 'low-diag'; el.appendChild(old); }
+    old.innerHTML = html;
+  }catch(_){}
+}
 function renderCarScore(){
   var el = document.getElementById('score-card');
   if(!el) return;
@@ -8506,6 +8552,7 @@ function renderCarScore(){
     btn.onclick = function(){ shareCarScore(); };
   }
   try{ track('score_view', { score: r.score }); }catch(_){}
+  try{ renderLowDiag(r); }catch(_){}
 }
 function shareCarScore(){
   var r = null;
@@ -9462,7 +9509,7 @@ function initTech(){
     }).join('');
     gc.innerHTML = '<div class="h" style="font-size:15px;">'+escapeHtml(tt('tech.guideTitle'))+'</div>'+
                    '<div style="margin-top:12px;">'+_items+'</div>'+
-                   '<a class="btn btn-primary" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="width:100%;margin-top:4px;text-align:center;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
+                   '<a class="btn btn-primary" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="width:100%;margin-top:4px;text-align:center;text-decoration:none;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
   })();
   box.appendChild(gc);
   CTA.tech = [{ text: tt('common.back'), primary:false, onClick:function(){ show('home'); } }];

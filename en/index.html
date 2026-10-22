@@ -8751,7 +8751,7 @@ function initTech(){
       return '<div style="display:flex;gap:10px;margin-bottom:14px;text-align:left;"><span style="flex:0 0 auto;font-size:20px;line-height:1;">'+escapeHtml(emo)+'</span><span style="flex:1;min-width:0;"><span style="display:block;font-size:15px;font-weight:700;line-height:1.4;">'+escapeHtml(ttl)+'</span>'+(dsc ? '<span class="small" style="display:block;margin-top:2px;line-height:1.6;">'+escapeHtml(dsc)+'</span>' : '')+'</span></div>';
     }).join('');
     gc.innerHTML = '<div class="h" style="font-size:15px;">'+escapeHtml(tt('tech.guideTitle'))+'</div>' + _items +
-      '<a class="btn btn-primary" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="display:block;text-align:center;margin-top:4px;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
+      '<a class="btn btn-primary" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="display:block;text-align:center;margin-top:4px;text-decoration:none;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
   })();
   box.appendChild(gc);
   CTA.tech = [{ text: tt('common.back'), primary:false, onClick:function(){ show('home'); } }];

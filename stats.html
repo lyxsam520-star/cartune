@@ -61,6 +61,34 @@
 var API = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest?kind=measurement&view=recent';
 function fmtF(f){ if(typeof f !== 'number') return '—'; return f >= 1000 ? (Math.round(f/100)/10) + 'kHz' : f + 'Hz'; }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+var TC_PARKED_S = [7.0,6.95,6.9,6.8,6.5,5.9,4.7,3.5,2.6,1.7,0.5,0.3,0.1,0.0,0.0,0.0,0.0,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+var TC_DRIVING_S = [7.0,7.0,7.0,7.0,6.9,6.6,5.7,4.2,3.3,2.5,1.2,0.9,0.5,0.6,0.3,0.2,0.1,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+/* v2.9.358: 低分测量问题诊断（40分以下，分数/方案不动）——口径与首页同式，看板只看频谱+播放方式，老记录缺信噪比/底噪 */
+function lowDiagStats(it){
+  var meas = it.meas31.map(Number), target = (it.targetCurve === 'driving' ? TC_DRIVING_S : TC_PARKED_S), score = Number(it.score);
+  var i, offs = [];
+  for(i=14;i<=20;i++) offs.push(meas[i]-target[i]);
+  offs.sort(function(a,b){ return a-b; });
+  var med = offs[Math.floor(offs.length/2)], dev = [];
+  for(i=0;i<31;i++) dev.push((meas[i]-med)-target[i]);
+  function medOf(a,b){ var t=[]; for(var j=a;j<=b;j++) t.push(dev[j]); t.sort(function(x,y){ return x-y; }); return t[Math.floor(t.length/2)]; }
+  var lowMed = medOf(5,11), lowMax = Math.max.apply(null, dev.slice(5,12)), hfMed = medOf(26,28);
+  var drop = meas[26]-meas[27], cliff = ((drop > 15 && meas[27] < -90) || (meas[27] < -100));
+  var planAllZero = false;
+  if(it.planDetail && it.planDetail.length){ var all0 = true; for(var k=0;k<it.planDetail.length;k++){ if(Number(it.planDetail[k].g) !== 0){ all0 = false; break; } } planAllZero = all0; }
+  var factors = [];
+  if(cliff) factors.push('高频截断嫌疑：8000Hz ' + meas[26].toFixed(1) + ' dB → 10000Hz ' + meas[27].toFixed(1) + ' dB，掉了 ' + drop.toFixed(1) + ' dB，10000Hz已到本底附近，不是车的高音特性，是mic链路带宽截断，高频部分不可信。建议换另一台手机（优先iPhone）同条件对照一次，看高频是否还塌；若对照不塌，原次高频不算数。');
+  if(lowMed > 8 || lowMax > 12) factors.push('低频过量：63-250Hz中位数偏差 ' + lowMed.toFixed(1) + ' dB，最高 ' + lowMax.toFixed(1) + ' dB。建议先确认基线车机EQ已归零、播放器音效全关，再按方案低频切量调，调完复测看残差；若基线未归零，先归零重测，不要带着切量测基线。');
+  if(!cliff && hfMed < -10) factors.push('高频凹陷：8000/10000/12500中位数偏差 ' + hfMed.toFixed(1) + ' dB，是凹陷不是峰值，只减不增修不了，不拔高。建议先做U盘无损 vs 蓝牙对比，看凹陷跟不跟播放方式走；若U盘下仍凹陷，接受为高频限制。');
+
+  if(planAllZero) factors.push('方案全0异常：7段增益全0，但分数只有 ' + score + ' 分，全0等于没调。建议对照重测一次，看方案是否出现；不要按全0“调完”就以为调好了。');
+  var verdict = cliff ? '结论：混合——测量部分不可信，车况部分可信。按低频方案调，高频部分用对照重测验证，不要把高频截断当车况修。' : '结论：暂未见强测量嫌疑，低分更像车况。按方案调，调完复测看残差。';
+  var html = '<div class="meta" style="margin-top:6px;text-align:left;"><b>低分测量问题诊断（40分以下）：</b>' + verdict + '分数和方案不动，诊断只给原因和重测建议，不改分。本诊断只看本次频谱与播放方式，老记录缺信噪比/底噪，位置与环境只能自查，不能从频谱定罪。</div>';
+  for(i=0;i<factors.length;i++) html += '<div class="meta" style="margin-top:4px;text-align:left;">· ' + factors[i] + '</div>';
+  html += '<div class="meta" style="margin-top:4px;text-align:left;">位置与环境自查：手机放驾驶位头枕处，全程别动；手机反过来放；取下手机壳，话筒不遮挡；找安静地方，车窗全关，空调关或低；车机EQ归零，关闭环绕/声场，播放器音效全关，无损原声；车机声场平衡居中；音量跟上次一致，太小信噪比低，太大削顶' + (it.playMethod === 'bt' ? '；本次用蓝牙，U盘无损再测一次对比' : '') + '。对照方法：换设备、换播放方式、换位置各重测一次，看问题跟不跟条件走。</div>';
+  return html;
+}
 function load(){
   document.getElementById('upd').textContent = '加载中…';
   fetch(API + '&_=' + Date.now()).then(function(r){ return r.json(); }).then(function(j){
@@ -107,7 +135,7 @@ function load(){
           var _biS = 0, _bdS = 1e9; for(var _k=0; _k<_isoS.length; _k++){ var _dd = Math.abs(Math.log(Number(p.f)||1)-Math.log(_isoS[_k])); if(_dd<_bdS){ _bdS=_dd; _biS=_k; } }
           var _mvS = (it.meas31 && typeof it.meas31[_biS]==='number') ? Number(it.meas31[_biS]).toFixed(1)+' dB' : '—';
           return '<tr><td>' + fmtF(p.f) + '</td><td style="text-align:center;">' + _mvS + '</td><td class="g ' + cls + '">' + gs + '</td></tr>';
-        }).join('') + '</table><div class="meta" style="margin-top:6px;">0 dB说明：只减不增——实测已达标，或实测偏低（偏低不拔高）时均为0；16000Hz为手机麦克风物理限制，无法准确测量，不参与调整。</div>' + (it.planDetail.some(function(p){ return Number(p.f)>=16000; }) ? '<div class="meta" style="margin-top:6px;">预测说明：16000Hz段不是直接实测——手机麦克风在16kHz以上无有效数据，不参与打分；该段增益（若非0）是按8000/10000/12500高频趋势保守预测（封顶-3dB），仅供参考，听感偏暗请归零；若为0，则为预测保持或未实测保持。</div>' : '') + '<div class="meta" style="margin-top:6px;">同车型同年款参考，调完可测一次验证</div>';
+        }).join('') + '</table><div class="meta" style="margin-top:6px;">0 dB说明：只减不增——实测已达标，或实测偏低（偏低不拔高）时均为0；16000Hz为手机麦克风物理限制，无法准确测量，不参与调整。</div>' + (it.planDetail.some(function(p){ return Number(p.f)>=16000; }) ? '<div class="meta" style="margin-top:6px;">预测说明：16000Hz段不是直接实测——手机麦克风在16kHz以上无有效数据，不参与打分；该段增益（若非0）是按8000/10000/12500高频趋势保守预测（封顶-3dB），仅供参考，听感偏暗请归零；若为0，则为预测保持或未实测保持。</div>' : '') + (Number(it.score) < 40 && it.meas31 && it.meas31.length >= 31 ? lowDiagStats(it) : '') + '<div class="meta" style="margin-top:6px;">同车型同年款参考，调完可测一次验证</div>';
       }
       var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
       var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');
