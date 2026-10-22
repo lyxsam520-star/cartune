@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.337 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.338 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.337';
+var CALIB_VER = 'v2.9.338';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6022,15 +6022,15 @@ var CN_DATA_VER = 'v2.9.336';
     var wrap = document.getElementById('home-ticker');
     if(!wrap) return;
     if(!__tickerItems || !__tickerItems.length){ wrap.style.display = 'none'; return; }
-    // v2.9.337: 首页成绩片改回一行两列（3 列时片太窄，分数被 ellipsis 截断）；有年款带「26款」前缀，无年款（如 Plus 车型）原样显示车系；点片看该成绩方案
+    // v2.9.338: 固定两列（flex:0 0 calc(50% - 4px)，奇数个末位不拉伸）；有年款带「26款」前缀，无年款（如 Plus 车型）原样显示车系；点片看该成绩方案
     var show = __tickerItems.slice(0, 9);
     var h = '';
     for(var i = 0; i < show.length; i++){
       var it = show[i];
-      h += '<div class="tk-chip" data-i="' + i + '" style="flex:1 1 45%;min-width:104px;box-sizing:border-box;text-align:center;padding:8px 4px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;font-size:13px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + tkEsc(tkLabel(it)) + '：音质 ' + it.score + ' 分 ›</div>';
+      h += '<div class="tk-chip" data-i="' + i + '" style="flex:0 0 calc(50% - 4px);box-sizing:border-box;text-align:center;padding:8px 4px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;font-size:13px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + tkEsc(tkLabel(it)) + '：音质 ' + it.score + ' 分 ›</div>';
     }
     if(__tickerItems.length > show.length){
-      h += '<div class="tk-more" style="flex:1 1 45%;min-width:104px;box-sizing:border-box;text-align:center;padding:8px 4px;border:1px dashed rgba(255,255,255,.25);border-radius:10px;cursor:pointer;font-size:13px;color:var(--amber);white-space:nowrap;">查看全部 ›</div>';
+      h += '<div class="tk-more" style="flex:0 0 calc(50% - 4px);box-sizing:border-box;text-align:center;padding:8px 4px;border:1px dashed rgba(255,255,255,.25);border-radius:10px;cursor:pointer;font-size:13px;color:var(--amber);white-space:nowrap;">查看全部 ›</div>';
     }
     wrap.innerHTML = h;
     wrap.style.display = 'flex';
@@ -6068,15 +6068,20 @@ var CN_DATA_VER = 'v2.9.336';
       __tickerItems = [];
       fetch(CN_INGEST_URL + '?kind=measurement&view=recent').then(function(r){ return r.json(); }).then(function(j){
         if(j && j.ok){
-          // 计数改云端真实总数（原本地计数各机不一致、冒充全网数，现清零起步、真实增长）
-          if(typeof j.total === 'number'){ var n = document.getElementById('home-tune-num'); if(n) n.textContent = j.total; }
-          if(j.items && j.items.length){ __tickerItems = j.items; homeTickerRender(); }
+          // v2.9.338: 0 分不展示（退化测量）——前端过滤，后端 recent 也要改 <=0（见 A 待部署）；计数同步扣掉已取到的 0 分条数（取数上限 100 内精确，后端改完即精确）
+          var _items = (j.items && j.items.length) ? j.items : [];
+          var _zeros = 0, _kept = [];
+          for(var _zi = 0; _zi < _items.length; _zi++){ if(_items[_zi] && Number(_items[_zi].score) <= 0){ _zeros++; } else { _kept.push(_items[_zi]); } }
+          if(typeof j.total === 'number'){ var n = document.getElementById('home-tune-num'); if(n) n.textContent = Math.max(0, j.total - _zeros); }
+          if(_kept.length){ __tickerItems = _kept; homeTickerRender(); }
         }
       }).catch(function(){});
     }catch(_){}
   }
   window.__homeTickerStart = homeTickerStart;
   setTimeout(homeTickerStart, 1200);
+  // v2.9.338: 首页计数字可点 → 全部成绩列表（计数取到真实数时数据已就位，点开即全量）
+  (function(){ var _cn = document.getElementById('home-tune-num'); if(_cn){ _cn.style.cursor = 'pointer'; _cn.addEventListener('click', function(){ tickerShowAll(); }); } })();
   // 方案明细弹窗（点轮播打开；数据随轮播一并下发，不额外请求）
   function tickerFmtF(f){ f = Number(f) || 0; return f >= 1000 ? (Math.round(f / 100) / 10) + 'kHz' : f + 'Hz'; }
   function tickerShowPlan(it){
