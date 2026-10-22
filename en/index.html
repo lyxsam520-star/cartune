@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.336 · Beta';
+  ver.innerHTML = 'v2.9.346 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.336';
+var CALIB_VER = 'v2.9.346';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9611,7 +9611,13 @@ else{ init(); }
         var _bands = (_prev && (_prev.bands || [])) || [];
         for(var i = 0; i < _bands.length; i++){
           var b = _bands[i];
-          planGains.push({ f: b.fc || b.f || b.freq || null, g: b.gainDb != null ? b.gainDb : b.g });
+          planGains.push({ f: b.centerHz || b.fc || b.f || b.freq || null, g: b.gainDb != null ? b.gainDb : b.g });
+        }
+      }catch(_){}
+      // v2.9.346: 方案自查——频点为 null 说明字段映射又错了，绝不静默上传坏数据（上报 clienterror，测量照常入库，分数与频谱不丢；与 CN v2.9.344 同步）
+      try{
+        if(planGains.length && planGains.some(function(p){ return p.f == null; })){
+          try{ window.__errCap && window.__errCap('plan-f-null', 'ingest', 0); }catch(_){}
         }
       }catch(_){}
       var device = 'Other';
@@ -9654,7 +9660,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.336',
+        appVer: 'v2.9.346',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
