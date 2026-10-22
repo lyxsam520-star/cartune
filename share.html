@@ -87,10 +87,10 @@ canvas{width:100%;height:180px;display:block}
     var year = rec.year || '2026款';
     var score = rec.score;
     document.getElementById('car-title').textContent = shortYear(year) + series;
-    // 分享页跑分时间＋测试设备（后端返回 at/deviceModel 后自动显示，未部署前不显示）
+    // 分享页跑分时间＋测试设备（后端返回 at/deviceModel/device 后自动显示；老记录无 deviceModel 时退回 device 类型，如 iPad/iPhone，未返回前不显示）
     var _st = '';
     try{ var _sd = new Date(rec.at || ''); if(!isNaN(_sd.getTime())) _st = ' · ' + (_sd.getMonth()+1) + '/' + _sd.getDate() + ' ' + ('0'+_sd.getHours()).slice(-2) + ':' + ('0'+_sd.getMinutes()).slice(-2); }catch(e){}
-    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + (rec.deviceModel ? ' · ' + rec.deviceModel : '') + _st;
+    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + (rec.deviceModel ? ' · ' + rec.deviceModel : (rec.device ? ' · ' + rec.device : '')) + _st;
     document.getElementById('score-num').textContent = score;
     document.title = series + ' ' + year + ' 音质 ' + score + '分 👑 | 音质跑分';
     var pb = document.getElementById('plan-body');

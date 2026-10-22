@@ -70,9 +70,9 @@ function load(){
     var nz = j.items.filter(function(it){ return Number(it.score) > 0; });
     var wp = nz.filter(function(it){ return it.planDetail && it.planDetail.length; }).length;
     document.getElementById('health').textContent = '数据健康：' + nz.length + ' 条有效记录中 ' + wp + ' 条带方案（' + (nz.length ? Math.round(wp / nz.length * 100) : 0) + '%）';
-    // v2.9.346: 按测试设备聚合（前端算，不新增后端接口；无机型数据时整行隐藏）
+    // v2.9.346: 按测试设备聚合（前端算，不新增后端接口；无机型数据时整行隐藏；老记录无 deviceModel 时退回 device 类型）
     var _dm = {}, _hasDev = false;
-    j.items.forEach(function(it){ if(it.deviceModel){ _hasDev = true; _dm[it.deviceModel] = (_dm[it.deviceModel] || 0) + 1; } });
+    j.items.forEach(function(it){ var _dvk = it.deviceModel || it.device; if(_dvk){ _hasDev = true; _dm[_dvk] = (_dm[_dvk] || 0) + 1; } });
     var _dv = document.getElementById('st-devices');
     if(_hasDev){ _dv.style.display = ''; _dv.textContent = '测试设备：' + Object.keys(_dm).map(function(k){ return k + ' ×' + _dm[k]; }).join(' · '); }
     // v2.9.348: 真实场景分布（驻车/行车，targetCurve 线上接口已返，前端直接算）
@@ -108,7 +108,7 @@ function load(){
       }
       var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
       var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');
-      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + (_cr[idx] ? '👑 ' : '') + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + (it.deviceModel ? ' · ' + esc(it.deviceModel) : '') + (it.dropRate != null ? ' · 复测残差' + (it.dropRate >= 0 ? '↓' : '↑') + Math.abs(it.dropRate) + '%' : '') + (it.at ? ' · ' + fmtT(it.at) : '') + '</div><div class="detail">' + det + '</div></div>';
+      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + (_cr[idx] ? '👑 ' : '') + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + (it.deviceModel ? ' · ' + esc(it.deviceModel) : (it.device ? ' · ' + esc(it.device) : '')) + (it.dropRate != null ? ' · 复测残差' + (it.dropRate >= 0 ? '↓' : '↑') + Math.abs(it.dropRate) + '%' : '') + (it.at ? ' · ' + fmtT(it.at) : '') + '</div><div class="detail">' + det + '</div></div>';
     }).join('');
     Array.prototype.forEach.call(box.querySelectorAll('.row'), function(el){
       el.addEventListener('click', function(){ el.classList.toggle('open'); });
