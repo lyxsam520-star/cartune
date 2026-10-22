@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.339 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.340 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.339';
+var CALIB_VER = 'v2.9.340';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6023,11 +6023,26 @@ var CN_DATA_VER = 'v2.9.336';
     if(!wrap) return;
     if(!__tickerItems || !__tickerItems.length){ wrap.style.display = 'none'; return; }
     // v2.9.338: 固定两列（flex:0 0 calc(50% - 4px)，奇数个末位不拉伸）；有年款带「26款」前缀，无年款（如 Plus 车型）原样显示车系；点片看该成绩方案
+    // v2.9.340: 同车型同年款内比——每组最高分右上角小皇冠（组内 ≥2 条才有比较意义；并列最高都戴）
     var show = __tickerItems.slice(0, 9);
+    var _groups = {}, _crownIdx = {};
+    for(var _gi = 0; _gi < show.length; _gi++){
+      var _gk = (show[_gi].series || '') + '|' + (show[_gi].year || '');
+      if(!_groups[_gk]) _groups[_gk] = [];
+      _groups[_gk].push(_gi);
+    }
+    for(var _gk2 in _groups){
+      var _arr = _groups[_gk2];
+      if(_arr.length < 2) continue;
+      var _mx = -1, _mi;
+      for(_mi = 0; _mi < _arr.length; _mi++){ var _s = Number(show[_arr[_mi]].score); if(_s > _mx) _mx = _s; }
+      for(var _mj = 0; _mj < _arr.length; _mj++){ if(Number(show[_arr[_mj]].score) === _mx) _crownIdx[_arr[_mj]] = true; }
+    }
     var h = '';
     for(var i = 0; i < show.length; i++){
       var it = show[i];
-      h += '<div class="tk-chip" data-i="' + i + '" style="flex:0 0 calc(50% - 4px);box-sizing:border-box;text-align:center;padding:8px 4px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;font-size:13px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + tkEsc(tkLabel(it)) + '：音质 ' + it.score + ' 分 ›</div>';
+      var _crown = _crownIdx[i] ? '<span style="position:absolute;top:1px;right:4px;font-size:13px;line-height:1;">👑</span>' : '';
+      h += '<div class="tk-chip" data-i="' + i + '" style="position:relative;flex:0 0 calc(50% - 4px);box-sizing:border-box;text-align:center;padding:8px 4px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);cursor:pointer;font-size:13px;color:#c9d1d9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + _crown + tkEsc(tkLabel(it)) + '：音质 ' + it.score + ' 分 ›</div>';
     }
     if(__tickerItems.length > show.length){
       h += '<div class="tk-more" style="flex:0 0 calc(50% - 4px);box-sizing:border-box;text-align:center;padding:8px 4px;border:1px dashed rgba(255,255,255,.25);border-radius:10px;cursor:pointer;font-size:13px;color:var(--amber);white-space:nowrap;">查看全部 ›</div>';
