@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>星越L 2026款 音质 55分 👑 | 调音玩</title>
+<meta name="description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。看着好玩，用着专业。">
+<meta property="og:title" content="星越L 2026款 音质 55分 👑 | 调音玩">
+<meta property="og:description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。">
+<meta property="og:type" content="website">
+<style>
+body{margin:0;background:#0f141a;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:24px 16px 32px}
+.crown{display:inline-block;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.5);color:#fbbf24;border-radius:999px;padding:4px 12px;font-size:13px}
+h1{font-size:26px;margin:14px 0 4px}
+.sub{color:#9aa7b4;font-size:14px}
+.score{margin:20px 0 8px;text-align:center}
+.score b{font-size:72px;color:#fbbf24;line-height:1}
+.score span{font-size:20px;color:#e6edf3}
+.mode{color:#9aa7b4;font-size:13px;text-align:center}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:14px;margin-top:16px}
+.card h2{font-size:16px;margin:0 0 10px}
+.card p{color:#c9d1d9;font-size:14px;line-height:1.7;margin:6px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+th{color:#9aa7b4;font-weight:400}
+td:last-child,th:last-child{text-align:right}
+.note{color:#9aa7b4;font-size:13px;line-height:1.7}
+.qr{text-align:center;margin-top:20px}
+.qr img{width:180px;height:180px;background:#fff;border-radius:12px;padding:8px}
+.qr p{color:#9aa7b4;font-size:13px;margin:8px 0}
+.btn{display:block;text-align:center;background:#fbbf24;color:#111827;font-weight:700;border-radius:10px;padding:13px;text-decoration:none;margin-top:12px}
+.foot{text-align:center;color:#6b7785;font-size:12px;margin-top:24px}
+canvas{width:100%;height:180px;display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="crown">👑 同车型同年款最高分</span>
+  <h1 id="car-title">26款星越L</h1>
+  <div class="sub" id="car-sub">2026款 · 驻车模式实测</div>
+  <div class="score"><b id="score-num">55</b><span> 分</span></div>
+  <div class="mode">音质跑分 · 分数越高，频响越接近目标曲线</div>
+
+  <div class="card" id="curve-card" style="display:none">
+    <h2>实测曲线 vs 目标曲线</h2>
+    <canvas id="share-chart" width="480" height="180"></canvas>
+    <p class="note"><span style="color:#22D3EE">■</span> 实测 &nbsp;<span style="color:#FF9F1C">■</span> 目标</p>
+  </div>
+
+  <div class="card" id="plan-card">
+    <h2>参考设置</h2>
+    <div id="plan-body"><p class="note">正在加载方案…</p></div>
+    <p class="note" style="margin-top:10px">同车型同年款参考，调完可测一次验证。你的车与这台车仍有个体差异，分数仅供参考。</p>
+  </div>
+
+  <div class="qr">
+    <img src="qr-h5.png" alt="扫码打开调音工具">
+    <p>扫码打开调音工具，测测你的车</p>
+    <a class="btn" href="./">打开调音工具 →</a>
+  </div>
+  <div class="foot">看着好玩，用着专业 · 调音玩</div>
+</div>
+<script>
+(function(){
+  var API = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest?kind=measurement&view=recent';
+  var TC_PARKED = [7.0,6.9,6.8,6.5,5.9,4.7,3.5,2.6,1.7,0.5,0.3,0.1,0.0,0.0,0.0,0.0,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+  var TC_DRIVING = [7.0,7.0,7.0,6.9,6.6,5.7,4.2,3.3,2.5,1.2,0.9,0.5,0.6,0.3,0.2,0.1,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+  function qp(k){ try{ return new URLSearchParams(location.search).get(k); }catch(e){ return null; } }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function shortYear(y){
+    var m = String(y || '').match(/(\d{2})\d{2}/);
+    return m ? m[1] + '款' : y;
+  }
+  function render(rec){
+    var series = rec.series || '星越L';
+    var year = rec.year || '2026款';
+    var score = rec.score;
+    document.getElementById('car-title').textContent = shortYear(year) + series;
+    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测');
+    document.getElementById('score-num').textContent = score;
+    document.title = series + ' ' + year + ' 音质 ' + score + '分 👑 | 调音玩';
+    var pb = document.getElementById('plan-body');
+    var pd = rec.planDetail;
+    if (Array.isArray(pd) && pd.length && typeof pd[0].f === 'number') {
+      var h = '<table><tr><th>频段</th><th>增益</th></tr>';
+      for (var i = 0; i < pd.length; i++) {
+        var g = pd[i].g;
+        h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB</td></tr>';
+      }
+      h += '</table>';
+      pb.innerHTML = h;
+    } else {
+      pb.innerHTML = '<p class="note">该次测量为早期数据，未保存具体方案。新测数据会自动带方案，点开详情就能看到完整设置表。</p><p><a style="color:#fbbf24" href="./">我也测一次，生成我的方案 →</a></p>';
+    }
+    var m31 = rec.meas31;
+    if (Array.isArray(m31) && m31.length >= 10) {
+      document.getElementById('curve-card').style.display = 'block';
+      drawChart(m31, rec.targetCurve === 'driving' ? TC_DRIVING : TC_PARKED);
+    }
+  }
+  function drawChart(meas, target){
+    var cv = document.getElementById('share-chart');
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    var all = meas.concat(target);
+    var mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
+    var pad = 2;
+    mn -= pad; mx += pad;
+    function X(i, n){ return 16 + (W - 32) * (n <= 1 ? 0 : i / (n - 1)); }
+    function Y(v){ return H - 16 - (H - 32) * (v - mn) / (mx - mn); }
+    function line(arr, color){
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      for (var i = 0; i < arr.length; i++) {
+        var x = X(i, arr.length), y = Y(arr[i]);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    line(target, '#FF9F1C');
+    line(meas, '#22D3EE');
+  }
+  var fallback = { series: '星越L', year: '2026款', score: 55, planDetail: null, targetCurve: 'parked' };
+  fetch(API).then(function(r){ return r.json(); }).then(function(j){
+    var items = (j && j.items) || [];
+    items = items.filter(function(it){ return Number(it.score) > 0; });
+    if (!items.length) { render(fallback); return; }
+    var wantScore = qp('score');
+    var wantSeries = qp('series');
+    var wantYear = qp('year');
+    var pick = null;
+    if (wantScore != null) {
+      for (var i = 0; i < items.length; i++) {
+        if (String(items[i].score) === String(wantScore) && (!wantSeries || items[i].series === wantSeries) && (!wantYear || items[i].year === wantYear)) { pick = items[i]; break; }
+      }
+    }
+    if (!pick) {
+      pick = items[0];
+      for (var k = 1; k < items.length; k++) { if (Number(items[k].score) > Number(pick.score)) pick = items[k]; }
+    }
+    render(pick);
+  }).catch(function(){ render(fallback); });
+})();
+</script>
+</body>
+</html>
