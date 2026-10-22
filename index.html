@@ -300,8 +300,8 @@ ul.clean li{margin:6px 0;}
   <!-- ============ 1. 首页 ============ -->
   <section class="sec" id="sec-home">
     <!-- v2.9.215: 首页 banner——logo + slogan，居左 -->
-    <div style="display:flex;align-items:center;gap:12px;padding:20px 4px 4px;">
-      <img src="logo.png" alt="音质跑分" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
+    <div style="display:flex;align-items:center;gap:16px;padding:20px 4px 4px;">
+      <img src="logo.png" alt="音质跑分" style="width:64px;height:64px;border-radius:16px;flex-shrink:0;">
       <div>
         <svg class="wm-svg wm-main" role="img" aria-label="音质跑分"><use href="#wmMain"/></svg>
         <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">看着好玩，用着专业</div>
@@ -4420,7 +4420,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.349 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.350 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5437,7 +5437,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.349';
+var CALIB_VER = 'v2.9.350';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5865,7 +5865,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.349';
+var CN_DATA_VER = 'v2.9.350';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
