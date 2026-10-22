@@ -38,6 +38,7 @@
 <body>
   <div class="hd"><h1>音质跑分 · 数据看板</h1><span class="tag">内部</span></div>
   <div class="upd" id="upd">加载中…</div>
+  <div class="upd" id="health">数据健康：加载中…</div>
   <div class="stats">
     <div class="stat"><div class="num" id="st-total">–</div><div class="lab">已记录跑分（真实数据）</div></div>
     <div class="stat"><div class="num" id="st-models">–</div><div class="lab">有成绩的车型</div></div>
@@ -62,6 +63,9 @@ function load(){
     if(!j || !j.ok) throw new Error('bad');
     document.getElementById('st-total').textContent = j.total;
     document.getElementById('st-models').textContent = j.items.length;
+    var nz = j.items.filter(function(it){ return Number(it.score) > 0; });
+    var wp = nz.filter(function(it){ return it.planDetail && it.planDetail.length; }).length;
+    document.getElementById('health').textContent = '数据健康：' + nz.length + ' 条有效记录中 ' + wp + ' 条带方案（' + (nz.length ? Math.round(wp / nz.length * 100) : 0) + '%）';
     var now = new Date();
     document.getElementById('upd').textContent = '更新于 ' + now.getHours() + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
     var box = document.getElementById('list');
