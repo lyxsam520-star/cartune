@@ -376,7 +376,7 @@ ul.clean li{margin:6px 0;}
     <div class="small center" id="home-payhint" style="margin-top:10px;display:none;"><!-- 内测版：付费提示已隐藏，恢复时删除 display:none --></div>
     <div class="alert amber hidden center" id="home-beta-soon" style="margin-top:10px;"></div>
     <!-- v2.9.215: 精简版跑分计数，放首页最底部 -->
-    <div class="small center" style="margin-top:16px;color:var(--sub);">共 <span id="home-tune-num" style="color:var(--amber);font-weight:700;">…</span> 辆车参加了跑分</div>
+    <div class="small center" id="home-tune-link" style="margin-top:16px;color:var(--sub);cursor:pointer;">共 <span id="home-tune-num" style="color:var(--amber);font-weight:800;font-size:22px;">…</span> 辆车参加了跑分 <span style="color:var(--amber);font-weight:700;">查看全部 →</span></div>
     <div id="home-ticker" style="margin-top:10px;display:none;"></div>
     <div id="home-activity" style="margin-top:10px;display:none;"></div>
     <div class="small center" style="margin-top:10px;"><a href="#" class="ss-fb-open" style="color:var(--sub);">问题反馈 — 报 bug 或提建议</a></div>
@@ -4420,7 +4420,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.345 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.347 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5437,7 +5437,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.345';
+var CALIB_VER = 'v2.9.347';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5865,7 +5865,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.345';
+var CN_DATA_VER = 'v2.9.347';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -6119,7 +6119,7 @@ var CN_DATA_VER = 'v2.9.345';
   window.__homeTickerStart = homeTickerStart;
   setTimeout(homeTickerStart, 1200);
   // v2.9.338: 首页计数字可点 → 全部成绩列表（计数取到真实数时数据已就位，点开即全量）
-  (function(){ var _cn = document.getElementById('home-tune-num'); if(_cn){ _cn.style.cursor = 'pointer'; _cn.addEventListener('click', function(){ tickerShowAll(); }); } })();
+  (function(){ var _cn = document.getElementById('home-tune-link'); if(_cn){ _cn.addEventListener('click', function(){ location.href = 'stats.html'; }); } })();
   // 方案明细弹窗（点轮播打开；数据随轮播一并下发，不额外请求）
   function tickerFmtF(f){ f = Number(f) || 0; return f >= 1000 ? (Math.round(f / 100) / 10) + 'kHz' : f + 'Hz'; }
   function tickerShowPlan(it){
