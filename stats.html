@@ -83,7 +83,7 @@ function load(){
       }
       var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
       var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');
-      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + '</div><div class="detail">' + det + '</div></div>';
+      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + (it.at ? ' · ' + fmtT(it.at) : '') + '</div><div class="detail">' + det + '</div></div>';
     }).join('');
     Array.prototype.forEach.call(box.querySelectorAll('.row'), function(el){
       el.addEventListener('click', function(){ el.classList.toggle('open'); });
