@@ -4420,7 +4420,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.351 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.352 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5437,7 +5437,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.351';
+var CALIB_VER = 'v2.9.352';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5865,7 +5865,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.351';
+var CN_DATA_VER = 'v2.9.352';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -5965,7 +5965,11 @@ var CN_DATA_VER = 'v2.9.351';
         var ua = navigator.userAgent || '';
         var m = ua.match(/iPhone OS ([\d_]+)/);
         if(m) deviceModel = 'iPhone iOS ' + m[1].replace(/_/g, '.');
+        else if((typeof DSP !== 'undefined' && DSP.isIPhone && DSP.isIPhone())) deviceModel = 'iPhone';
+        else if((typeof DSP !== 'undefined' && DSP.isIPad && DSP.isIPad())) deviceModel = 'iPad';
         else if(/iPad/.test(ua)) deviceModel = 'iPad';
+        else if(/Android/.test(ua)){ var am = ua.match(/Android\s+([\d.]+)/); deviceModel = am ? 'Android ' + am[1] : 'Android'; }
+        else if(device === 'iPad' || device === 'iPhone') deviceModel = device;
       }catch(_){}
       var payload = {
         kind: 'measurement', consent: true, app: 'soundscore-cn', appVer: CN_DATA_VER,
@@ -6150,9 +6154,12 @@ var CN_DATA_VER = 'v2.9.351';
     var rows = ov.querySelector('#tp-rows');
     if(it.planDetail && it.planDetail.length){
       var h = '';
+      var _nAdj = 0;
+      for(var i = 0; i < it.planDetail.length; i++){ if(Number(it.planDetail[i].g) !== 0) _nAdj++; }
+      h += '<div style="font-size:12px;color:#98989f;padding-bottom:4px;">共' + it.planDetail.length + '段 · 其中' + _nAdj + '段需调整 · ' + (it.planDetail.length - _nAdj) + '段保持0（不用动）</div>';
       for(var i = 0; i < it.planDetail.length; i++){
         var p = it.planDetail[i], g = Number(p.g) || 0;
-        h += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2c2c2e;font-size:14px;"><span>' + tickerFmtF(p.f) + '</span><span style="font-weight:700;color:' + (g < 0 ? '#30d158' : (g > 0 ? '#f5a623' : '#98989f')) + '">' + (g > 0 ? '+' : '') + g + ' dB</span></div>';
+        h += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2c2c2e;font-size:14px;"><span>' + tickerFmtF(p.f) + '</span><span style="font-weight:700;color:' + (g < 0 ? '#30d158' : (g > 0 ? '#f5a623' : '#98989f')) + '">' + (g > 0 ? '+' : '') + g + ' dB' + (g === 0 ? '（不用动）' : '') + '</span></div>';
       }
       rows.innerHTML = h;
     } else {

@@ -96,10 +96,12 @@ canvas{width:100%;height:180px;display:block}
     var pb = document.getElementById('plan-body');
     var pd = rec.planDetail;
     if (Array.isArray(pd) && pd.length && typeof pd[0].f === 'number') {
-      var h = '<table><tr><th>频段</th><th>增益</th></tr>';
+      var _nAdj = 0;
+      for (var _k = 0; _k < pd.length; _k++) { if (Number(pd[_k].g) !== 0) _nAdj++; }
+      var h = '<p class="note">共' + pd.length + '段 · 其中' + _nAdj + '段需调整 · ' + (pd.length - _nAdj) + '段保持0（不用动）</p><table><tr><th>频段</th><th>增益</th></tr>';
       for (var i = 0; i < pd.length; i++) {
         var g = pd[i].g;
-        h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB</td></tr>';
+        h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB' + (Number(g) === 0 ? '（不用动）' : '') + '</td></tr>';
       }
       h += '</table>';
       pb.innerHTML = h;
