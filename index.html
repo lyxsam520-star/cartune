@@ -4419,7 +4419,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.338 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.339 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5436,7 +5436,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.338';
+var CALIB_VER = 'v2.9.339';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -6092,9 +6092,10 @@ var CN_DATA_VER = 'v2.9.336';
       ov = document.createElement('div');
       ov.id = 'ticker-plan-ov';
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;';
-      ov.innerHTML = '<div style="background:#1c1c1e;border-radius:16px;max-width:340px;width:100%;padding:20px;color:#f5f5f7;">'
+      ov.innerHTML = '<div style="background:#1c1c1e;border-radius:16px;max-width:340px;width:100%;max-height:85vh;overflow-y:auto;padding:20px;color:#f5f5f7;">'
         + '<div id="tp-title" style="font-size:17px;font-weight:800;"></div>'
         + '<div id="tp-sub" style="font-size:12px;color:#98989f;margin-top:4px;"></div>'
+        + '<canvas id="tp-chart" style="width:100%;height:150px;display:none;background:#0d1219;border:1px solid rgba(255,255,255,.12);border-radius:12px;margin-top:12px;"></canvas>'
         + '<div id="tp-rows" style="margin-top:14px;"></div>'
         + '<div style="font-size:12px;color:#98989f;margin-top:14px;line-height:1.6;">一车一调：这份方案来自该车主的实测，只适合他的车。照抄到你的车上，效果可能适得其反——用你自己的测量生成你的方案。</div>'
         + '<button id="tp-close" style="margin-top:16px;width:100%;padding:11px;border:none;border-radius:10px;background:#f5a623;color:#111;font-size:15px;font-weight:700;">关闭</button></div>';
@@ -6117,6 +6118,14 @@ var CN_DATA_VER = 'v2.9.336';
       rows.innerHTML = '<div style="font-size:13px;color:#98989f;">这条成绩暂无方案明细</div>';
     }
     ov.style.display = 'flex';
+    // v2.9.339: 详情曲线——复用报告页画法（实测＋目标两条主线）；无频谱数据时（后端未部署 meas31 前）不画
+    try{
+      var _tpcv = ov.querySelector('#tp-chart');
+      if(_tpcv){
+        if(it.meas31 && it.meas31.length){ _tpcv.style.display = 'block'; drawReportChart(_tpcv, it, 150); }
+        else { _tpcv.style.display = 'none'; }
+      }
+    }catch(_){}
   }
   // 调音群微信号：点击复制（版本号旁全局函数，底栏重渲染不丢）
   window.__copyWx = function(el){
@@ -8618,22 +8627,40 @@ function copyPeq(rows){
     document.body.removeChild(ta);
   }
 }
-function drawReportChart(){
-  var cv = document.getElementById('report-chart');
-  var g = fitCanvas(cv, 220), ctx=g.ctx, W=g.w, H=g.h;
+// v2.9.339: cv 可选（默认 #report-chart）；rec 可选（详情弹窗传记录 {meas31, targetCurve}，只画实测＋目标两条主线，不画模拟线；无 rec 时走报告页原逻辑）
+function drawReportChart(cv, rec, h){
+  var cvEl = cv || document.getElementById('report-chart');
+  if(!cvEl) return;
+  var g = fitCanvas(cvEl, h || 220), ctx=g.ctx, W=g.w, H=g.h;
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
-  var meas = avg31();
-  var tgt = iso.map(function(f){ try{ return DSP.targetDbAt(f); }catch(_){ return 0; } });
-  var sim = meas.slice();
-  try{
-    var draft = S()._planDraft || buildPlan();
-    // v2.9.81: simulate 要 band 对象数组（内部取 .gainDb）；之前误传数字数组得 NaN，曲线全灭
-    var _spec80 = (S().eqSpec && S().eqSpec.bands) ? S().eqSpec : {bands:7};
-    var _s80 = DSP.simulate(meas, draft.bands||[], _spec80);
-    // v2.9.227: 图表也用保守预估（70%）
-    if(_s80 && _s80.sim31) sim = _s80.sim31.map(function(v, i){ return meas[i] + (v - meas[i]) * 0.7; });
-  }catch(_){}
+  var meas, tgt, sim = null;
+  if(rec && Array.isArray(rec.meas31) && rec.meas31.length){
+    meas = rec.meas31.slice();
+    // 目标按记录工况取（不动全局 TARGET_PAIRS）：与 targetDbAt 同算法的对数插值
+    var pairs = (rec.targetCurve === 'driving') ? DSP.TC_DRIVING : DSP.TC_PARKED;
+    tgt = iso.map(function(f){
+      var n = pairs.length;
+      if(f <= pairs[0][0]) return pairs[0][1];
+      if(f >= pairs[n-1][0]) return pairs[n-1][1];
+      var i;
+      for(i = 0; i < n-1; i++){ if(f >= pairs[i][0] && f <= pairs[i+1][0]) break; }
+      var f0 = pairs[i][0], d0 = pairs[i][1], f1 = pairs[i+1][0], d1 = pairs[i+1][1];
+      return d0 + (Math.log(f)-Math.log(f0))/(Math.log(f1)-Math.log(f0))*(d1-d0);
+    });
+  } else {
+    meas = avg31();
+    tgt = iso.map(function(f){ try{ return DSP.targetDbAt(f); }catch(_){ return 0; } });
+    sim = meas.slice();
+    try{
+      var draft = S()._planDraft || buildPlan();
+      // v2.9.81: simulate 要 band 对象数组（内部取 .gainDb）；之前误传数字数组得 NaN，曲线全灭
+      var _spec80 = (S().eqSpec && S().eqSpec.bands) ? S().eqSpec : {bands:7};
+      var _s80 = DSP.simulate(meas, draft.bands||[], _spec80);
+      // v2.9.227: 图表也用保守预估（70%）
+      if(_s80 && _s80.sim31) sim = _s80.sim31.map(function(v, i){ return meas[i] + (v - meas[i]) * 0.7; });
+    }catch(_){}
+  }
   // v2.9.81: 电平对齐显示——实测绝对电平 vs 目标相对曲线，按均值差对齐后比较形状
   var _off2=0, _cn2=0, _k2;
   for(_k2=0; _k2<iso.length && _k2<meas.length && _k2<tgt.length; _k2++){
@@ -8641,8 +8668,8 @@ function drawReportChart(){
   }
   _off2 = _cn2>0 ? _off2/_cn2 : 0;
   var measN = meas.map(function(v){ return isFinite(v)? v-_off2 : NaN; });
-  var simN = sim.map(function(v, _ix){ return isFinite(v)? v-_off2 : measN[_ix]; });
-  var all = measN.concat(tgt, simN).filter(isFinite);
+  var simN = sim ? sim.map(function(v, _ix){ return isFinite(v)? v-_off2 : measN[_ix]; }) : null;
+  var all = simN ? measN.concat(tgt, simN).filter(isFinite) : measN.concat(tgt).filter(isFinite);
   if(!all.length) return;
   var mn=Math.min.apply(null,all)-2, mx=Math.max.apply(null,all)+2;
   function X(f){ var l0=Math.log10(20), l1=Math.log10(20000); return 34+(Math.log10(f)-l0)/(l1-l0)*(W-44); }
@@ -8667,18 +8694,20 @@ function drawReportChart(){
   }
   line(tgt,'#FF9F1C',2);    // 目标曲线
   line(measN,'#22D3EE',2); // 实测均值（已对齐）
-  line(simN,'#34D399',1.5);// 模拟调后（已对齐）
-  // v2-PATCH-01 (V2P01-UI-CHART)：多选风格对比线（已应用风格即橙色目标线，不重复画）
-  try{
-    var _csSel = app.styleSel || [];
-    var _csApplied = _csSel.length ? _csSel[_csSel.length-1] : null;
-    for(var _ci=0; _ci<_csSel.length; _ci++){
-      var _ck = _csSel[_ci];
-      if(_ck===_csApplied) continue;
-      var _carr = DSP.styleTarget31(_ck);
-      if(_carr) line(_carr, STYLE_LINE_COLORS[_ck] || '#94a3b8', 1);
-    }
-  }catch(_){}
+  if(simN){
+    line(simN,'#34D399',1.5);// 模拟调后（已对齐，报告页才有）
+    // v2-PATCH-01 (V2P01-UI-CHART)：多选风格对比线（已应用风格即橙色目标线，不重复画）
+    try{
+      var _csSel = app.styleSel || [];
+      var _csApplied = _csSel.length ? _csSel[_csSel.length-1] : null;
+      for(var _ci=0; _ci<_csSel.length; _ci++){
+        var _ck = _csSel[_ci];
+        if(_ck===_csApplied) continue;
+        var _carr = DSP.styleTarget31(_ck);
+        if(_carr) line(_carr, STYLE_LINE_COLORS[_ck] || '#94a3b8', 1);
+      }
+    }catch(_){}
+  }
 }
 
 /* v2.9.81: iOS 手势同步创建 AudioContext（修复 suspended 导致频谱无数据/监听卡死） */
