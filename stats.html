@@ -42,6 +42,7 @@
   <div class="upd" id="health">数据健康：加载中…</div>
   <div class="upd" id="st-devices" style="display:none;"></div>
   <div class="upd" id="st-modes" style="display:none;"></div>
+  <div class="upd" id="st-bands" style="display:none;"></div>
   <div class="stats">
     <div class="stat"><div class="num" id="st-total">–</div><div class="lab">已记录跑分（真实数据）</div></div>
     <div class="stat"><div class="num" id="st-models">–</div><div class="lab">有成绩的车型</div></div>
@@ -79,6 +80,11 @@ function load(){
     j.items.forEach(function(it){ if(it.targetCurve === 'driving') _md++; else _mp++; });
     var _mv = document.getElementById('st-modes');
     if(j.items.length){ _mv.style.display = ''; _mv.textContent = '场景：驻车×' + _mp + ' · 行车×' + _md; }
+    // 段数分布（自查可见：段数由车机 EQ 决定，与测试机型无关；3/4/5/7/8段均为正常，非数据丢失）
+    var _bd = {};
+    nz.forEach(function(it){ var n = (it.planDetail && it.planDetail.length) ? it.planDetail.length : 0; _bd[n] = (_bd[n] || 0) + 1; });
+    var _bv = document.getElementById('st-bands');
+    if(nz.length){ _bv.style.display = ''; _bv.textContent = '方案段数：' + Object.keys(_bd).sort(function(a,b){ return b - a; }).map(function(k){ return (k === '0' ? '无方案' : k + '段') + '×' + _bd[k]; }).join(' · ') + '（段数由车机 EQ 决定，与测试机型无关）'; }
     var now = new Date();
     document.getElementById('upd').textContent = '更新于 ' + now.getHours() + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
     var box = document.getElementById('list');
@@ -92,7 +98,7 @@ function load(){
           var cls = g < 0 ? 'cut' : (g > 0 ? 'boost' : '');
           var gs = (g > 0 ? '+' : '') + g + ' dB';
           return '<tr><td>' + fmtF(p.f) + '</td><td class="g ' + cls + '">' + gs + '</td></tr>';
-        }).join('') + '</table><div class="meta" style="margin-top:6px;">一车一调：只适合这台车，照抄可能适得其反</div>';
+        }).join('') + '</table><div class="meta" style="margin-top:6px;">同车型同年款参考，调完可测一次验证</div>';
       }
       var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
       var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');

@@ -4420,7 +4420,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.350 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.351 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5437,7 +5437,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.350';
+var CALIB_VER = 'v2.9.351';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5865,7 +5865,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.350';
+var CN_DATA_VER = 'v2.9.351';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -6135,7 +6135,7 @@ var CN_DATA_VER = 'v2.9.350';
         + '<div id="tp-sub" style="font-size:12px;color:#98989f;margin-top:4px;"></div>'
         + '<canvas id="tp-chart" style="width:100%;height:150px;display:none;background:#0d1219;border:1px solid rgba(255,255,255,.12);border-radius:12px;margin-top:12px;"></canvas>'
         + '<div id="tp-rows" style="margin-top:14px;"></div>'
-        + '<div style="font-size:12px;color:#98989f;margin-top:14px;line-height:1.6;">一车一调：这份方案来自该车主的实测，只适合他的车。照抄到你的车上，效果可能适得其反——用你自己的测量生成你的方案。</div>'
+        + '<div style="font-size:12px;color:#98989f;margin-top:14px;line-height:1.6;">同车型同年款参考：这份方案来自同车型同年款车主的实测，调完可测一次验证。你的车与这台车仍有个体差异，分数仅供参考。</div>'
         + '<button id="tp-close" style="margin-top:16px;width:100%;padding:11px;border:none;border-radius:10px;background:#f5a623;color:#111;font-size:15px;font-weight:700;">关闭</button></div>';
       document.body.appendChild(ov);
       var closeFn = function(){ ov.style.display = 'none'; };
