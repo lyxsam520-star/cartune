@@ -4470,7 +4470,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.362 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.363 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5489,7 +5489,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.362';
+var CALIB_VER = 'v2.9.363';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5917,7 +5917,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.362';
+var CN_DATA_VER = 'v2.9.363';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -10129,7 +10129,14 @@ function renderRemeasureResult(entry, before, after, tgt){
     '<span><i style="background:#FF9F1C"></i>'+escapeHtml(tt('remeasure.legendTarget'))+'</span>';
   ON_SHOW.remeasure = function(){ drawRemeasureChart(before, after, tgt); }; // 可见后重绘
   renderRemeasureHistory();
+  // v2.9.363/352: 复测循环闭合——点此后以本次复测频谱为新基线重算方案，原基线存 _prevMeasL/R，复测记录保留分数对比；不点则仍为纯验证，原方案不变
+  var _maxDiff = 0;
+  try{ for(var _di=2; _di<=28; _di++){ var _d = Math.abs((before[_di]||0)-(after[_di]||0)); if(_d>_maxDiff) _maxDiff=_d; } }catch(_){}
+  if(_maxDiff < 2){
+    try{ var _noteEl = document.getElementById('remeasure-note'); if(_noteEl) _noteEl.textContent = _noteEl.textContent + ' ' + '调前与调后曲线几乎重合（本次贴合度未变），蓝线被绿线盖住了，不是图坏了——说明本次复测频谱与调前几乎相同。'; }catch(_){}
+  }
   CTA.remeasure = [
+    { text: '按本次复测出新方案（继续优化）', primary:true, onClick: function(){ try{ var _s = S(); _s._prevMeasL = _s.measL; _s._prevMeasR = _s.measR; _s._prevPlanDraft = _s._planDraft; _s.measL = after.slice(); _s.measR = after.slice(); _s._planDraft = null; try{ track('remeasure_new_plan', {fit1:entry.fit1, fit2:entry.fit2}); }catch(_){} }catch(_){} try{ renderPlan(); }catch(e){ try{ alert('方案加载失败，请重试'); }catch(_){} return; } show('plan'); } },
     { text: tt('remeasure.startBtn'), primary:false, onClick: startRemeasurePrompt },
     { text: tt('common.back'), primary:false, onClick: function(){ show('plan'); } }
   ];
