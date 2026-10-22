@@ -3,14 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>星越L 2026款 音质 55分 👑 | 调音玩</title>
+<title>星越L 2026款 音质 55分 👑 | 音质跑分</title>
 <meta name="description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。看着好玩，用着专业。">
-<meta property="og:title" content="星越L 2026款 音质 55分 👑 | 调音玩">
+<meta property="og:title" content="星越L 2026款 音质 55分 👑 | 音质跑分">
 <meta property="og:description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。">
 <meta property="og:type" content="website">
 <style>
 body{margin:0;background:#0f141a;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
 .wrap{max-width:520px;margin:0 auto;padding:24px 16px 32px}
+.brand{font-size:22px;font-weight:800;letter-spacing:1px}
+.brand-sub{color:#9aa7b4;font-size:13px;margin:4px 0 16px}
 .crown{display:inline-block;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.5);color:#fbbf24;border-radius:999px;padding:4px 12px;font-size:13px}
 h1{font-size:26px;margin:14px 0 4px}
 .sub{color:#9aa7b4;font-size:14px}
@@ -26,8 +28,8 @@ th,td{padding:8px 6px;border-bottom:1px solid rgba(255,255,255,.08);text-align:l
 th{color:#9aa7b4;font-weight:400}
 td:last-child,th:last-child{text-align:right}
 .note{color:#9aa7b4;font-size:13px;line-height:1.7}
-.qr{text-align:center;margin-top:20px}
-.qr img{width:180px;height:180px;background:#fff;border-radius:12px;padding:8px}
+.qr{text-align:center;margin-top:16px}
+.qr img{width:144px;height:144px;background:#fff;border-radius:12px;padding:8px}
 .qr p{color:#9aa7b4;font-size:13px;margin:8px 0}
 .btn{display:block;text-align:center;background:#fbbf24;color:#111827;font-weight:700;border-radius:10px;padding:13px;text-decoration:none;margin-top:12px}
 .foot{text-align:center;color:#6b7785;font-size:12px;margin-top:24px}
@@ -36,6 +38,8 @@ canvas{width:100%;height:180px;display:block}
 </head>
 <body>
 <div class="wrap">
+  <div class="brand">音质跑分</div>
+  <div class="brand-sub">看着好玩，用着专业</div>
   <span class="crown">👑 同车型同年款最高分</span>
   <h1 id="car-title">26款星越L</h1>
   <div class="sub" id="car-sub">2026款 · 驻车模式实测</div>
@@ -59,7 +63,7 @@ canvas{width:100%;height:180px;display:block}
     <p>扫码打开调音工具，测测你的车</p>
     <a class="btn" href="./">打开调音工具 →</a>
   </div>
-  <div class="foot">看着好玩，用着专业 · 调音玩</div>
+  <div class="foot">看着好玩，用着专业 · 音质跑分</div>
 </div>
 <script>
 (function(){
@@ -69,20 +73,20 @@ canvas{width:100%;height:180px;display:block}
   function qp(k){ try{ return new URLSearchParams(location.search).get(k); }catch(e){ return null; } }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function shortYear(y){
-    var m = String(y || '').match(/(\d{2})\d{2}/);
-    return m ? m[1] + '款' : y;
+    var d = String(y || '').replace(/\D/g, '');
+    return d.length >= 2 ? d.slice(-2) + '款' : y;
   }
   function render(rec){
     var series = rec.series || '星越L';
     var year = rec.year || '2026款';
     var score = rec.score;
     document.getElementById('car-title').textContent = shortYear(year) + series;
-    // 分享页跑分时间（后端返回 at 后自动显示，未部署前不显示）
+    // 分享页跑分时间＋测试设备（后端返回 at/deviceModel 后自动显示，未部署前不显示）
     var _st = '';
     try{ var _sd = new Date(rec.at || ''); if(!isNaN(_sd.getTime())) _st = ' · ' + (_sd.getMonth()+1) + '/' + _sd.getDate() + ' ' + ('0'+_sd.getHours()).slice(-2) + ':' + ('0'+_sd.getMinutes()).slice(-2); }catch(e){}
-    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + _st;
+    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + (rec.deviceModel ? ' · ' + rec.deviceModel : '') + _st;
     document.getElementById('score-num').textContent = score;
-    document.title = series + ' ' + year + ' 音质 ' + score + '分 👑 | 调音玩';
+    document.title = series + ' ' + year + ' 音质 ' + score + '分 👑 | 音质跑分';
     var pb = document.getElementById('plan-body');
     var pd = rec.planDetail;
     if (Array.isArray(pd) && pd.length && typeof pd[0].f === 'number') {
@@ -94,7 +98,7 @@ canvas{width:100%;height:180px;display:block}
       h += '</table>';
       pb.innerHTML = h;
     } else {
-      pb.innerHTML = '<p class="note">该次测量为早期数据，未保存具体方案。新测数据会自动带方案，点开详情就能看到完整设置表。</p><p><a style="color:#fbbf24" href="./">我也测一次，生成我的方案 →</a></p>';
+      pb.innerHTML = '<p class="note">该次测量为早期数据，未保存具体方案。新测数据会自动带方案，分享页会直接显示完整设置表。</p><p><a style="color:#fbbf24" href="./">我也测一次，生成我的方案 →</a></p>';
     }
     var m31 = rec.meas31;
     if (Array.isArray(m31) && m31.length >= 10) {

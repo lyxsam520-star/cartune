@@ -4420,7 +4420,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.347 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.348 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5437,7 +5437,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.347';
+var CALIB_VER = 'v2.9.348';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5865,7 +5865,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.347';
+var CN_DATA_VER = 'v2.9.348';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -6146,7 +6146,7 @@ var CN_DATA_VER = 'v2.9.347';
     // v2.9.345: 详情页跑分时间（后端返回 at 后自动显示，未部署前不显示，不报错）
     var _tpT = '';
     try{ var _tpD = new Date(it.at || ''); if(!isNaN(_tpD.getTime())) _tpT = ' · ' + (_tpD.getMonth()+1) + '/' + _tpD.getDate() + ' ' + ('0'+_tpD.getHours()).slice(-2) + ':' + ('0'+_tpD.getMinutes()).slice(-2); }catch(_){}
-    ov.querySelector('#tp-sub').textContent = (it.targetCurve === 'driving' ? '行车工况方案' : '驻车工况方案') + _tpT;
+    ov.querySelector('#tp-sub').textContent = (it.targetCurve === 'driving' ? '行车工况方案' : '驻车工况方案') + (it.deviceModel ? ' · ' + it.deviceModel : '') + _tpT;
     var rows = ov.querySelector('#tp-rows');
     if(it.planDetail && it.planDetail.length){
       var h = '';

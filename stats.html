@@ -41,6 +41,7 @@
   <div class="upd" id="upd">加载中…</div>
   <div class="upd" id="health">数据健康：加载中…</div>
   <div class="upd" id="st-devices" style="display:none;"></div>
+  <div class="upd" id="st-modes" style="display:none;"></div>
   <div class="stats">
     <div class="stat"><div class="num" id="st-total">–</div><div class="lab">已记录跑分（真实数据）</div></div>
     <div class="stat"><div class="num" id="st-models">–</div><div class="lab">有成绩的车型</div></div>
@@ -73,6 +74,11 @@ function load(){
     j.items.forEach(function(it){ if(it.deviceModel){ _hasDev = true; _dm[it.deviceModel] = (_dm[it.deviceModel] || 0) + 1; } });
     var _dv = document.getElementById('st-devices');
     if(_hasDev){ _dv.style.display = ''; _dv.textContent = '测试设备：' + Object.keys(_dm).map(function(k){ return k + ' ×' + _dm[k]; }).join(' · '); }
+    // v2.9.348: 真实场景分布（驻车/行车，targetCurve 线上接口已返，前端直接算）
+    var _md = 0, _mp = 0;
+    j.items.forEach(function(it){ if(it.targetCurve === 'driving') _md++; else _mp++; });
+    var _mv = document.getElementById('st-modes');
+    if(j.items.length){ _mv.style.display = ''; _mv.textContent = '场景：驻车×' + _mp + ' · 行车×' + _md; }
     var now = new Date();
     document.getElementById('upd').textContent = '更新于 ' + now.getHours() + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
     var box = document.getElementById('list');
