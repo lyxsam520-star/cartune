@@ -11,8 +11,6 @@
 <style>
 body{margin:0;background:#0f141a;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
 .wrap{max-width:520px;margin:0 auto;padding:24px 16px 32px}
-.brand{font-size:22px;font-weight:800;letter-spacing:1px}
-.brand-sub{color:#9aa7b4;font-size:13px;margin:4px 0 16px}
 .crown{display:inline-block;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.5);color:#fbbf24;border-radius:999px;padding:4px 12px;font-size:13px}
 h1{font-size:26px;margin:14px 0 4px}
 .sub{color:#9aa7b4;font-size:14px}
@@ -29,7 +27,7 @@ th{color:#9aa7b4;font-weight:400}
 td:last-child,th:last-child{text-align:right}
 .note{color:#9aa7b4;font-size:13px;line-height:1.7}
 .qr{text-align:center;margin-top:16px}
-.qr img{width:144px;height:144px;background:#fff;border-radius:12px;padding:8px}
+.qr img{width:120px;height:120px;background:#fff;border-radius:12px;padding:6px}
 .qr p{color:#9aa7b4;font-size:13px;margin:8px 0}
 .btn{display:block;text-align:center;background:#fbbf24;color:#111827;font-weight:700;border-radius:10px;padding:13px;text-decoration:none;margin-top:12px}
 .foot{text-align:center;color:#6b7785;font-size:12px;margin-top:24px}
@@ -38,8 +36,13 @@ canvas{width:100%;height:180px;display:block}
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">音质跑分</div>
-  <div class="brand-sub">看着好玩，用着专业</div>
+  <div style="display:flex;align-items:center;gap:12px;margin:4px 0 14px;">
+    <img src="logo.png" alt="音质跑分" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:1px;">音质跑分</div>
+      <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">看着好玩，用着专业</div>
+    </div>
+  </div>
   <span class="crown">👑 同车型同年款最高分</span>
   <h1 id="car-title">26款星越L</h1>
   <div class="sub" id="car-sub">2026款 · 驻车模式实测</div>
