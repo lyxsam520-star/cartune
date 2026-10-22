@@ -89,20 +89,26 @@ function load(){
     document.getElementById('upd').textContent = '更新于 ' + now.getHours() + ':' + ('0'+now.getMinutes()).slice(-2) + ':' + ('0'+now.getSeconds()).slice(-2);
     var box = document.getElementById('list');
     if(!j.items.length){ box.innerHTML = '<div class="empty">暂无真实成绩数据<br>车友测完第一条就会出现在这里</div>'; return; }
+    // 看板皇冠：同车型同年款组内最高分戴👑（组内≥2条才比，并列都戴；与首页同规则）
+    var _grp = {}, _cr = {};
+    j.items.forEach(function(it, ix){ var k = (it.series || '') + '|' + (it.year || ''); if(!_grp[k]) _grp[k] = []; _grp[k].push(ix); });
+    Object.keys(_grp).forEach(function(k){ var arr = _grp[k]; if(arr.length < 2) return; var mx = Math.max.apply(null, arr.map(function(ix){ return Number(j.items[ix].score) || 0; })); arr.forEach(function(ix){ if(Number(j.items[ix].score) === mx) _cr[ix] = true; }); });
     box.innerHTML = j.items.map(function(it, idx){
       var mode = it.targetCurve === 'driving' ? '行车工况方案' : '驻车工况方案';
       var det = '<div class="meta">暂无方案明细</div>';
       if(it.planDetail && it.planDetail.length){
-        det = '<table>' + it.planDetail.map(function(p){
+        var _na = 0;
+        it.planDetail.forEach(function(p){ if(Number(p.g) !== 0) _na++; });
+        det = '<div class="meta" style="margin-bottom:4px;">共' + it.planDetail.length + '段 · 其中' + _na + '段需调整 · ' + (it.planDetail.length - _na) + '段保持0（不用动）</div><table>' + it.planDetail.map(function(p){
           var g = (typeof p.g === 'number') ? p.g : 0;
           var cls = g < 0 ? 'cut' : (g > 0 ? 'boost' : '');
-          var gs = (g > 0 ? '+' : '') + g + ' dB';
+          var gs = (g > 0 ? '+' : '') + g + ' dB' + (g === 0 ? '（不用动）' : '');
           return '<tr><td>' + fmtF(p.f) + '</td><td class="g ' + cls + '">' + gs + '</td></tr>';
         }).join('') + '</table><div class="meta" style="margin-top:6px;">同车型同年款参考，调完可测一次验证</div>';
       }
       var yv = it.year ? String(it.year).replace(/[款年]\s*$/, '') : '';
       var carLabel = (yv ? yv.slice(-2) + '款' : '') + (it.series || '');
-      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + (it.deviceModel ? ' · ' + esc(it.deviceModel) : '') + (it.dropRate != null ? ' · 复测残差' + (it.dropRate >= 0 ? '↓' : '↑') + Math.abs(it.dropRate) + '%' : '') + (it.at ? ' · ' + fmtT(it.at) : '') + '</div><div class="detail">' + det + '</div></div>';
+      return '<div class="row" data-i="' + idx + '"><div class="top"><span class="car">' + (_cr[idx] ? '👑 ' : '') + esc(carLabel) + '</span><span class="score">' + it.score + ' <small>分</small></span></div><div class="meta">' + mode + (it.deviceModel ? ' · ' + esc(it.deviceModel) : '') + (it.dropRate != null ? ' · 复测残差' + (it.dropRate >= 0 ? '↓' : '↑') + Math.abs(it.dropRate) + '%' : '') + (it.at ? ' · ' + fmtT(it.at) : '') + '</div><div class="detail">' + det + '</div></div>';
     }).join('');
     Array.prototype.forEach.call(box.querySelectorAll('.row'), function(el){
       el.addEventListener('click', function(){ el.classList.toggle('open'); });
