@@ -4470,7 +4470,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.356 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.357 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5489,7 +5489,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.356';
+var CALIB_VER = 'v2.9.357';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5917,7 +5917,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.356';
+var CN_DATA_VER = 'v2.9.357';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -9462,7 +9462,7 @@ function initTech(){
     }).join('');
     gc.innerHTML = '<div class="h" style="font-size:15px;">'+escapeHtml(tt('tech.guideTitle'))+'</div>'+
                    '<div style="margin-top:12px;">'+_items+'</div>'+
-                   '<a class="btn" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="width:100%;margin-top:4px;text-align:center;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
+                   '<a class="btn btn-primary" href="https://pan.baidu.com/s/1XUR00U5Ch1bv3K2-XJN0jg?pwd=6dn3" target="_blank" style="width:100%;margin-top:4px;text-align:center;">'+escapeHtml(tt('tech.guideLink'))+'</a>';
   })();
   box.appendChild(gc);
   CTA.tech = [{ text: tt('common.back'), primary:false, onClick:function(){ show('home'); } }];
