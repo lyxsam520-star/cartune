@@ -308,7 +308,7 @@ ul.clean li{margin:6px 0;}
       <img src="logo.png" alt="SoundScore" style="width:56px;height:56px;border-radius:14px;flex-shrink:0;">
       <div>
         <svg class="wm-svg wm-main" role="img" aria-label="SoundScore"><use href="#wmMain"/></svg>
-        <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">Car tuning AI, sharper every measure.</div>
+        <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">Car tuning tool, sharper every measure.</div>
       </div>
     </div>
     <div class="center" style="padding-top:12px;">
@@ -3939,7 +3939,7 @@ window.COPY = {
     titleEn: "How It Works",
     heroTitle: "Every car deserves its own score.",
     heroTitleEn: "Every car deserves its own score.",
-    heroBody: "One phone, 30 seconds: measure your car audio's true frequency response (how loud each band actually is) and get a plan matched to your head unit's actual EQ bands. Focused on car tuning AI — the more we measure, the more accurate the tune.",
+    heroBody: "One phone, 30 seconds: measure your car audio's true frequency response (how loud each band actually is) and get a plan matched to your head unit's actual EQ bands. Focused on car tuning tool — the more we measure, the more accurate the tune.",
     heroBodyEn: "Car audio tuning used to be a privilege of the few \u2014 professional gear, a master\u2019s ear, an entire afternoon.\n\nWe want to change that: one phone, 30 seconds, and your car tunes into its own great sound.\n\nThe more we measure, the better we understand cars; the better we understand, the more accurate the tune.",
     sections: [
       {
@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.349 · Beta';
+  ver.innerHTML = 'v2.9.350 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.349';
+var CALIB_VER = 'v2.9.350';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9309,7 +9309,7 @@ function sharePlanWithFriends(){
   var carLine = 'Car: ' + carName;
   if(before != null && score != null && before !== score) carLine += ' | Before' + before + ' → After' + score;
   lines.push(carLine);
-  lines.push('Car tuning AI, sharper every measure.');
+  lines.push('Car tuning tool, sharper every measure.');
   if(token) lines.push('[Plan code: ' + token + ']');
   var txt = lines.join('\n');
   function done(ok){
@@ -9480,7 +9480,7 @@ function init(){
       '<div class="page-banner" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:12px 4px 4px;">' +
       '<div style="text-align:right;">' +
       '<svg class="wm-svg wm-mini" role="img" aria-label="SoundScore"><use href="#wmMini"/></svg>' +
-      '<div style="font-size:11px;color:#FFD9A0;">Car tuning AI, sharper every measure.</div>' +
+      '<div style="font-size:11px;color:#FFD9A0;">Car tuning tool, sharper every measure.</div>' +
       '</div>' +
       '<img src="logo.png" alt="SoundScore" style="width:36px;height:36px;border-radius:9px;flex-shrink:0;">' +
       '</div>';
@@ -9674,7 +9674,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.349',
+        appVer: 'v2.9.350',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
