@@ -107,6 +107,7 @@ canvas{width:100%;height:180px;display:block}
         h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + _mv + '</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB' + (Number(g) === 0 ? '（不用动）' : '') + ((Number(pd[i].f) >= 16000 && Number(g) !== 0) ? '（预测参考）' : '') + '</td></tr>';
       }
       h += '</table><p class="note" style="margin-top:8px;">0 dB说明：只减不增——实测已达标，或实测偏低（偏低不拔高）时均为0；16000Hz为手机麦克风物理限制，无法准确测量，不参与调整。</p>';
+      if(pd.some(function(p){ return Number(p.f)>=16000; })) h += '<p class="note" style="margin-top:8px;">预测说明：16000Hz段不是直接实测——手机麦克风在16kHz以上无有效数据，不参与打分；该段增益（若非0）是按8000/10000/12500高频趋势保守预测（封顶-3dB），仅供参考，听感偏暗请归零；若为0，则为预测保持或未实测保持。</p>';
       pb.innerHTML = h;
     } else {
       pb.innerHTML = '<p class="note">该次测量为早期数据，未保存具体方案。新测数据会自动带方案，分享页会直接显示完整设置表。</p><p><a style="color:#fbbf24" href="./">我也测一次，生成我的方案 →</a></p>';

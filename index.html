@@ -4470,7 +4470,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.355 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.356 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5489,7 +5489,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.355';
+var CALIB_VER = 'v2.9.356';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5917,7 +5917,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.355';
+var CN_DATA_VER = 'v2.9.356';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -6224,6 +6224,7 @@ var CN_DATA_VER = 'v2.9.355';
         h += '<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2c2c2e;font-size:14px;"><span>' + tickerFmtF(p.f) + '</span><span style="color:#98989f;">' + _mvD + '</span><span style="font-weight:700;color:' + (g < 0 ? '#30d158' : (g > 0 ? '#f5a623' : '#98989f')) + '">' + (g > 0 ? '+' : '') + g + ' dB' + (g === 0 ? '（不用动）' : '') + _tagD + '</span></div>';
       }
       h += '<div style="font-size:12px;color:#98989f;padding-top:6px;">0 dB说明：只减不增——实测已达标，或实测偏低（偏低不拔高）时均为0；16000Hz为手机麦克风物理限制，无法准确测量，不参与调整。</div>';
+      if(it.planDetail.some(function(p){ return Number(p.f)>=16000; })) h += '<div style="font-size:12px;color:#98989f;padding-top:6px;">预测说明：16000Hz段不是直接实测——手机麦克风在16kHz以上无有效数据，不参与打分；该段增益（若非0）是按8000/10000/12500高频趋势保守预测（封顶-3dB），仅供参考，听感偏暗请归零；若为0，则为预测保持或未实测保持。</div>';
       rows.innerHTML = h;
     } else {
       rows.innerHTML = '<div style="font-size:13px;color:#98989f;">这条成绩暂无方案明细</div>';
@@ -9352,7 +9353,7 @@ function renderPlan(){
       '<div class="gl"><div class="gt">'+escapeHtml(dispLabel)+snrDot+
         (isComb?' <span class="tag" style="color:var(--red);border-color:rgba(255,77,77,.5);">梳状谷</span>':'')+'</div>'+
         '<div class="gc num">'+escapeHtml(centerTxt)+'</div>'+
-        (bd.predicted ? '<div class="gc" style="color:var(--amber);">预测，非直接实测</div>' : (bd.predStatus==='unmeasured' && bd.centerHz && bd.centerHz>=16000 ? '<div class="gc" style="color:var(--sub);">' + (bd.predCliff ? '未实测，保守保持（高频带宽截断）' : '未实测，保守保持') + '</div>' : '')) +
+        (bd.predicted ? '<div class="gc" style="color:var(--amber);">预测，非直接实测（原因见下方）</div>' : (bd.predStatus==='unmeasured' && bd.centerHz && bd.centerHz>=16000 ? '<div class="gc" style="color:var(--sub);">' + (bd.predCliff ? '未实测，保守保持（高频带宽截断）' : '未实测，保守保持') + '</div>' : '')) +
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
         unfix+'</div>'+
       '<div class="gv num">'+escapeHtml(gv)+'</div>';
@@ -9362,7 +9363,8 @@ function renderPlan(){
       var uhfNote = document.createElement('div');
       uhfNote.className = 'small';
       uhfNote.style.cssText = 'color:var(--sub);margin:-4px 0 12px;font-size:12px;';
-      uhfNote.textContent = (bd.predicted ? (bd.gainDb<0 ? '16000Hz为预测值（高频趋势保守预测，封顶-3dB），非直接实测，仅供参考，听感偏暗请归零；不参与打分。' : '16000Hz为预测保持0dB，非直接实测，仅供参考；不参与打分。') : '16kHz 以上为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。');
+      // v2.9.356: 预测下方必须说明为什么是预测（此前预测分支只说了是什么/封顶，丢了为什么）
+      uhfNote.textContent = (bd.predicted ? ('为什么是预测：16kHz以上为手机麦克风物理限制，无法准确测量，不参与打分；所以本段按8000/10000/12500高频趋势保守预测' + (bd.gainDb<0 ? '，衰减' + Math.abs(bd.gainDb) + 'dB（封顶-3dB），仅供参考，听感偏暗请归零。' : '，保持0dB，仅供参考。')) : (bd.predCliff ? '为什么不预测：高频带宽截断（8000到10000陡降），趋势不可信，故保守保持0dB；16kHz以上为手机麦克风物理限制，无法准确测量，不参与打分。' : (bd.predStatus==='unmeasured' && bd.centerHz && bd.centerHz>=16000 ? '为什么不预测：高频有效数据不足或方向矛盾，趋势不可信，故保守保持0dB；16kHz以上为手机麦克风物理限制，无法准确测量，不参与打分。' : '16kHz 以上为手机麦克风物理限制，无法准确测量，不参与打分。非设备故障。')));
       box.appendChild(uhfNote);
     }
   });
