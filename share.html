@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>星越L 2026款 音质 55分 👑 | 音质跑分</title>
-<meta name="description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。看着好玩，用着专业。">
+<meta name="description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。专注汽车调音的AI，测得越多，调得越准。">
 <meta property="og:title" content="星越L 2026款 音质 55分 👑 | 音质跑分">
 <meta property="og:description" content="同车型同年款最高分车主的参考设置，扫码打开调音工具测测你的车。">
 <meta property="og:type" content="website">
@@ -43,7 +43,7 @@ canvas{width:100%;height:180px;display:block}
     <img src="logo.png" alt="音质跑分" style="width:64px;height:64px;border-radius:16px;flex-shrink:0;">
     <div>
       <svg class="wm-svg wm-main" role="img" aria-label="音质跑分"><use href="#wmMain"/></svg>
-      <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">看着好玩，用着专业</div>
+      <div style="font-size:13.5px;color:#FFD9A0;margin-top:6px;letter-spacing:.5px;">汽车调音AI，测得多，调得准</div>
     </div>
   </div>
   <span class="crown">👑 同车型同年款最高分</span>
@@ -69,13 +69,13 @@ canvas{width:100%;height:180px;display:block}
     <p>扫码打开调音工具，测测你的车</p>
     <a class="btn" href="./">打开调音工具 →</a>
   </div>
-  <div class="foot">看着好玩，用着专业 · 音质跑分</div>
+  <div class="foot">汽车调音AI，测得多，调得准 · 音质跑分</div>
 </div>
 <script>
 (function(){
   var API = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest?kind=measurement&view=recent';
-  var TC_PARKED = [7.0,6.9,6.8,6.5,5.9,4.7,3.5,2.6,1.7,0.5,0.3,0.1,0.0,0.0,0.0,0.0,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
-  var TC_DRIVING = [7.0,7.0,7.0,6.9,6.6,5.7,4.2,3.3,2.5,1.2,0.9,0.5,0.6,0.3,0.2,0.1,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+  var TC_PARKED = [7.0,6.95,6.9,6.8,6.5,5.9,4.7,3.5,2.6,1.7,0.5,0.3,0.1,0.0,0.0,0.0,0.0,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
+  var TC_DRIVING = [7.0,7.0,7.0,7.0,6.9,6.6,5.7,4.2,3.3,2.5,1.2,0.9,0.5,0.6,0.3,0.2,0.1,0.0,-0.1,-0.3,-0.5,-0.8,-1.0,-1.3,-1.6,-1.9,-2.3,-2.7,-3.3,-4.1,-5.0];
   function qp(k){ try{ return new URLSearchParams(location.search).get(k); }catch(e){ return null; } }
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
   function shortYear(y){
@@ -90,7 +90,7 @@ canvas{width:100%;height:180px;display:block}
     // 分享页跑分时间＋测试设备（后端返回 at/deviceModel/device 后自动显示；老记录无 deviceModel 时退回 device 类型，如 iPad/iPhone，未返回前不显示）
     var _st = '';
     try{ var _sd = new Date(rec.at || ''); if(!isNaN(_sd.getTime())) _st = ' · ' + (_sd.getMonth()+1) + '/' + _sd.getDate() + ' ' + ('0'+_sd.getHours()).slice(-2) + ':' + ('0'+_sd.getMinutes()).slice(-2); }catch(e){}
-    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + (rec.deviceModel ? ' · ' + rec.deviceModel : (rec.device ? ' · ' + rec.device : '')) + _st;
+    document.getElementById('car-sub').textContent = year + ' · ' + (rec.targetCurve === 'driving' ? '行车模式实测' : '驻车模式实测') + (rec.deviceModel ? ' · ' + rec.deviceModel : (rec.device && rec.device !== 'Other' ? ' · ' + rec.device : '')) + _st;
     document.getElementById('score-num').textContent = score;
     document.title = series + ' ' + year + ' 音质 ' + score + '分 👑 | 音质跑分';
     var pb = document.getElementById('plan-body');
@@ -98,12 +98,15 @@ canvas{width:100%;height:180px;display:block}
     if (Array.isArray(pd) && pd.length && typeof pd[0].f === 'number') {
       var _nAdj = 0;
       for (var _k = 0; _k < pd.length; _k++) { if (Number(pd[_k].g) !== 0) _nAdj++; }
-      var h = '<p class="note">共' + pd.length + '段 · 其中' + _nAdj + '段需调整 · ' + (pd.length - _nAdj) + '段保持0（不用动）</p><table><tr><th>频段</th><th>增益</th></tr>';
+      var h = '<p class="note">共' + pd.length + '段 · 其中' + _nAdj + '段需调整 · ' + (pd.length - _nAdj) + '段保持0（不用动）</p><table><tr><th>频段</th><th>实测</th><th>增益</th></tr>';
       for (var i = 0; i < pd.length; i++) {
         var g = pd[i].g;
-        h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB' + (Number(g) === 0 ? '（不用动）' : '') + '</td></tr>';
+        var _iso = [20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
+        var _bi = 0, _bd = 1e9; for (var _bi2 = 0; _bi2 < _iso.length; _bi2++) { var _dd = Math.abs(Math.log(Number(pd[i].f) || 1) - Math.log(_iso[_bi2])); if (_dd < _bd) { _bd = _dd; _bi = _bi2; } }
+        var _mv = (Array.isArray(rec.meas31) && typeof rec.meas31[_bi] === 'number') ? Number(rec.meas31[_bi]).toFixed(1) + ' dB' : '—';
+        h += '<tr><td>' + esc(pd[i].f) + ' Hz</td><td>' + _mv + '</td><td>' + (g > 0 ? '+' : '') + esc(g) + ' dB' + (Number(g) === 0 ? '（不用动）' : '') + ((Number(pd[i].f) >= 16000 && Number(g) !== 0) ? '（预测参考）' : '') + '</td></tr>';
       }
-      h += '</table>';
+      h += '</table><p class="note" style="margin-top:8px;">0 dB说明：只减不增——实测已达标，或实测偏低（偏低不拔高）时均为0；16000Hz为手机麦克风物理限制，无法准确测量，不参与调整。</p>';
       pb.innerHTML = h;
     } else {
       pb.innerHTML = '<p class="note">该次测量为早期数据，未保存具体方案。新测数据会自动带方案，分享页会直接显示完整设置表。</p><p><a style="color:#fbbf24" href="./">我也测一次，生成我的方案 →</a></p>';
@@ -111,7 +114,13 @@ canvas{width:100%;height:180px;display:block}
     var m31 = rec.meas31;
     if (Array.isArray(m31) && m31.length >= 10) {
       document.getElementById('curve-card').style.display = 'block';
-      drawChart(m31, rec.targetCurve === 'driving' ? TC_DRIVING : TC_PARKED);
+      // v2.9.355: 曲线先电平对齐再画（500-2000Hz偏差中位数），视觉差距与分数一致；目标已补31点，无横向错位
+      var _tgt = rec.targetCurve === 'driving' ? TC_DRIVING : TC_PARKED;
+      var _dev = [];
+      for (var _di = 14; _di <= 20; _di++) { if (typeof m31[_di] === 'number' && typeof _tgt[_di] === 'number') _dev.push(m31[_di] - _tgt[_di]); }
+      var _al = m31.slice();
+      if (_dev.length >= 4) { _dev.sort(function(a,b){ return a-b; }); var _off = _dev[Math.floor(_dev.length/2)]; _al = m31.map(function(v){ return (typeof v === 'number' ? v - _off : v); }); }
+      drawChart(_al, _tgt);
     }
   }
   function drawChart(meas, target){
