@@ -4470,7 +4470,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.361 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
+  ver.innerHTML = 'v2.9.362 · 内测版 · 调音群微信号（点击复制）：<span style="color:var(--amber);font-weight:700;cursor:pointer;" onclick="if(window.__copyWx)__copyWx(this)">129428</span>';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5489,7 +5489,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-cn';
-var CALIB_VER = 'v2.9.361';
+var CALIB_VER = 'v2.9.362';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -5917,7 +5917,7 @@ function initCalib(){
  * 取消勾选即停止。发送失败静默，不影响任何既有流程（零回归）。
  * ===================================================================== */
 var CN_INGEST_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
-var CN_DATA_VER = 'v2.9.361';
+var CN_DATA_VER = 'v2.9.362';
 (function(){
   var consentBox = document.getElementById('cn-data-consent');
   var mLastHash = '';
@@ -9336,9 +9336,9 @@ function renderPlan(){
         var _desc = '';
         if(_cur != null){
           var _gain = Math.round((_ceiling - _cur) * 10) / 10;
-          _desc = '当前 ' + _cur + ' 分，按方案调完预计 ' + _ceiling + ' 分（+' + _gain + '）。这是这套 EQ 的极限，再往上得换 DSP。';
+          _desc = '当前 ' + _cur + ' 分，模拟：若切量全落地、中心与带宽与假设一致，约 ' + _ceiling + ' 分（+' + _gain + '）。这是模拟天花板，不是承诺，实际以复测为准；再往上得换 DSP。';
         }else{
-          _desc = '按方案调完预计 ' + _ceiling + ' 分。这是这套 EQ 的极限，再往上得换 DSP。';
+          _desc = '模拟：若切量全落地、中心与带宽与假设一致，约 ' + _ceiling + ' 分。这是模拟天花板，不是承诺，实际以复测为准；再往上得换 DSP。';
         }
         document.getElementById('plan-ceiling-desc').textContent = _desc;
       }
@@ -9403,7 +9403,7 @@ function renderPlan(){
         (bd.predicted ? '<div class="gc" style="color:var(--amber);">预测，非直接实测（原因见下方）</div>' : (bd.predStatus==='unmeasured' && bd.centerHz && bd.centerHz>=16000 ? '<div class="gc" style="color:var(--sub);">' + (bd.predCliff ? '未实测，保守保持（高频带宽截断）' : '未实测，保守保持') + '</div>' : '')) +
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
         unfix+'</div>'+
-      '<div class="gv num">'+escapeHtml(gv)+'</div>';
+      '<div class="gv num">'+gv+'</div>';
     box.appendChild(card);
     // v2.9.232: 超高音（16kHz）栏下加物理限制说明（31段表终版会隐藏，说明跟用户看得到的地方走）
     if(i === bands.length - 1 && bd.centerHz && bd.centerHz >= 12000){
@@ -10142,7 +10142,14 @@ function drawRemeasureChart(before, after, tgt){
   var g = fitCanvas(cv, 220), ctx=g.ctx, W=g.w, H=g.h;
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
-  var all = before.concat(after, tgt);
+  // v2.9.362: 复测图与报告页同口径——调前/调后先用 alignMedOffset31 对齐到目标，尺度只取 idx2-28，排除 20/25Hz 与 16k/20kHz 物理限制段，避免 -120 假值压扁曲线
+  var _medB = 0, _medA = 0;
+  try{ _medB = DSP.alignMedOffset31(before, tgt) || 0; }catch(_){}
+  try{ _medA = DSP.alignMedOffset31(after, tgt) || 0; }catch(_){}
+  var beforeA = before.map(function(v){ return (typeof v === 'number' ? v - _medB : v); });
+  var afterA = after.map(function(v){ return (typeof v === 'number' ? v - _medA : v); });
+  var all = [];
+  for(var _ai=2; _ai<=28; _ai++){ if(typeof beforeA[_ai]==='number') all.push(beforeA[_ai]); if(typeof afterA[_ai]==='number') all.push(afterA[_ai]); if(typeof tgt[_ai]==='number') all.push(tgt[_ai]); }
   var mn=Math.min.apply(null,all)-2, mx=Math.max.apply(null,all)+2;
   function X(f){ var l0=Math.log10(20), l1=Math.log10(20000); return 34+(Math.log10(f)-l0)/(l1-l0)*(W-44); }
   function Y(db){ return 14+(1-(db-mn)/(mx-mn))*(H-38); }
@@ -10155,7 +10162,7 @@ function drawRemeasureChart(before, after, tgt){
   function line(arr, color, width){
     ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
     var _started=false, _li;
-    for(_li=0;_li<iso.length && _li<arr.length;_li++){
+    for(_li=2;_li<=28 && _li<iso.length && _li<arr.length;_li++){
       var _v=arr[_li];
       if(!isFinite(_v)) { _started=false; continue; } // v2.9.81: 跳过 NaN 断点
       var x=X(iso[_li]), y=Y(_v);
@@ -10163,9 +10170,9 @@ function drawRemeasureChart(before, after, tgt){
     }
     ctx.stroke();
   }
-  line(tgt,'#FF9F1C',2);    // 目标曲线
-  line(before,'#22D3EE',2); // 调前实测
-  line(after,'#34D399',2);  // 调后实测
+  line(tgt,'#FF9F1C',2);
+  line(beforeA,'#22D3EE',2);
+  line(afterA,'#34D399',2);
 }
 function renderRemeasureHistory(){
   var box = document.getElementById('remeasure-history');

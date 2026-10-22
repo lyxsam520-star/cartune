@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.350 · Beta';
+  ver.innerHTML = 'v2.9.351 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.350';
+var CALIB_VER = 'v2.9.351';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -8581,9 +8581,9 @@ function renderPlan(){
         var _desc = '';
         if(_cur != null){
           var _gain = Math.round((_ceiling - _cur) * 10) / 10;
-          _desc = 'Now ' + _cur + ' pts; after the plan ~' + _ceiling + ' pts (+' + _gain + '). That\'s this EQ\'s limit — beyond that needs a DSP.';
+          _desc = 'Now ' + _cur + ' pts; simulation: if all cuts land exactly at the assumed centers/bandwidths, ~' + _ceiling + ' pts (+' + _gain + '). This is a simulated ceiling, not a promise — verify by re-measuring; beyond that needs a DSP.';
         }else{
-          _desc = 'After the plan ~' + _ceiling + ' pts. That\'s this EQ\'s limit — beyond that needs a DSP.';
+          _desc = 'Simulation: if all cuts land exactly at the assumed centers/bandwidths, ~' + _ceiling + ' pts. This is a simulated ceiling, not a promise — verify by re-measuring; beyond that needs a DSP.';
         }
         document.getElementById('plan-ceiling-desc').textContent = _desc;
       }
@@ -8647,7 +8647,7 @@ function renderPlan(){
         '<div class="gc num">'+escapeHtml(centerTxt)+'</div>'+
         (isComb?'<div class="gc" style="color:var(--red);">'+escapeHtml(tt('plan.combNote'))+'</div>':'')+
         unfix+'</div>'+
-      '<div class="gv num">'+escapeHtml(gv)+'</div>';
+      '<div class="gv num">'+gv+'</div>';
     box.appendChild(card);
     // v2.9.232: 超高音（16kHz）栏下加物理限制说明（31段表终版会隐藏，说明跟用户看得到的地方走）
     if(i === bands.length - 1 && bd.centerHz && bd.centerHz >= 12000){
@@ -9386,7 +9386,14 @@ function drawRemeasureChart(before, after, tgt){
   var g = fitCanvas(cv, 220), ctx=g.ctx, W=g.w, H=g.h;
   ctx.clearRect(0,0,W,H);
   var iso = DSP.ISO31 || [];
-  var all = before.concat(after, tgt);
+  // v2.9.351: remeasure chart aligned like report chart — align before/after with alignMedOffset31, scale only idx2-28, exclude 20/25Hz and 16k/20kHz physics-limit bands so -120 dummy does not flatten curves
+  var _medB = 0, _medA = 0;
+  try{ _medB = DSP.alignMedOffset31(before, tgt) || 0; }catch(_){}
+  try{ _medA = DSP.alignMedOffset31(after, tgt) || 0; }catch(_){}
+  var beforeA = before.map(function(v){ return (typeof v === 'number' ? v - _medB : v); });
+  var afterA = after.map(function(v){ return (typeof v === 'number' ? v - _medA : v); });
+  var all = [];
+  for(var _ai=2; _ai<=28; _ai++){ if(typeof beforeA[_ai]==='number') all.push(beforeA[_ai]); if(typeof afterA[_ai]==='number') all.push(afterA[_ai]); if(typeof tgt[_ai]==='number') all.push(tgt[_ai]); }
   var mn=Math.min.apply(null,all)-2, mx=Math.max.apply(null,all)+2;
   function X(f){ var l0=Math.log10(20), l1=Math.log10(20000); return 34+(Math.log10(f)-l0)/(l1-l0)*(W-44); }
   function Y(db){ return 14+(1-(db-mn)/(mx-mn))*(H-38); }
@@ -9399,7 +9406,7 @@ function drawRemeasureChart(before, after, tgt){
   function line(arr, color, width){
     ctx.strokeStyle=color; ctx.lineWidth=width; ctx.beginPath();
     var _started=false, _li;
-    for(_li=0;_li<iso.length && _li<arr.length;_li++){
+    for(_li=2;_li<=28 && _li<iso.length && _li<arr.length;_li++){
       var _v=arr[_li];
       if(!isFinite(_v)) { _started=false; continue; } // v2.9.81: 跳过 NaN 断点
       var x=X(iso[_li]), y=Y(_v);
@@ -9407,9 +9414,9 @@ function drawRemeasureChart(before, after, tgt){
     }
     ctx.stroke();
   }
-  line(tgt,'#FF9F1C',2);    // 目标曲线
-  line(before,'#22D3EE',2); // 调前实测
-  line(after,'#34D399',2);  // 调后实测
+  line(tgt,'#FF9F1C',2);
+  line(beforeA,'#22D3EE',2);
+  line(afterA,'#34D399',2);
 }
 function renderRemeasureHistory(){
   var box = document.getElementById('remeasure-history');
@@ -9674,7 +9681,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.350',
+        appVer: 'v2.9.351',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
