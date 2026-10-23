@@ -4161,7 +4161,7 @@ function renderCTA(btns, sub){
   // 版本号：按钮上方，flex 全宽独占一行
   var ver = document.createElement('div');
   ver.style.cssText = 'flex:0 0 100%;text-align:center;color:#8B94A3;font-size:12px;padding-bottom:2px;';
-  ver.innerHTML = 'v2.9.353 · Beta';
+  ver.innerHTML = 'v2.9.354 · Beta';
   box.appendChild(ver);
   btns.forEach(function(b){
     var btn = document.createElement('button');
@@ -5166,7 +5166,7 @@ var CALIB_NEEDED = 10;
 var CALIB_M_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_G_URL = 'https://yinzhipaofen-prod-d9d7tnc4a1ebb2-1510625950.ap-shanghai.app.tcloudbase.com/ingest';
 var CALIB_APP = 'soundscore-en';
-var CALIB_VER = 'v2.9.353';
+var CALIB_VER = 'v2.9.354';
 /* 版本自检：打开时向服务器核对最新版本号，不一致自动重载到新版（sessionStorage 防循环，失败静默） */
 (function(){ try{
   if(sessionStorage.getItem('__ssVerChecked')) return;
@@ -9688,7 +9688,7 @@ else{ init(); }
       var payload = {
         consent: true,
         app: 'soundscore-en',
-        appVer: 'v2.9.353',
+        appVer: 'v2.9.354',
         session: sessionId,
         spectrum: { l: st.measL.slice(0, 31), r: st.measR.slice(0, 31) },
         score: (sc && sc.score != null) ? sc.score : null,
@@ -9796,7 +9796,7 @@ else{ init(); }
       __tickerItems = [];
       fetch(M_URL + '?kind=measurement&view=recent').then(function(r){ return r.json(); }).then(function(j){
         if(j && j.ok){
-          if(j.items && j.items.length){ __tickerItems = j.items.filter(function(it){ var _t = (it && it.at) ? String(it.at) : ''; return !(_t >= '2026-10-22T20:46' && _t <= '2026-10-22T21:50'); }); homeTickerRender(); } // v2.9.353: hide tonight batch (UTC 2026-10-22T20:46-21:49) from public ticker only, backend record kept
+          if(j.items && j.items.length){ __tickerItems = j.items.filter(function(it){ var _t = (it && it.at) ? String(it.at) : ''; return !((_t >= '2026-10-22T20:46' && _t <= '2026-10-22T21:50') || (_t >= '2026-10-22T22:28' && _t <= '2026-10-22T22:36')); }); homeTickerRender(); } // v2.9.354: hide tonight batch + at-home fan 2 (UTC 2026-10-22T22:28-22:36) from public ticker only, backend record kept
         }
       }).catch(function(){});
     }catch(_){}

@@ -181,8 +181,8 @@ canvas{width:100%;height:180px;display:block}
   fetch(API).then(function(r){ return r.json(); }).then(function(j){
     var items = (j && j.items) || [];
     items = items.filter(function(it){ return Number(it.score) > 0; });
-    // v2.9.364: 今晚 7 条不对外显示——分享页也不挑它们，默认最高回落到之前皇冠，后端记录不删
-    items = items.filter(function(it){ var _t = (it && it.at) ? String(it.at) : ''; return !(_t >= '2026-10-22T20:46' && _t <= '2026-10-22T21:50'); });
+    // v2.9.365: 今晚 7 条＋家中吊扇 2 条不对外显示——分享页也不挑它们，默认最高回落到之前皇冠，后端记录不删
+    items = items.filter(function(it){ var _t = (it && it.at) ? String(it.at) : ''; return !((_t >= '2026-10-22T20:46' && _t <= '2026-10-22T21:50') || (_t >= '2026-10-22T22:28' && _t <= '2026-10-22T22:36')); });
     if (!items.length) { render(fallback); return; }
     var wantScore = qp('score');
     var wantSeries = qp('series');
